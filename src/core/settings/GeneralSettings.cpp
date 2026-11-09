@@ -13,6 +13,9 @@ void registerSettings(SettingsSchema &schema)
     schema.add(SettingDefinition::integer(LogRetentionDays, 30, Logger::kMinRetentionDays,
                                           Logger::kMaxRetentionDays));
     schema.add(SettingDefinition::boolean(TrayHintShown, false));
+    // Stage 1: what to do with the main window at startup (W-02).
+    schema.add(SettingDefinition::enumeration(StartupAutoMode, StartupTray, {StartupTray, StartupWindow}));
+    schema.add(SettingDefinition::enumeration(StartupManualMode, StartupWindow, {StartupWindow, StartupTray}));
 }
 
 } // namespace ergo::GeneralSettings

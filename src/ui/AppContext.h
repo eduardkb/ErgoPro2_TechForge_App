@@ -1,0 +1,22 @@
+#pragma once
+
+#include <QString>
+
+namespace ergo {
+
+class FeatureAvailabilityService;
+class InstallController;
+class Logger;
+class SettingsStore;
+struct Platform;
+
+// Services shared by the windows and tabs (owned by AppController / main).
+struct AppContext {
+    SettingsStore &settings;
+    Logger &logger;
+    Platform &platform;
+    FeatureAvailabilityService &availability;
+    InstallController &install;
+};
+
+} // namespace ergo

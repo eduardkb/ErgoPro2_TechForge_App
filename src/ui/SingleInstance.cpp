@@ -74,6 +74,18 @@ SingleInstance::Result SingleInstance::acquire()
     return Result::Failed;
 }
 
+void SingleInstance::release()
+{
+    if (m_server) {
+        m_server->close();
+        m_server->deleteLater();
+        m_server = nullptr;
+    }
+    if (m_lock && m_lock->isLocked())
+        m_lock->unlock();
+    qCInfo(lcApp) << "Single-instance lock released";
+}
+
 bool SingleInstance::notifyPrimary()
 {
     QLocalSocket socket;

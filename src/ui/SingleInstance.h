@@ -28,6 +28,10 @@ public:
     ~SingleInstance() override;
 
     Result acquire();
+
+    // Releases the lock and stops listening, so that a new process (restart,
+    // installed copy) can become the primary instance.
+    void release();
     QString errorMessage() const { return m_error; }
 
 signals:

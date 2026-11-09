@@ -2,6 +2,9 @@
 
 #include "core/LogCategories.h"
 
+#include <QCoreApplication>
+#include <QProcess>
+
 namespace ergo {
 
 namespace {
@@ -40,34 +43,21 @@ PlatformResult StubClickInjector::release(MouseButton)
     return reportNotImplemented(QStringLiteral("Mouse button release injection"));
 }
 
-PlatformResult StubAutostart::enable(const QString &, const QStringList &)
-{
-    return reportNotImplemented(QStringLiteral("Start at login"));
-}
-
-PlatformResult StubAutostart::disable()
-{
-    return reportNotImplemented(QStringLiteral("Start at login"));
-}
-
-PlatformResult StubInstaller::install()
-{
-    return reportNotImplemented(QStringLiteral("Install"));
-}
-
-PlatformResult StubInstaller::uninstall()
-{
-    return reportNotImplemented(QStringLiteral("Uninstall"));
-}
-
-PlatformResult StubPermissions::openSettingsFor(const QString &permissionId)
-{
-    return reportNotImplemented(QStringLiteral("Opening permission settings (%1)").arg(permissionId));
-}
-
 PlatformResult StubPowerEvents::start()
 {
     return reportNotImplemented(QStringLiteral("Sleep/lock notifications"));
+}
+
+PlatformResult GenericDesktopIntegration::launchApplication(const QString &executablePath,
+                                                            const QStringList &arguments)
+{
+    if (!QProcess::startDetached(executablePath, arguments)) {
+        const QString message =
+            QCoreApplication::translate("ergo::GenericDesktopIntegration", "Cannot start '%1'.").arg(executablePath);
+        qCCritical(lcPlatform).noquote() << message;
+        return PlatformResult::failed(message);
+    }
+    return PlatformResult::success();
 }
 
 } // namespace ergo

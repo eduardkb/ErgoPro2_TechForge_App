@@ -6,6 +6,9 @@ set(ERGOPRO2_RESOURCES_DIR ${PROJECT_SOURCE_DIR}/resources)
 add_library(ergopro2_core STATIC
     core/Clock.h
     core/CrashHandler.cpp core/CrashHandler.h
+    core/FeatureAvailability.cpp core/FeatureAvailability.h
+    core/LocationClassifier.cpp core/LocationClassifier.h
+    core/StartupMode.cpp core/StartupMode.h
     core/LogCategories.cpp core/LogCategories.h
     core/LogLevel.cpp core/LogLevel.h
     core/Logger.cpp core/Logger.h
@@ -27,15 +30,20 @@ add_library(ergopro2_platform STATIC
     platform/PlatformInterfaces.h
     platform/PlatformResult.h
     platform/stub/StubPlatform.cpp platform/stub/StubPlatform.h
+    platform/common/FileOperations.cpp platform/common/FileOperations.h
 )
 if(APPLE)
     target_sources(ergopro2_platform PRIVATE
-        platform/mac/MacDesktopIntegration.mm platform/mac/MacDesktopIntegration.h)
-    target_link_libraries(ergopro2_platform PRIVATE "-framework AppKit" "-framework CoreServices")
+        platform/mac/MacAutostart.cpp platform/mac/MacAutostart.h
+        platform/mac/MacDesktopIntegration.mm platform/mac/MacDesktopIntegration.h
+        platform/mac/MacInstaller.cpp platform/mac/MacInstaller.h
+        platform/mac/MacPermissions.mm platform/mac/MacPermissions.h)
+    target_link_libraries(ergopro2_platform PRIVATE
+        "-framework AppKit" "-framework CoreServices" "-framework ApplicationServices" "-framework IOKit")
 elseif(WIN32)
-    # Windows implementations are added in stages 1 and 2 (platform/win/).
+    target_sources(ergopro2_platform PRIVATE platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
 elseif(UNIX)
-    # Linux implementations are added in stages 1 and 2 (platform/linux/).
+    target_sources(ergopro2_platform PRIVATE platform/linux/LinuxPlatform.cpp platform/linux/LinuxPlatform.h)
 endif()
 target_link_libraries(ergopro2_platform PUBLIC ergopro2_core PRIVATE ergopro2_warnings)
 
@@ -44,14 +52,23 @@ target_link_libraries(ergopro2_platform PUBLIC ergopro2_core PRIVATE ergopro2_wa
 # ---------------------------------------------------------------------------
 qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     main.cpp
+    ui/AppContext.h
     ui/AppController.cpp ui/AppController.h
     ui/ErgoApplication.cpp ui/ErgoApplication.h
+    ui/FeatureAvailabilityService.cpp ui/FeatureAvailabilityService.h
+    ui/InstallController.cpp ui/InstallController.h
     ui/MainWindow.cpp ui/MainWindow.h
+    ui/PermissionActions.cpp ui/PermissionActions.h
+    ui/PermissionsDialog.cpp ui/PermissionsDialog.h
     ui/SingleInstance.cpp ui/SingleInstance.h
     ui/Theme.cpp ui/Theme.h
     ui/TrayController.cpp ui/TrayController.h
+    ui/tabs/DiagnosticsCard.cpp ui/tabs/DiagnosticsCard.h
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
+    ui/tabs/InstallCard.cpp ui/tabs/InstallCard.h
     ui/widgets/CardWidget.cpp ui/widgets/CardWidget.h
+    ui/widgets/FeatureBanner.cpp ui/widgets/FeatureBanner.h
+    ui/widgets/FeaturePage.cpp ui/widgets/FeaturePage.h
     ui/widgets/ParameterRow.cpp ui/widgets/ParameterRow.h
     ui/widgets/PlaceholderPage.cpp ui/widgets/PlaceholderPage.h
     ui/widgets/StatusBadge.cpp ui/widgets/StatusBadge.h

@@ -12,6 +12,7 @@ public:
     void activateApplication() override;
     bool isSessionEnding() const override;
     bool prefersMonochromeTrayIcon() const override { return true; }
+    PlatformResult launchApplication(const QString &executablePath, const QStringList &arguments) override;
 };
 
 } // namespace ergo

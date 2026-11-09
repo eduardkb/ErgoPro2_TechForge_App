@@ -1,7 +1,9 @@
 #include "ui/MainWindow.h"
 
 #include "core/LogCategories.h"
+#include "ui/AppContext.h"
 #include "ui/tabs/GeneralTab.h"
+#include "ui/widgets/FeaturePage.h"
 #include "ui/widgets/PlaceholderPage.h"
 
 #include <QApplication>
@@ -11,7 +13,7 @@
 
 namespace ergo {
 
-MainWindow::MainWindow(SettingsStore &settings, const QString &logDirectory, QWidget *parent)
+MainWindow::MainWindow(AppContext &context, QWidget *parent)
     : QMainWindow(parent)
 {
     setWindowTitle(tr("ErgoPro2 v%1").arg(QApplication::applicationVersion()));
@@ -23,22 +25,27 @@ MainWindow::MainWindow(SettingsStore &settings, const QString &logDirectory, QWi
     m_tabs->setDocumentMode(true);
     m_tabs->setUsesScrollButtons(false);
 
-    m_general = new GeneralTab(settings, logDirectory, m_tabs);
+    m_general = new GeneralTab(context, m_tabs);
     const QString later = tr("Coming in a later version.");
 
-    // Tab order is fixed by the specification (B.1.1).
+    // Tab order is fixed by the specification (B.1.1). Function tabs show the
+    // availability banner (B.1.4) above their content.
     m_tabs->addTab(m_general, tr("General"));
-    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/break.svg"), tr("Break Timer"),
-                                       tr("Reminds you to rest after a period of continuous work.\n%1").arg(later),
-                                       m_tabs),
+    m_tabs->addTab(new FeaturePage(Feature::BreakTimerActivity, context.availability,
+                                   new PlaceholderPage(QStringLiteral(":/icons/ui/break.svg"), tr("Break Timer"),
+                                                       tr("Reminds you to rest after a period of continuous work.\n%1")
+                                                           .arg(later))),
                    tr("Break Timer"));
-    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/autoclick.svg"), tr("Auto Click"),
-                                       tr("Clicks automatically when the mouse pointer stops moving.\n%1")
-                                           .arg(later),
-                                       m_tabs),
+    m_tabs->addTab(new FeaturePage(Feature::AutoClick, context.availability,
+                                   new PlaceholderPage(QStringLiteral(":/icons/ui/autoclick.svg"), tr("Auto Click"),
+                                                       tr("Clicks automatically when the mouse pointer stops "
+                                                          "moving.\n%1")
+                                                           .arg(later))),
                    tr("Auto Click"));
-    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/keyboard.svg"), tr("Key Control"),
-                                       tr("Assign keyboard shortcuts to mouse actions.\n%1").arg(later), m_tabs),
+    m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
+                                   new PlaceholderPage(QStringLiteral(":/icons/ui/keyboard.svg"), tr("Key Control"),
+                                                       tr("Assign keyboard shortcuts to mouse actions.\n%1")
+                                                           .arg(later))),
                    tr("Key Control"));
     m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/statistics.svg"), tr("Statistics"),
                                        tr("Coming soon."), m_tabs),

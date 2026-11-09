@@ -9,9 +9,10 @@ application, create a distributable package and start it automatically at login,
 
 Shared information:
 - [Where settings and logs are stored](#4-where-settings-and-logs-are-stored)
-- [Starting automatically at login](#5-starting-automatically-at-login)
-- [Troubleshooting](#6-troubleshooting)
-- [How to test each stage](#7-how-to-test-each-stage)
+- [Install, Uninstall and starting automatically at login](#5-install-uninstall-and-starting-automatically-at-login)
+- [Permissions (macOS, Linux Wayland, Windows)](#6-permissions-macos-linux-wayland-windows)
+- [Troubleshooting](#7-troubleshooting)
+- [How to test each stage](#8-how-to-test-each-stage)
 
 > All commands are run from the **repository root** (the `ergoPro2` folder that contains
 > `CMakeLists.txt`), unless stated otherwise.
@@ -109,6 +110,11 @@ The build creates an app bundle at `build/bin/ErgoPro2.app`.
 
 Useful command-line options: `--help`, `--version`, `--autostart` (simulates a start at login).
 
+> **Permissions and the terminal:** when you start ErgoPro2 from Terminal (first command above), macOS
+> treats **Terminal** as the app asking for Accessibility / Input Monitoring, so the permission status
+> shown by ErgoPro2 is Terminal's. To test permissions, start ErgoPro2 from **Finder** or with
+> `open` (see section 6.1).
+
 ### 1.5 Create a self-contained app and a .dmg
 
 The bundle in `build/bin` uses the Qt libraries installed on your Mac. To copy the app to another
@@ -132,7 +138,7 @@ hdiutil create -volname ErgoPro2 -srcfolder build-release/bin/ErgoPro2.app -ov -
 ```
 
 To install from the `.dmg`: open it and drag **ErgoPro2** to your *Applications* folder (or to
-`~/Applications`). From stage 1 on, the app's own **Install** button can do this for you.
+`~/Applications`). The app's own **Install** button (General tab) can do this for you – see section 5.
 
 ### 1.6 Code signing (important for permissions)
 
@@ -253,8 +259,9 @@ C:\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --release --no-translations dist\Erg
 powershell Compress-Archive -Path dist\ErgoPro2 -DestinationPath dist\ErgoPro2-1.0.0-windows.zip -Force
 ```
 `dist\ErgoPro2` now contains everything needed. Copy the folder anywhere (e.g.
-`%LOCALAPPDATA%\Programs\ErgoPro2`) and double-click `ErgoPro2.exe`. From stage 1 on, the app's own
-**Install** button copies it to `%LOCALAPPDATA%\Programs\ErgoPro2` for you.
+`%LOCALAPPDATA%\Programs\ErgoPro2`) and double-click `ErgoPro2.exe`. The app's own **Install** button
+(General tab) copies it to `%LOCALAPPDATA%\Programs\ErgoPro2` for you – see section 5. Install only
+works from a folder prepared with `windeployqt` (it must contain the Qt DLLs).
 
 > Windows SmartScreen may warn about an unknown publisher the first time: click **More info → Run anyway**.
 
@@ -280,7 +287,7 @@ Cinnamon and MATE have a tray out of the box. Without a tray, ErgoPro2 minimizes
 hiding it.
 
 **X11 vs Wayland:** the input features of later stages work fully in an **X11 session** ("GNOME on Xorg"
-on the login screen's gear menu). Wayland support is best effort (stage 1/2 explain what is needed).
+on the login screen's gear menu). Wayland support is best effort and needs extra access – see section 6.3.
 Check your session with `echo $XDG_SESSION_TYPE`.
 
 ### 3.2 Configure and build
@@ -308,8 +315,8 @@ cmake --install build-release --prefix ~/.local
 ~/.local/bin/ErgoPro2
 ```
 This also installs the menu entry (`~/.local/share/applications/ergopro2.desktop`) and the icon.
-ErgoPro2 then appears in the application menu. From stage 1 on, the app's own **Install** button does
-this for you.
+ErgoPro2 then appears in the application menu. Alternatively, the app's own **Install** button
+(General tab) copies the executable to `~/.local/opt/ErgoPro2` and creates the menu entry – see section 5.
 
 > **Coming in stage 7:** `cpack -G DEB` will produce `ErgoPro2-<version>.deb`, installable with
 > `sudo apt install ./ErgoPro2-<version>.deb`.
@@ -331,20 +338,68 @@ ErgoPro2 uses Qt's standard per-user folders (organization `techforge`, applicat
 - Log files: one per day, `ergopro2-YYYY-MM-DD.log`. A file larger than 5 MB continues in
   `ergopro2-YYYY-MM-DD-1.log`, `-2.log`, … Files older than the retention set on the General tab
   (1–180 days, default 30) are deleted automatically.
-- To **reset all settings**, exit ErgoPro2 and delete `settings.json` (a new one with defaults is
-  created at the next start). A damaged `settings.json` is renamed to `settings.corrupt-<date>.json`
+- To **reset all settings**, use General tab → **Reset all settings to defaults…**, or exit ErgoPro2 and
+  delete `settings.json` (a new one with defaults is created at the next start). The General tab's
+  **Open settings folder** / **Open log folder** buttons open these folders. A damaged `settings.json` is renamed to `settings.corrupt-<date>.json`
   automatically and you are informed.
 - The macOS paths were verified on macOS Tahoe. The Windows and Linux paths follow Qt's
   documentation and will be confirmed when manual tests on those systems are possible.
 
 ---
 
-## 5. Starting automatically at login
+## 5. Install, Uninstall and starting automatically at login
 
-**From stage 1 on, the General tab's *Install* button does this for you:** it copies ErgoPro2 to a
-permanent per-user folder and registers it to start at login (with `--autostart`, so the app knows it
-was started automatically). *Uninstall* removes it again. The manual methods below are only needed
-before stage 1 or for troubleshooting.
+### 5.0 Using the app's Install / Uninstall buttons (recommended)
+
+Open the **General** tab → **Installation** card:
+
+- **Install** copies the *running* ErgoPro2 to a permanent folder in your user account, creates a menu
+  entry / shortcut and registers the installed copy to **start at login** with `--autostart`. No
+  administrator rights are needed. Afterwards ErgoPro2 offers to **restart from the installed copy**
+  (recommended; the copy you started from can then be deleted).
+- **Uninstall** stops the start at login and removes the installed copy and its menu entry / shortcut.
+  Settings and log files are **kept**. If you click Uninstall in the installed copy itself, ErgoPro2
+  exits and the folder is deleted right after it has closed.
+- The card shows the status ("Installed at …, starts at login" / "Not installed – running from …") and
+  warns when ErgoPro2 runs from a temporary folder, the Downloads folder or a disk image.
+- The **Startup** card decides what happens with the window: *Started at login* (default **Hide in tray**)
+  and *Started manually* (default **Show window**).
+
+| OS | Installed copy | Start-at-login registration | Menu entry / shortcut |
+|----|----------------|-----------------------------|------------------------|
+| macOS | `~/Applications/ErgoPro2.app` | `~/Library/LaunchAgents/com.techforge.ergopro2.plist` | (the app in `~/Applications`) |
+| Windows | `%LOCALAPPDATA%\Programs\ErgoPro2\` | Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → value `ErgoPro2` | Start Menu → `ErgoPro2` |
+| Linux | `~/.local/opt/ErgoPro2/ErgoPro2` | `~/.config/autostart/ergopro2.desktop` | `~/.local/share/applications/ergopro2.desktop` |
+
+> **macOS:** sign the app **before** clicking Install (section 1.6). The installed copy keeps the
+> signature of the copy you installed from, and macOS ties the permissions to it.
+
+**Check that start at login is registered:**
+
+- **macOS:**
+  ```bash
+  cat ~/Library/LaunchAgents/com.techforge.ergopro2.plist
+  ```
+  The file must contain the path of the installed copy and `--autostart`. In **System Settings → General →
+  Login Items & Extensions**, ErgoPro2 appears under *Allow in the Background* (macOS may show a
+  "Background Items Added" notification). After logging out and in again:
+  ```bash
+  launchctl print gui/$(id -u)/com.techforge.ergopro2 | head -20
+  ```
+  shows the job, and the log contains `Started automatically at login (--autostart)`.
+- **Windows:** Task Manager → **Startup apps** lists ErgoPro2, or in a command prompt:
+  ```bat
+  reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v ErgoPro2
+  ```
+- **Linux:**
+  ```bash
+  cat ~/.config/autostart/ergopro2.desktop
+  ```
+  `Exec=` must point to `~/.local/opt/ErgoPro2/ErgoPro2 --autostart`.
+
+The General tab's **Permissions & diagnostics** card also shows the registration ("Start at login").
+
+### Manual methods (troubleshooting only)
 
 **Why not a system "service"?** A service (Windows service, `launchd` daemon, `systemd` system
 service) runs outside your desktop session – often before anyone logs in, without access to the
@@ -404,7 +459,70 @@ Remove the file to disable autostart.
 
 ---
 
-## 6. Troubleshooting
+## 6. Permissions (macOS, Linux Wayland, Windows)
+
+Auto Click, Key Control and the Break Timer's activity tracking need to observe and control the mouse
+and keyboard in all applications. Each function tab shows a **yellow banner** while its feature is
+unavailable, saying what is missing and offering a button to fix it. The General tab's **Permissions &
+diagnostics** card lists every requirement with its status. Both update by themselves every 3 seconds
+while something is missing.
+
+### 6.1 macOS (Tahoe 26)
+
+| Permission | Needed for | Where to grant it |
+|------------|------------|-------------------|
+| **Accessibility** | Auto Click, Key Control (clicking for you, keeping your hotkeys) | System Settings → Privacy & Security → **Accessibility** |
+| **Input Monitoring** | Auto Click, Key Control, Break Timer (noticing mouse and keys) | System Settings → Privacy & Security → **Input Monitoring** |
+
+1. Start ErgoPro2 from **Finder** (or `open ~/Applications/ErgoPro2.app`) – not from Terminal (see 1.4).
+2. If a permission is missing, the window **"ErgoPro2 needs your permission"** opens at startup.
+3. Click **Open System Settings** next to a permission. macOS adds ErgoPro2 to the list (switched off)
+   and opens the right page. Switch **ErgoPro2** on and confirm with your password / Touch ID.
+   If ErgoPro2 is not in the list, click **+** below the list and choose the ErgoPro2 app.
+4. Come back to ErgoPro2: the status changes to **GRANTED** within 3 seconds (or click **Check again**).
+   When all are granted the window closes by itself.
+5. If a permission stays **MISSING** although it is switched on, click **Restart ErgoPro2** (some macOS
+   versions apply the change only after a restart). Still missing? Reset it (section 1.6.4), make sure
+   the app is signed consistently (1.6.3) and grant it again.
+
+You can also close the window with **Continue without**: the affected tabs then show the banner
+until the permissions are granted.
+
+### 6.2 Linux on X11
+Nothing to grant. The diagnostics card shows *X11 session – GRANTED*.
+
+### 6.3 Linux on Wayland (best effort)
+Wayland does not let applications observe the mouse and keyboard. ErgoPro2 therefore reads the input
+devices directly, which needs:
+
+| Requirement | Needed for |
+|-------------|------------|
+| Read access to `/dev/input/event*` (membership in the `input` group) | all input features |
+| Write access to `/dev/uinput` (udev rule) | Auto Click, Key Control |
+
+**Automatic:** click **Grant access…** on a banner or on the diagnostics card. ErgoPro2 explains what it
+will change and asks for confirmation; then the system asks for the **administrator password**
+(`pkexec` – ErgoPro2 never sees the password). Afterwards **log out and log in again**.
+
+**Manual** (same result):
+```bash
+sudo usermod -aG input "$USER"
+echo 'KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"' | sudo tee /etc/udev/rules.d/99-ergopro2-uinput.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+Then log out and log in again. Check with `groups` (must list `input`) and `ls -l /dev/uinput`
+(group `input`, mode `crw-rw----`).
+
+> Membership in the `input` group lets every program you run read your keyboard. If you prefer not to
+> allow that, use an **X11 session** instead ("GNOME on Xorg" on the login screen).
+
+### 6.4 Windows
+No special permission is needed. Note: Windows does not let clicks and hotkeys reach windows of
+programs running **as Administrator**, unless ErgoPro2 also runs as Administrator.
+
+---
+
+## 7. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -420,19 +538,25 @@ Remove the file to disable autostart.
 | macOS: "ErgoPro2 is damaged and can't be opened" | Remove the quarantine flag (1.6.5). |
 | macOS: permission is on in System Settings but the app says it is missing | Sign consistently (1.6.3) and reset the permission (1.6.4). |
 | macOS: `macdeployqt` prints `Cannot resolve rpath ... QtVirtualKeyboard` | Homebrew Qt quirk; remove `Contents/PlugIns/platforminputcontexts` (1.5 step 2). |
+| macOS: the status of a permission never changes | Start ErgoPro2 from Finder or with `open`, not from Terminal (1.4). Then see 6.1 step 5. |
+| Install: "not running from an application bundle (.app)" | Start the `.app` bundle (Finder / `open`), not a copied executable. |
+| Windows Install: "folder does not contain the Qt libraries" | Prepare the folder with `windeployqt` first (2.5) and start ErgoPro2 from there. |
+| Linux Wayland: still unavailable after "Grant access" | Log out and log in again (group changes apply only to new sessions). Check with `groups`. |
+| ErgoPro2 does not start at login | Check the registration (5.0). macOS: System Settings → General → Login Items & Extensions → *Allow in the Background* must be on for ErgoPro2. |
 | The app looks wrong / reports an error at start | Check the latest log file (section 4). Every error is logged there. In a Debug build, run it from a terminal to see the log live. |
 | Settings were reset and a message mentions `settings.corrupt-…json` | The settings file was damaged; the old file was kept with that name for inspection. |
 
 ---
 
-## 7. How to test each stage
+## 8. How to test each stage
 
 1. Check the version: the window title shows `ErgoPro2 v1.N.x` and must match the stage
    (stage N ⇒ `1.N.0`, bug-fix releases increase the last number).
 2. Build (Debug is fine) and run the unit tests (`ctest`), as described for your OS above. All tests
    must pass.
 3. If the app is already running, exit it first (General tab → **Exit ErgoPro2**, or tray menu → **Exit**).
-4. On macOS, sign the build (1.6) when the stage uses OS permissions (stage 2 and later).
+4. On macOS, sign the build (1.6) when the stage uses OS permissions (stage 1 and later) and start it
+   from Finder / `open` so macOS attributes the permissions to ErgoPro2.
 5. Start the new build and follow the checklist of that stage in
    [`MANUAL_TESTS.md`](MANUAL_TESTS.md). Earlier stages' checklists can be re-run as regression tests.
 6. If something fails, collect the steps, the version and the relevant log lines and use the prompt in

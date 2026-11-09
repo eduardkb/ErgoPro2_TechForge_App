@@ -3,30 +3,37 @@
 #include <QWidget>
 
 class QComboBox;
-class QLabel;
 
 namespace ergo {
 
 class ParameterRow;
-class SettingsStore;
+struct AppContext;
 
-// "General" tab. Stage 0 content: application version, logging options and
-// the Exit button. Stage 1 adds install/uninstall, startup behavior, folders,
-// reset to defaults and permissions/diagnostics.
+// "General" tab (B.1.3): application info, installation, startup behavior,
+// logging (level, retention, open folders), permissions & diagnostics,
+// reset to defaults and Exit.
 class GeneralTab : public QWidget {
     Q_OBJECT
 public:
-    GeneralTab(SettingsStore &settings, const QString &logDirectory, QWidget *parent = nullptr);
+    GeneralTab(AppContext &context, QWidget *parent = nullptr);
 
 signals:
     void exitRequested();
 
 private:
+    QWidget *buildApplicationCard(QWidget *parent);
+    QWidget *buildStartupCard(QWidget *parent);
+    QWidget *buildLoggingCard(QWidget *parent);
+    QWidget *buildMaintenanceCard(QWidget *parent);
+    void openFolder(const QString &path);
+    void resetSettings();
     void syncFromSettings();
 
-    SettingsStore &m_settings;
+    AppContext &m_context;
     QComboBox *m_logLevel = nullptr;
     ParameterRow *m_retention = nullptr;
+    QComboBox *m_startupAuto = nullptr;
+    QComboBox *m_startupManual = nullptr;
 };
 
 } // namespace ergo

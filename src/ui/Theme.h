@@ -22,6 +22,7 @@ struct ThemeColors {
     QColor accentText;    // text on accent backgrounds
     QColor success;
     QColor warning;
+    QColor warningBg;     // background of warning banners
     QColor danger;
     QColor dangerHover;
 };

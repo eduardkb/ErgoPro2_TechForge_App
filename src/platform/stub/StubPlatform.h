@@ -23,27 +23,6 @@ public:
     PlatformResult release(MouseButton) override;
 };
 
-class StubAutostart final : public IAutostart {
-public:
-    bool isEnabled() const override { return false; }
-    PlatformResult enable(const QString &, const QStringList &) override;
-    PlatformResult disable() override;
-};
-
-class StubInstaller final : public IInstaller {
-public:
-    bool isInstalled() const override { return false; }
-    QString installLocation() const override { return {}; }
-    PlatformResult install() override;
-    PlatformResult uninstall() override;
-};
-
-class StubPermissions final : public IPermissions {
-public:
-    QList<PermissionStatus> check() const override { return {}; }
-    PlatformResult openSettingsFor(const QString &permissionId) override;
-};
-
 class StubPowerEvents final : public IPowerEvents {
 public:
     PlatformResult start() override;
@@ -59,6 +38,7 @@ public:
     // (it does not route this through the main window's close event).
     bool isSessionEnding() const override { return false; }
     bool prefersMonochromeTrayIcon() const override { return false; }
+    PlatformResult launchApplication(const QString &executablePath, const QStringList &arguments) override;
 };
 
 } // namespace ergo

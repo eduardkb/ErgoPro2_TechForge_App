@@ -47,6 +47,29 @@ private slots:
         QVERIFY(m_schema.find(GeneralSettings::TrayHintShown));
     }
 
+    void startupModeSettings()
+    {
+        const SettingDefinition *autoMode = m_schema.find(GeneralSettings::StartupAutoMode);
+        const SettingDefinition *manualMode = m_schema.find(GeneralSettings::StartupManualMode);
+        QVERIFY(autoMode);
+        QVERIFY(manualMode);
+        QCOMPARE(autoMode->defaultValue.toString(), GeneralSettings::StartupTray);
+        QCOMPARE(manualMode->defaultValue.toString(), GeneralSettings::StartupWindow);
+        QVERIFY(SettingsSchema::validate(*autoMode, GeneralSettings::StartupWindow));
+        QVERIFY(!SettingsSchema::validate(*autoMode, QStringLiteral("minimized")));
+
+        // A stage 0 settings file (without the new keys) gets the defaults.
+        QTemporaryDir dir;
+        const QString path = QDir(dir.path()).filePath(QStringLiteral("settings.json"));
+        writeRaw(path, R"({"schemaVersion":1,"general":{"logLevel":"info","logRetentionDays":30,"trayHintShown":true}})");
+        SettingsStore store(m_schema, path);
+        const SettingsLoadResult result = store.load();
+        QCOMPARE(result.invalidValues, 0);
+        QCOMPARE(store.stringValue(GeneralSettings::StartupAutoMode), GeneralSettings::StartupTray);
+        QCOMPARE(readJson(path).value(QStringLiteral("general")).toObject()
+                     .value(QStringLiteral("startupManualMode")).toString(), GeneralSettings::StartupWindow);
+    }
+
     void schemaRejectsDuplicatesAndBadDefaults()
     {
         SettingsSchema schema;

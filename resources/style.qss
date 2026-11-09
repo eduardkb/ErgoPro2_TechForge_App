@@ -118,6 +118,34 @@ QLabel#valueLabel {
     color: @text@;
 }
 
+/* ---------- Feature availability banner ---------- */
+
+QFrame#banner {
+    background: @warningBg@;
+    border: 1px solid @warning@;
+    border-radius: 12px;
+}
+
+QLabel#bannerIcon {
+    color: @warning@;
+    font-size: 22px;
+}
+
+QLabel#bannerTitle {
+    font-weight: 700;
+    font-size: 14px;
+    color: @text@;
+}
+
+QLabel#bannerText {
+    color: @text@;
+}
+
+QLabel#warningText {
+    color: @warning@;
+    font-weight: 600;
+}
+
 /* ---------- Status badge ---------- */
 
 QLabel[badgeState] {

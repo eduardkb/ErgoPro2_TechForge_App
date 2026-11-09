@@ -46,3 +46,84 @@ the settings file and the log folder first.
 | 27 | `--autostart`: start from a terminal with `--autostart` (macOS: `./build/bin/ErgoPro2.app/Contents/MacOS/ErgoPro2 --autostart`). | The app starts (in stage 0 the window is still shown); the log contains `Started automatically at login (--autostart)`. |
 | 28 | `--version` and `--help` from a terminal. | `--version` prints `ErgoPro2 1.0.0`; `--help` lists the `--autostart` option. |
 | 29 | Log out of the OS (macOS: Apple menu → Log Out) while ErgoPro2 runs with its window **open**. | ErgoPro2 does **not** block or cancel the logout. After logging back in, the log contains `macOS session is ending` (macOS) and `ErgoPro2 exited with code 0`. |
+
+---
+
+## Stage 1 – v1.1.0
+
+Goal: complete General tab, Install / Uninstall with start at login, startup behavior, permission
+detection, the macOS permissions window and the "unavailable" banners.
+
+**Preparation (macOS):**
+1. Exit any running ErgoPro2 (General tab → Exit, or tray → Exit).
+2. Build, then **sign** the app (BUILD.md 1.6 – ideally with your self-signed certificate, 1.6.3).
+3. To see the permissions window, the permissions must be missing. If you granted them before, reset
+   them: `tccutil reset Accessibility com.techforge.ergopro2` and
+   `tccutil reset ListenEvent com.techforge.ergopro2`.
+4. Start the app with `open build/bin/ErgoPro2.app` (**not** from Terminal – see BUILD.md 1.4).
+
+### A. Version, layout and folders
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 6 test programs pass (adds `tst_startupmode`, `tst_locationclassifier`, `tst_featureavailability`). |
+| 2 | Look at the title and the General tab. | Title **ErgoPro2 v1.1.0**; General tab cards in this order: ErgoPro2 (version **1.1.0**), Installation, Startup, Logging, Permissions & diagnostics, Reset, then the Exit button. Hovering the tray icon shows **ErgoPro2 v1.1.0** (Windows/Linux). |
+| 3 | Make the window as narrow as possible and scroll the General tab. | No horizontal scrollbar; long paths wrap; nothing is cut off. |
+| 4 | Logging card → **Open log folder**. | Finder/Explorer opens the log folder (BUILD.md §4). |
+| 5 | Logging card → **Open settings folder**. | The folder containing `settings.json` opens. |
+
+### B. macOS permissions window and banners (permissions missing)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 6 | Start ErgoPro2 with the permissions missing. | The window **"ErgoPro2 needs your permission"** appears in front, listing **Accessibility** and **Input Monitoring**, both **MISSING**, each with an explanation and **Open System Settings**. The log contains `Permission Accessibility : MISSING`. |
+| 7 | Click **Continue without**. | The window closes; ErgoPro2 keeps running. |
+| 8 | Open the **Auto Click**, **Key Control** and **Break Timer** tabs. | Each shows a yellow banner "<feature> is unavailable" with the reason, **Open System Settings** and **Check again**. Break Timer's banner mentions only **Input Monitoring**; Auto Click and Key Control mention both. |
+| 9 | General tab → Permissions & diagnostics. | OS (e.g. macOS Tahoe 26.x, arm64), Desktop session *macOS desktop (Aqua)*, the application path, both permissions **MISSING** with buttons, Input hook **NOT RUNNING** ("added in a later version"), Start at login *Not registered*. |
+| 10 | On the Auto Click banner click **Open System Settings**. | macOS shows its own hint and System Settings opens at **Privacy & Security → Accessibility**, with ErgoPro2 in the list (switched off). |
+| 11 | Switch **ErgoPro2** on (confirm with password/Touch ID) and go back to ErgoPro2 without clicking anything. | Within about 3 seconds the diagnostics show Accessibility **GRANTED**; the Break Timer banner is unchanged (still needs Input Monitoring). |
+| 12 | Grant **Input Monitoring** the same way (diagnostics card button). | Within ~3 s all three banners disappear and both permissions show **GRANTED**. If a permission stays MISSING although switched on, restart ErgoPro2 (step 15). |
+| 13 | Exit and start again (`open build/bin/ErgoPro2.app`). | No permissions window appears (everything granted). |
+| 14 | Reset the permissions (Preparation step 3) and start again. In the permissions window click **Open System Settings** for one permission and grant it. | The row changes to **GRANTED** by itself. A **Restart ErgoPro2** button has appeared. After granting the second permission the window says "All permissions are granted" and closes itself after ~1.5 s. |
+| 15 | Reset one permission again, start ErgoPro2, click **Open System Settings** in the window, then **Restart ErgoPro2**. | ErgoPro2 quits and a new instance starts (window or tray according to the Startup options); no "already running" message. |
+
+### C. Startup behavior
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 16 | Startup card defaults. | *Started at login*: **Hide in tray**; *Started manually*: **Show window**. |
+| 17 | Exit, then start with `open build/bin/ErgoPro2.app --args --autostart`. | No main window appears; only the tray/menu bar icon (no Dock icon on macOS). Log: `Started automatically at login (--autostart) - hidden in the tray`. Tray → Show window works. |
+| 18 | Set *Started at login* to **Show window**, exit, start again with `--autostart`. | The window is shown. |
+| 19 | Set *Started manually* to **Hide in tray**, exit, start normally. | Only the tray icon appears. Set both back to the defaults afterwards. |
+| 20 | Check `settings.json`. | Contains `"startupAutoMode"` and `"startupManualMode"` in the `general` section with the chosen values. |
+
+### D. Install / Uninstall (macOS)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 21 | Installation card before installing. | "Not installed – running from …/build/bin/ErgoPro2.app"; **Install** enabled, **Uninstall** disabled. |
+| 22 | Click **Install**. | A message says ErgoPro2 was installed at `~/Applications/ErgoPro2.app` and will start at login, and asks to restart from there. `~/Applications/ErgoPro2.app` exists; `~/Library/LaunchAgents/com.techforge.ergopro2.plist` exists and contains that path plus `--autostart` (BUILD.md 5.0). macOS may show "Background Items Added". |
+| 23 | Answer **Yes** to the restart question. | This instance exits and the installed copy starts. Its diagnostics card shows the application path inside `~/Applications`. Installation card: "✅ Installed at …, starts at login."; Install disabled (nothing to do), Uninstall enabled. |
+| 24 | Log out of macOS and log in again. | ErgoPro2 starts automatically, hidden in the menu bar (default). The log contains `Started automatically at login (--autostart)`. |
+| 25 | Start the **build** copy (`open build/bin/ErgoPro2.app`) while the installed copy is NOT running. | Installation card: "Installed at … starts at login" plus "This window runs from …/build/…"; the button reads **Reinstall**. |
+| 26 | In the installed copy click **Uninstall** and confirm. | A message says ErgoPro2 no longer starts at login, the installed copy will be deleted after exit, and settings/logs are kept; ErgoPro2 exits. A few seconds later `~/Applications/ErgoPro2.app` and the LaunchAgent plist are gone. `settings.json` and the logs still exist. |
+| 27 | Install again from the build copy, answer **No** to the restart, then click **Uninstall** in the same (build) window. | The installed copy and the plist are removed immediately; the build copy keeps running; the card shows "Not installed". |
+| 28 | Location warning: copy `ErgoPro2.app` into `~/Downloads` and start it from there. | The Installation card shows "⚠ ErgoPro2 is running from your Downloads folder…". (A copy inside a mounted `.dmg` shows the disk-image warning.) |
+
+### E. Reset settings
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 29 | Change the log retention and a startup option, then click **Reset all settings to defaults…** → **No**. | Nothing changes. |
+| 30 | Click it again → **Yes**. | All controls jump back to the defaults (30 days, recommended log level, Hide in tray / Show window); `settings.json` contains the defaults. Installation / start at login are unchanged. |
+
+### F. Windows 11 and Debian (when a machine is available)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 31 | Windows: run **Install** from a `windeployqt` folder (BUILD.md 2.5). | Copied to `%LOCALAPPDATA%\Programs\ErgoPro2`; Start Menu shortcut "ErgoPro2"; Task Manager → Startup apps lists ErgoPro2; `reg query` shows the command with `--autostart`. Diagnostics: "No special permission needed" with the Administrator note; no banners. |
+| 32 | Windows: run Install from `build\bin` (not deployed). | Error message asking to prepare the folder with windeployqt; nothing installed. |
+| 33 | Windows: Uninstall from the installed copy. | Shortcut and Run value removed; the folder is deleted after ErgoPro2 exits. |
+| 34 | Debian X11: Install. | `~/.local/opt/ErgoPro2/ErgoPro2` + `ergopro2.svg`, menu entry in the application menu, `~/.config/autostart/ergopro2.desktop` with `--autostart`. Diagnostics: Desktop session **X11**, "X11 session" **GRANTED**, no banners. |
+| 35 | Debian Wayland: start ErgoPro2 as a user that is not in the `input` group. | Diagnostics: session **Wayland**; "Read access to input devices" and "Write access to /dev/uinput" **MISSING** with **Grant access…**; banners on the three tabs. |
+| 36 | Click **Grant access…**. | A confirmation explains the changes (input group + udev rule); after **Yes** the system password dialog appears; on success a message asks to log out and in. After re-login both requirements are **GRANTED** and the banners are gone. Cancelling the password dialog shows "authorization was cancelled". |

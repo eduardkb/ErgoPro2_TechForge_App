@@ -5,6 +5,43 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.1.0] - 2026-11-09
+
+Stage 1 – General tab, install / start at login, permissions.
+
+### Added
+- **Install / Uninstall** (General tab): copies ErgoPro2 to a permanent per-user folder
+  (macOS `~/Applications/ErgoPro2.app`, Windows `%LOCALAPPDATA%\Programs\ErgoPro2`, Linux
+  `~/.local/opt/ErgoPro2`), creates the Start Menu shortcut / Linux menu entry and registers the installed
+  copy to start at login with `--autostart` (macOS LaunchAgent, Windows `HKCU\…\Run`, Linux XDG
+  autostart). No administrator rights. Offers to restart from the installed copy. Uninstall removes
+  everything but keeps settings and logs; when run from the installed copy, the copy is deleted right
+  after ErgoPro2 exits.
+- Status of the installation and a warning when running from a temporary folder, the Downloads folder,
+  a disk image or macOS App Translocation.
+- **Startup behavior** options: *Started at login* (default: hide in tray) and *Started manually*
+  (default: show window), applied at launch using `--autostart` (settings `general.startupAutoMode`,
+  `general.startupManualMode`).
+- **Open log folder** and **Open settings folder** buttons; **Reset all settings to defaults** (with
+  confirmation).
+- **Permissions & diagnostics** card: OS, desktop session, application path, each OS permission with
+  status and fix button, input hook status, start-at-login registration.
+- Permission detection: macOS Accessibility and Input Monitoring (with System Settings shortcuts);
+  Linux X11/Wayland detection and, on Wayland, input device / `/dev/uinput` access with an optional fix
+  through `pkexec` (after confirmation; the app never handles passwords); Windows reports that no
+  permission is needed (with the note about programs running as Administrator).
+- `FeatureAvailability` rules and service: per feature (Auto Click, Key Control, Break Timer activity)
+  available / reason / fix; re-checked every 3 s while something is missing.
+- "Unavailable" banner at the top of the Break Timer, Auto Click and Key Control tabs, updated live.
+- macOS startup window "ErgoPro2 needs your permission" with *Open System Settings*, *Check again*,
+  *Restart ErgoPro2* and *Continue without*; closes itself when everything is granted.
+- Unit tests for the startup decision, the location check, the availability rules and the new settings.
+
+### Changed
+- Platform interfaces `IAutostart`, `IInstaller`, `IPermissions` and `IDesktopIntegration` extended; the
+  stage 0 stubs for them are replaced by real implementations on all three OSes.
+- Long file paths in the UI wrap instead of widening the window.
+
 ## [1.0.0] - 2026-11-09
 
 Stage 0 – project skeleton.

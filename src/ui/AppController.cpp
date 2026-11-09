@@ -3,9 +3,13 @@
 #include "core/LogCategories.h"
 #include "core/LogLevel.h"
 #include "core/Logger.h"
+#include "core/StartupMode.h"
 #include "core/settings/GeneralSettings.h"
 #include "platform/PlatformFactory.h"
+#include "ui/FeatureAvailabilityService.h"
+#include "ui/InstallController.h"
 #include "ui/MainWindow.h"
+#include "ui/PermissionsDialog.h"
 #include "ui/SingleInstance.h"
 #include "ui/TrayController.h"
 
@@ -44,7 +48,13 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // The app keeps running in the tray when the window is closed.
     QApplication::setQuitOnLastWindowClosed(false);
 
-    m_window = std::make_unique<MainWindow>(m_settings, m_logger.directory());
+    m_availability = std::make_unique<FeatureAvailabilityService>(*m_platform.permissions);
+    m_install = std::make_unique<InstallController>(m_platform);
+    connect(m_install.get(), &InstallController::relaunchRequested, this, &AppController::relaunch);
+    connect(m_install.get(), &InstallController::exitRequested, this, &AppController::exitApplication);
+    m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install});
+
+    m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
     connect(m_window.get(), &MainWindow::exitRequested, this, &AppController::exitApplication);
     m_window->setSessionEndingCheck([this] { return m_platform.desktop->isSessionEnding(); });
@@ -65,11 +75,18 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(&m_maintenanceTimer, &QTimer::timeout, this, [this] { m_logger.cleanupOldFiles(); });
     m_maintenanceTimer.start();
 
-    // Stage 0: always show the window. The startup behavior options
-    // (hide in tray when started with --autostart) are implemented in stage 1.
-    qCInfo(lcApp) << "Started" << (m_options.autostart ? "automatically at login (--autostart)" : "manually");
-    showMainWindow();
+    // Startup behavior (W-02): depends on how the app was started.
+    const StartupWindowMode mode = decideStartupWindowMode(
+        m_options.autostart, m_settings.stringValue(GeneralSettings::StartupAutoMode),
+        m_settings.stringValue(GeneralSettings::StartupManualMode), static_cast<bool>(m_tray));
+    qCInfo(lcApp) << "Started" << (m_options.autostart ? "automatically at login (--autostart)" : "manually") << "-"
+                  << (mode == StartupWindowMode::ShowWindow ? "showing the window" : "hidden in the tray");
+    if (mode == StartupWindowMode::ShowWindow)
+        showMainWindow();
+    else
+        m_platform.desktop->setDockIconVisible(false);
 
+    showPermissionsWindowIfNeeded();
     reportSettingsLoad(loadResult);
 }
 
@@ -130,6 +147,38 @@ void AppController::exitApplication()
         m_window->close();
     }
     QApplication::quit();
+}
+
+void AppController::showPermissionsWindowIfNeeded()
+{
+    if (!m_availability->promptAtStartup() || !m_availability->anyRequiredPermissionMissing())
+        return;
+    qCInfo(lcUi) << "Required permissions are missing; showing the permissions window";
+    m_permissionsDialog = new PermissionsDialog(*m_availability, m_window->isVisible() ? m_window.get() : nullptr);
+    m_permissionsDialog->setAttribute(Qt::WA_DeleteOnClose);
+    connect(m_permissionsDialog, &PermissionsDialog::restartRequested, this,
+            [this] { relaunch(QApplication::applicationFilePath()); });
+    m_permissionsDialog->show();
+    m_permissionsDialog->raise();
+    m_permissionsDialog->activateWindow();
+    m_platform.desktop->activateApplication();
+}
+
+void AppController::relaunch(const QString &executable)
+{
+    qCInfo(lcApp).noquote() << "Restarting from" << executable;
+    if (!m_settings.saveNow())
+        qCCritical(lcApp) << "Settings could not be saved before restarting";
+    // The new process must be able to become the primary instance.
+    m_instance.release();
+    const PlatformResult started = m_platform.desktop->launchApplication(executable, {});
+    if (!started.ok()) {
+        if (m_instance.acquire() != SingleInstance::Result::Primary)
+            qCCritical(lcApp) << "Could not re-acquire the single-instance lock after a failed restart";
+        showError(tr("Restart failed"), started.message);
+        return;
+    }
+    exitApplication();
 }
 
 void AppController::reportSettingsLoad(const SettingsLoadResult &result)

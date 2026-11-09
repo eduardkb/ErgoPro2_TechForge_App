@@ -31,6 +31,7 @@ ThemeColors Theme::lightColors()
     c.accentText = QColor(0xFF, 0xFF, 0xFF);
     c.success = QColor(0x15, 0x80, 0x3D);
     c.warning = QColor(0xB4, 0x53, 0x09);
+    c.warningBg = QColor(0xFF, 0xF7, 0xE6);
     c.danger = QColor(0xDC, 0x26, 0x26);
     c.dangerHover = QColor(0xB9, 0x1C, 0x1C);
     return c;
@@ -51,6 +52,7 @@ ThemeColors Theme::darkColors()
     c.accentText = QColor(0x04, 0x2F, 0x2B);
     c.success = QColor(0x4A, 0xDE, 0x80);
     c.warning = QColor(0xFB, 0xBF, 0x24);
+    c.warningBg = QColor(0x2E, 0x26, 0x12);
     c.danger = QColor(0xDC, 0x26, 0x26);
     c.dangerHover = QColor(0xEF, 0x44, 0x44);
     return c;
@@ -129,6 +131,7 @@ void Theme::apply()
         token("accentHover", c.accentHover);
         token("accentText", c.accentText);
         token("success", c.success);
+        token("warningBg", c.warningBg);
         token("warning", c.warning);
         token("danger", c.danger);
         token("dangerHover", c.dangerHover);

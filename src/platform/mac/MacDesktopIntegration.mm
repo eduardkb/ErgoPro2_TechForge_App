@@ -5,6 +5,11 @@
 #import <AppKit/AppKit.h>
 #include <CoreServices/CoreServices.h>
 
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
+#include <QProcess>
+
 namespace ergo {
 
 void MacDesktopIntegration::setDockIconVisible(bool visible)
@@ -53,6 +58,31 @@ bool MacDesktopIntegration::isSessionEnding() const
     default:
         return false;
     }
+}
+
+PlatformResult MacDesktopIntegration::launchApplication(const QString &executablePath, const QStringList &arguments)
+{
+    // Start the enclosing .app through LaunchServices so macOS treats it as a
+    // normal app launch (permissions are attributed to ErgoPro2, not a terminal).
+    QDir bundle(QFileInfo(executablePath).absolutePath()); // .../Contents/MacOS
+    bundle.cdUp();
+    bundle.cdUp();
+    bool started = false;
+    if (bundle.absolutePath().endsWith(QLatin1String(".app"))) {
+        QStringList openArguments{QStringLiteral("-n"), bundle.absolutePath()};
+        if (!arguments.isEmpty())
+            openArguments << QStringLiteral("--args") << arguments;
+        started = QProcess::startDetached(QStringLiteral("/usr/bin/open"), openArguments);
+    } else {
+        started = QProcess::startDetached(executablePath, arguments);
+    }
+    if (!started) {
+        const QString message =
+            QCoreApplication::translate("ergo::MacDesktopIntegration", "Cannot start '%1'.").arg(executablePath);
+        qCCritical(lcPlatform).noquote() << message;
+        return PlatformResult::failed(message);
+    }
+    return PlatformResult::success();
 }
 
 } // namespace ergo

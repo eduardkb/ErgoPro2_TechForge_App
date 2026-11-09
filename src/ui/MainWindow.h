@@ -9,14 +9,14 @@ class QTabWidget;
 namespace ergo {
 
 class GeneralTab;
-class SettingsStore;
+struct AppContext;
 
 // Main window with the five tabs. Closing or minimizing hides it to the tray
 // (decided by AppController through setHideToTrayEnabled()).
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    MainWindow(SettingsStore &settings, const QString &logDirectory, QWidget *parent = nullptr);
+    explicit MainWindow(AppContext &context, QWidget *parent = nullptr);
 
     // When enabled, close/minimize emit hideToTrayRequested() instead of
     // closing/minimizing. Disabled when no system tray is available.
