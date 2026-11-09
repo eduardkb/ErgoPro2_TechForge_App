@@ -1,0 +1,116 @@
+name: CI
+
+# Builds ErgoPro2 and runs the unit tests on macOS, Windows and Debian 13.
+# Windows and Linux are only verified here (the owner tests manually on macOS).
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.8.*'
+
+jobs:
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+
+      - name: Install Ninja
+        run: python3 -m pip install --break-system-packages ninja || brew install ninja
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Deploy, ad-hoc sign and zip the app bundle
+        run: |
+          macdeployqt build/bin/ErgoPro2.app
+          codesign --force --deep --sign - build/bin/ErgoPro2.app
+          ditto -c -k --keepParent build/bin/ErgoPro2.app ErgoPro2-macos.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ErgoPro2-macos
+          path: ErgoPro2-macos.zip
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Ninja
+        run: python -m pip install ninja
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Deploy (windeployqt)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/ErgoPro2 | Out-Null
+          Copy-Item build/bin/ErgoPro2.exe dist/ErgoPro2/
+          windeployqt --release --no-translations dist/ErgoPro2/ErgoPro2.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ErgoPro2-windows
+          path: dist/ErgoPro2
+
+  linux:
+    name: Debian 13
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git ca-certificates \
+            qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ErgoPro2-debian13
+          path: build/bin/ErgoPro2

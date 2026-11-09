@@ -1,0 +1,253 @@
+/*
+ * ErgoPro2 application stylesheet.
+ * @token@ placeholders are replaced at runtime by ergo::Theme with the colors
+ * of the current light/dark theme (see src/ui/Theme.cpp).
+ */
+
+QWidget {
+    font-size: 13px;
+}
+
+QMainWindow, QDialog {
+    background: @background@;
+}
+
+QToolTip {
+    background: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+/* ---------- Tabs ---------- */
+
+QTabWidget::pane {
+    border: none;
+    background: @background@;
+}
+
+QTabWidget::tab-bar {
+    alignment: left;
+    left: 20px;
+}
+
+QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: @textMuted@;
+    padding: 8px 16px;
+    margin: 8px 4px 6px 0px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+QTabBar::tab:hover {
+    color: @text@;
+    background: @surfaceAlt@;
+}
+
+QTabBar::tab:selected {
+    color: @accentText@;
+    background: @accent@;
+}
+
+/* ---------- Scroll areas ---------- */
+
+QScrollArea, QScrollArea > QWidget > QWidget#scrollContent {
+    background: transparent;
+    border: none;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical {
+    background: @border@;
+    border-radius: 4px;
+    min-height: 24px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0px;
+}
+
+/* ---------- Cards ---------- */
+
+QFrame#card {
+    background: @surface@;
+    border: 1px solid @border@;
+    border-radius: 12px;
+}
+
+QLabel#cardTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: @text@;
+}
+
+QLabel#cardSubtitle, QLabel#hint {
+    color: @textMuted@;
+}
+
+QLabel#pageTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: @text@;
+}
+
+QLabel#placeholderTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: @text@;
+}
+
+QLabel#placeholderText {
+    color: @textMuted@;
+    font-size: 14px;
+}
+
+QLabel#valueLabel {
+    font-weight: 600;
+    color: @text@;
+}
+
+/* ---------- Status badge ---------- */
+
+QLabel[badgeState] {
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+QLabel[badgeState="active"] {
+    color: @accentText@;
+    background: @accent@;
+}
+
+QLabel[badgeState="inactive"] {
+    color: @textMuted@;
+    background: @surfaceAlt@;
+    border: 1px solid @border@;
+}
+
+QLabel[badgeState="warning"] {
+    color: @background@;
+    background: @warning@;
+}
+
+QLabel[badgeState="error"] {
+    color: @accentText@;
+    background: @danger@;
+}
+
+/* ---------- Buttons ---------- */
+
+QPushButton {
+    background: @surfaceAlt@;
+    color: @text@;
+    border: 1px solid @border@;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    border-color: @accent@;
+}
+
+QPushButton:pressed {
+    background: @border@;
+}
+
+QPushButton:disabled {
+    color: @textMuted@;
+}
+
+QPushButton[variant="primary"] {
+    background: @accent@;
+    color: @accentText@;
+    border: none;
+}
+
+QPushButton[variant="primary"]:hover {
+    background: @accentHover@;
+}
+
+QPushButton[variant="danger"] {
+    background: @danger@;
+    color: #FFFFFF;
+    border: none;
+}
+
+QPushButton[variant="danger"]:hover {
+    background: @dangerHover@;
+}
+
+/* ---------- Inputs ---------- */
+
+QComboBox, QSpinBox, QLineEdit {
+    background: @surfaceAlt@;
+    color: @text@;
+    border: 1px solid @border@;
+    border-radius: 8px;
+    padding: 5px 8px;
+    min-height: 20px;
+}
+
+QComboBox:focus, QSpinBox:focus, QLineEdit:focus {
+    border-color: @accent@;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 22px;
+}
+
+QComboBox QAbstractItemView {
+    background: @surface@;
+    color: @text@;
+    border: 1px solid @border@;
+    selection-background-color: @accent@;
+    selection-color: @accentText@;
+    outline: none;
+}
+
+QSpinBox::up-button, QSpinBox::down-button {
+    width: 16px;
+    border: none;
+}
+
+/* ---------- Sliders ---------- */
+
+QSlider::groove:horizontal {
+    height: 6px;
+    background: @surfaceAlt@;
+    border: 1px solid @border@;
+    border-radius: 3px;
+}
+
+QSlider::sub-page:horizontal {
+    background: @accent@;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: @surface@;
+    border: 2px solid @accent@;
+    width: 16px;
+    height: 16px;
+    margin: -7px 0;
+    border-radius: 9px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: @accent@;
+}

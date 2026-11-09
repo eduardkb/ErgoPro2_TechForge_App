@@ -1,0 +1,86 @@
+#include "ui/MainWindow.h"
+
+#include "core/LogCategories.h"
+#include "ui/tabs/GeneralTab.h"
+#include "ui/widgets/PlaceholderPage.h"
+
+#include <QApplication>
+#include <QCloseEvent>
+#include <QTabWidget>
+#include <QTimer>
+
+namespace ergo {
+
+MainWindow::MainWindow(SettingsStore &settings, const QString &logDirectory, QWidget *parent)
+    : QMainWindow(parent)
+{
+    setWindowTitle(tr("ErgoPro2 v%1").arg(QApplication::applicationVersion()));
+    setWindowIcon(QIcon(QStringLiteral(":/icons/app/app.svg")));
+    setMinimumSize(720, 560);
+    resize(820, 620);
+
+    m_tabs = new QTabWidget(this);
+    m_tabs->setDocumentMode(true);
+    m_tabs->setUsesScrollButtons(false);
+
+    m_general = new GeneralTab(settings, logDirectory, m_tabs);
+    const QString later = tr("Coming in a later version.");
+
+    // Tab order is fixed by the specification (B.1.1).
+    m_tabs->addTab(m_general, tr("General"));
+    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/break.svg"), tr("Break Timer"),
+                                       tr("Reminds you to rest after a period of continuous work.\n%1").arg(later),
+                                       m_tabs),
+                   tr("Break Timer"));
+    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/autoclick.svg"), tr("Auto Click"),
+                                       tr("Clicks automatically when the mouse pointer stops moving.\n%1")
+                                           .arg(later),
+                                       m_tabs),
+                   tr("Auto Click"));
+    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/keyboard.svg"), tr("Key Control"),
+                                       tr("Assign keyboard shortcuts to mouse actions.\n%1").arg(later), m_tabs),
+                   tr("Key Control"));
+    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/statistics.svg"), tr("Statistics"),
+                                       tr("Coming soon."), m_tabs),
+                   tr("Statistics"));
+
+    setCentralWidget(m_tabs);
+
+    connect(m_general, &GeneralTab::exitRequested, this, &MainWindow::exitRequested);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (m_exiting) {
+        event->accept();
+        return;
+    }
+    if (m_sessionEnding && m_sessionEnding()) {
+        qCInfo(lcUi) << "Accepting window close because the OS session is ending";
+        event->accept();
+        return;
+    }
+    // The app only exits through the Exit button or the tray menu (B.1.2).
+    event->ignore();
+    if (m_hideToTray) {
+        emit hideToTrayRequested();
+    } else {
+        qCWarning(lcUi) << "No system tray available: minimizing instead of hiding";
+        showMinimized();
+    }
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::WindowStateChange && (windowState() & Qt::WindowMinimized) && m_hideToTray
+        && !m_exiting) {
+        // Hide after the minimize animation/state change has been processed.
+        QTimer::singleShot(0, this, [this] {
+            setWindowState(windowState() & ~Qt::WindowMinimized);
+            emit hideToTrayRequested();
+        });
+    }
+}
+
+} // namespace ergo

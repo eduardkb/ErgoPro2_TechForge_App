@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ErgoPro2
+GenericName=Ergonomic assistant
+Comment=Auto click, key control and break reminders to reduce wrist strain
+Exec=ErgoPro2
+Icon=ergopro2
+Terminal=false
+Categories=Utility;Accessibility;
+StartupNotify=false
