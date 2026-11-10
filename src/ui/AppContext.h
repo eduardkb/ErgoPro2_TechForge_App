@@ -5,6 +5,7 @@
 namespace ergo {
 
 class FeatureAvailabilityService;
+class InputService;
 class InstallController;
 class Logger;
 class SettingsStore;
@@ -17,6 +18,7 @@ struct AppContext {
     Platform &platform;
     FeatureAvailabilityService &availability;
     InstallController &install;
+    InputService &input;
 };
 
 } // namespace ergo

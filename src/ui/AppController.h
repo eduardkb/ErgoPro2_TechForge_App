@@ -12,6 +12,7 @@
 namespace ergo {
 
 class FeatureAvailabilityService;
+class InputService;
 class InstallController;
 class Logger;
 class MainWindow;
@@ -57,6 +58,7 @@ private:
 
     std::unique_ptr<FeatureAvailabilityService> m_availability;
     std::unique_ptr<InstallController> m_install;
+    std::unique_ptr<InputService> m_input;
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;
     std::unique_ptr<TrayController> m_tray;

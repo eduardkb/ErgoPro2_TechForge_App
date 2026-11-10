@@ -7,6 +7,7 @@
 #include "core/settings/GeneralSettings.h"
 #include "platform/PlatformFactory.h"
 #include "ui/FeatureAvailabilityService.h"
+#include "ui/InputService.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
 #include "ui/PermissionsDialog.h"
@@ -33,7 +34,11 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 {
 }
 
-AppController::~AppController() = default;
+AppController::~AppController()
+{
+    if (m_input)
+        m_input->stop();
+}
 
 void AppController::start(const SettingsLoadResult &loadResult)
 {
@@ -52,7 +57,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
     m_install = std::make_unique<InstallController>(m_platform);
     connect(m_install.get(), &InstallController::relaunchRequested, this, &AppController::relaunch);
     connect(m_install.get(), &InstallController::exitRequested, this, &AppController::exitApplication);
-    m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install});
+    m_input = std::make_unique<InputService>(m_platform, *m_availability);
+    m_context = std::make_unique<AppContext>(
+        AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install, *m_input});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -88,6 +95,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
         m_platform.desktop->setDockIconVisible(false);
 
     showPermissionsWindowIfNeeded();
+
+    // Global input layer (stage 2); waits for missing permissions by itself.
+    m_input->start();
     reportSettingsLoad(loadResult);
 }
 
@@ -141,6 +151,8 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
+    if (m_input)
+        m_input->stop(); // release hooks and key grabs before quitting
     if (!m_settings.saveNow())
         qCCritical(lcApp) << "Settings could not be saved before exit";
     if (m_window) {
@@ -152,7 +164,7 @@ void AppController::exitApplication()
 
 void AppController::showPermissionsWindowIfNeeded()
 {
-    if (!m_availability->promptAtStartup() || !m_availability->anyRequiredPermissionMissing())
+    if (!m_availability->promptAtStartup() || !m_availability->anyOsPermissionMissing())
         return;
     qCInfo(lcUi) << "Required permissions are missing; showing the permissions window";
     m_permissionsDialog = new PermissionsDialog(*m_availability, m_window->isVisible() ? m_window.get() : nullptr);

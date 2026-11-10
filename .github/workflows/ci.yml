@@ -97,7 +97,8 @@ jobs:
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates \
-            qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev
+            qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev \
+            pkg-config libx11-dev libxtst-dev libevdev-dev
 
       - uses: actions/checkout@v4
 

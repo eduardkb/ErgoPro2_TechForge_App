@@ -9,6 +9,8 @@
 //   IInputHook, IClickInjector, IPowerEvents                  -> stage 2
 
 #include "core/FeatureAvailability.h"
+#include "core/input/InputEvent.h"
+#include "core/input/KeyCombo.h"
 #include "platform/PlatformResult.h"
 
 #include <QList>
@@ -19,18 +21,44 @@
 
 namespace ergo {
 
-// Global mouse/keyboard monitoring on a dedicated thread (stage 2).
+// Called ON THE HOOK THREAD for every input event. Must return quickly
+// (e.g. InputDispatcher::post): no I/O, no long locks.
+using InputEventSink = std::function<void(const InputEvent &)>;
+
+// Global mouse/keyboard monitoring on ONE dedicated thread with its own OS
+// event loop (B.6). Key events for which suppression->shouldSwallow() returns
+// true are blocked from reaching other applications (they are still delivered
+// to the sink with swallowed = true).
 class IInputHook {
 public:
     virtual ~IInputHook() = default;
-    virtual PlatformResult start() = 0;
+
+    virtual PlatformResult start(InputEventSink sink, KeySuppressionRegistry *suppression) = 0;
     virtual void stop() = 0;
     virtual bool isRunning() const = 0;
+
+    // False when the hook runs but cannot block keys (e.g. macOS without
+    // Accessibility: listen-only event tap).
+    virtual bool canSuppressKeys() const = 0;
+    virtual QString backendName() const = 0;
+
+    // Health probe for the watchdog (B.5.4). Repairs what can be repaired in
+    // place (e.g. re-enables a disabled macOS event tap, counted by
+    // selfRepairCount()). Returns false if the hook must be reinstalled.
+    virtual bool checkHealth() = 0;
+    virtual int selfRepairCount() const = 0;
+
+    // OS-level registration of a key combo that must be exclusive. X11 grabs
+    // the key (XGrabKey); other OSes block it inside the hook and only validate.
+    // Registrations survive stop()/start() (they are re-applied).
+    virtual PlatformResult registerKey(const KeyCombo &combo) = 0;
+    virtual PlatformResult unregisterKey(const KeyCombo &combo) = 0;
 };
 
 enum class MouseButton { Left, Right, Middle };
 
-// Synthetic mouse clicks at the current pointer position (stage 2).
+// Synthetic mouse clicks at the current pointer position (B.6). Every injected
+// event is tagged so the hook reports it with synthetic = true.
 class IClickInjector {
 public:
     virtual ~IClickInjector() = default;
@@ -38,6 +66,7 @@ public:
     virtual PlatformResult doubleClick(MouseButton button) = 0;
     virtual PlatformResult press(MouseButton button) = 0;
     virtual PlatformResult release(MouseButton button) = 0;
+    virtual int doubleClickIntervalMs() const = 0; // OS setting (default 400 ms)
 };
 
 // Start-at-login registration for the current user (no admin rights).
@@ -104,11 +133,14 @@ public:
     virtual void runFix(const QString &permissionId, std::function<void(PlatformResult)> done) = 0;
 };
 
-// Sleep / resume / lock / unlock notifications (stage 2).
+enum class PowerEvent { Sleep, Resume, ScreenLocked, ScreenUnlocked };
+
+// Sleep / resume / lock / unlock notifications (B.6). The callback may be
+// called on any thread.
 class IPowerEvents {
 public:
     virtual ~IPowerEvents() = default;
-    virtual PlatformResult start() = 0;
+    virtual PlatformResult start(std::function<void(PowerEvent)> callback) = 0;
     virtual void stop() = 0;
 };
 

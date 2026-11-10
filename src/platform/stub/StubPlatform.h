@@ -1,33 +1,10 @@
 #pragma once
 
-// Placeholder implementations used until the stage that implements each
-// interface. They never crash: every call is logged and returns
-// PlatformResult::NotImplemented.
+// Shared implementations for OSes that need nothing special.
 
 #include "platform/PlatformInterfaces.h"
 
 namespace ergo {
-
-class StubInputHook final : public IInputHook {
-public:
-    PlatformResult start() override;
-    void stop() override {}
-    bool isRunning() const override { return false; }
-};
-
-class StubClickInjector final : public IClickInjector {
-public:
-    PlatformResult click(MouseButton) override;
-    PlatformResult doubleClick(MouseButton) override;
-    PlatformResult press(MouseButton) override;
-    PlatformResult release(MouseButton) override;
-};
-
-class StubPowerEvents final : public IPowerEvents {
-public:
-    PlatformResult start() override;
-    void stop() override {}
-};
 
 // Desktop integration for OSes that need nothing special (Windows, Linux).
 class GenericDesktopIntegration final : public IDesktopIntegration {

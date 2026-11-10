@@ -188,3 +188,58 @@ Accessibility / Input Monitoring → select every ErgoPro2 entry → **−**), t
 | 3 | Grant **Input Monitoring**. | Both cards show **GRANTED**, all text readable; "All permissions are granted" appears and the window closes after ~1.5 s. |
 | 4 | Repeat with the opposite order (Input Monitoring first, then Accessibility). | Same: the remaining card is never squeezed. |
 | 5 | While the window is open with one permission missing, try to drag the bottom edge of the window upwards. | The window cannot be made smaller than its content. |
+
+---
+
+## Stage 2 – v1.2.0
+
+Goal: the shared global input layer (hook, click injection, key blocking, sleep/lock handling,
+watchdog) and its diagnostics view. No end-user feature yet.
+
+**Preparation (macOS):** build (`cmake --build build`), exit ErgoPro2, then **Reinstall** from the build
+copy and restart from the installed copy (BUILD.md 5.0). Grant **Accessibility** and **Input
+Monitoring** to the installed copy (BUILD.md 6.1). With ad-hoc signing, remove the old ErgoPro2 entries
+first (BUILD.md 1.6.4). Start ErgoPro2 with `open ~/Applications/ErgoPro2.app`.
+
+### A. Hook status and live events
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 10 test programs pass (adds `tst_inputevent`, `tst_keycombo`, `tst_dispatcher`, `tst_watchdog`). |
+| 2 | Title / General tab. | **ErgoPro2 v1.2.0**. Permissions & diagnostics → *Input hook* **RUNNING**, "CGEventTap (active)". No banners on the function tabs. |
+| 3 | General tab → **Input diagnostics** → **Show**. | The card expands: Hook **RUNNING** "CGEventTap (active) – can block keys". |
+| 4 | Move the mouse over the whole screen (and to a second monitor if available). | *Pointer position* follows the mouse in real time (logical pixels, top-left of the main screen = 0,0); *Events per second* rises while moving; screen number changes on a second monitor. |
+| 5 | Type in another app (e.g. TextEdit): `a`, `Shift+B`, `Ctrl+Option+Cmd+F9`; hold `x` for 2 s. | *Last key event* shows e.g. `KeyDown Shift+B (native 11)`, `KeyDown Ctrl+Alt+Meta+F9 …`; holding `x` shows `repeat`. Typing in the other app works normally. |
+| 6 | Click left, right and middle buttons and scroll. | *Last mouse button* shows `MouseDown/MouseUp Left/Right/Middle at x,y`; *Synthetic* says "Last event: no". |
+| 7 | **Test left click in 3 s**; within 3 s move the pointer over an empty desktop area. | After the countdown a real left click happens at the pointer, and the card says "✅ Click at x, y received back from the hook as synthetic after N ms". *Synthetic → Last synthetic event* shows `MouseDown Left … [synthetic]`. |
+
+### B. Key blocking
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 8 | Open TextEdit (or any app that reacts to F9; on a Mac keyboard use **fn+F9** if the top row are media keys). Press F9 once: note what happens. | The app reacts normally (baseline). |
+| 9 | **Test: block F9 for 30 s**, switch to the other app and press F9 several times (also hold it). | Nothing happens in the other app. The card counts the blocked key events ("Blocked key events so far: N"). *Last key event* still shows the F9 presses. |
+| 10 | Wait until the 30 s are over, press F9 again in the other app. | "Test finished: N F9 key event(s) were blocked. F9 works normally again." F9 works again. |
+| 11 | During a new block test, press `Shift+F9` and `F8`. | Those are **not** blocked (only plain F9). |
+
+### C. Permissions and robustness
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 12 | Exit, remove **Accessibility** only (System Settings → − ), start again. | Hook RUNNING "CGEventTap (listen-only) – cannot block keys"; live events still work; the F9 test says it cannot block keys; Auto Click / Key Control show the banner for Accessibility. |
+| 13 | Grant Accessibility again while ErgoPro2 runs. | Within ~3 s the banners disappear. The hook keeps running (restart ErgoPro2 to get the active tap; the log contains "Input hook running"). |
+| 14 | Exit, remove **Input Monitoring**, start. | Diagnostics: *Input hook* NOT RUNNING "Waiting for the permissions above." – no crash. Granting it starts the hook within ~3 s (log: `Input hook running ( permissions changed )`). |
+| 15 | Put the Mac to sleep (Apple menu → Sleep), wake it, unlock. | Log: `System is going to sleep`, `System resumed from sleep`, `Reinstalling the input hook: resume from sleep` (and/or `session unlock`). Diagnostics *Watchdog → Reinstalls* increased; live events and the F9 test work immediately. |
+| 16 | Lock the screen (Ctrl+Cmd+Q) and unlock. | Log: `Screen locked`, `Screen unlocked`, a reinstall; everything keeps working. |
+| 17 | **Long run:** leave ErgoPro2 running for 2+ hours with normal use, including at least one sleep/wake. Then repeat steps 4, 7 and 9. | Everything still works. The log shows a health check every 30 s at Debug level and no `Input hook keeps failing`. |
+| 18 | Exit ErgoPro2 while the F9 block test is running, then press F9 in another app. | F9 works normally (the block ends with the app). |
+
+### D. Windows 11 and Debian (when a machine is available)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 19 | Windows: steps 3–11. | Backend "WH_KEYBOARD_LL + WH_MOUSE_LL – can block keys"; positions in logical pixels (also on a 150 % scaled monitor); synthetic click recognized; F9 blocked. *Self-repairs* counts the 30 s re-arms. |
+| 20 | Windows: sleep / lock (Win+L) and back. | Reinstall logged; everything keeps working. |
+| 21 | Debian X11: steps 3–11. | Backend "X11 XRecord + XGrabKey". F9 blocked in other apps. Start another program that grabs F9 first (e.g. a desktop shortcut on F9): the block test reports "F9 is already used by another application". |
+| 22 | Debian Wayland with the `input` group granted (BUILD.md 6.3): steps 3–11. | Backend "evdev (Wayland)"; pointer position shown as *relative*; synthetic click recognized; F9 blocked. Unplug/replug a USB keyboard: it keeps working (hotplug). |
+| 23 | Debian Wayland, build without `libevdev-dev`. | Diagnostics/banners explain that this build has no Wayland input support; no crash. |

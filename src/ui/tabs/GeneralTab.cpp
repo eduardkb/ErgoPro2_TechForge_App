@@ -8,6 +8,7 @@
 #include "ui/AppContext.h"
 #include "ui/TextUtils.h"
 #include "ui/tabs/DiagnosticsCard.h"
+#include "ui/tabs/InputDiagnosticsCard.h"
 #include "ui/tabs/InstallCard.h"
 #include "ui/widgets/CardWidget.h"
 #include "ui/widgets/ParameterRow.h"
@@ -102,6 +103,7 @@ GeneralTab::GeneralTab(AppContext &context, QWidget *parent)
     layout->addWidget(buildStartupCard(content));
     layout->addWidget(buildLoggingCard(content));
     layout->addWidget(new DiagnosticsCard(m_context, content));
+    layout->addWidget(new InputDiagnosticsCard(m_context.input, content));
     layout->addWidget(buildMaintenanceCard(content));
     layout->addStretch(1);
 

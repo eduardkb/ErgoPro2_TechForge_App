@@ -24,7 +24,15 @@ public:
 
     explicit FeatureAvailabilityService(IPermissions &permissions, QObject *parent = nullptr);
 
-    QList<PermissionState> permissions() const { return m_permissions; }
+    // OS permissions followed by runtime requirements.
+    QList<PermissionState> permissions() const { return m_permissions + m_runtime; }
+
+    // True if an OS permission (not a runtime requirement) is missing.
+    bool anyOsPermissionMissing() const;
+
+    // Adds/replaces a runtime requirement (e.g. the input hook) or removes it.
+    void setRuntimeRequirement(const PermissionState &requirement);
+    void clearRuntimeRequirement(const QString &id);
     FeatureStatus status(Feature feature) const;
     bool anyRequiredPermissionMissing() const;
     QString sessionDescription() const;
@@ -45,6 +53,7 @@ private:
 
     IPermissions &m_permissionsApi;
     QList<PermissionState> m_permissions;
+    QList<PermissionState> m_runtime;
     QHash<Feature, FeatureStatus> m_statuses;
     QTimer m_recheckTimer;
     bool m_initialized = false;

@@ -1,10 +1,20 @@
 #pragma once
 
 #include <QDateTime>
-#include <QElapsedTimer>
 #include <QtGlobal>
 
+#include <chrono>
+
 namespace ergo {
+
+// Monotonic milliseconds on a system-wide epoch (steady clock). Used by
+// SystemClock and by the platform input hooks, so event timestamps and the
+// application clock are directly comparable.
+inline qint64 monotonicNowMs()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
 
 // Injectable time source. All core logic that depends on time must use an
 // IClock instead of calling QDateTime/QElapsedTimer directly, so that state
@@ -23,13 +33,8 @@ public:
 // Real clock used by the application.
 class SystemClock final : public IClock {
 public:
-    SystemClock() { m_elapsed.start(); }
-
     QDateTime now() const override { return QDateTime::currentDateTime(); }
-    qint64 monotonicMs() const override { return m_elapsed.elapsed(); }
-
-private:
-    QElapsedTimer m_elapsed;
+    qint64 monotonicMs() const override { return monotonicNowMs(); }
 };
 
 // Fully controllable clock for unit tests.

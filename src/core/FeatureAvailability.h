@@ -28,6 +28,9 @@ struct PermissionState {
     FixKind fixKind = FixKind::None;
     QString fixLabel;    // button text, e.g. "Open System Settings"
     QList<Feature> requiredFor;
+    // Runtime requirement reported by the app itself (e.g. "input hook running"),
+    // not an OS permission the user grants in a settings page.
+    bool runtime = false;
 };
 
 struct FeatureStatus {

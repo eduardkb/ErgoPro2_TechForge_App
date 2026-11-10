@@ -33,8 +33,9 @@ void FeatureAvailabilityService::refresh()
     const bool different = !m_initialized || fingerprint(current) != fingerprint(m_permissions);
     m_permissions = current;
     m_statuses.clear();
+    const QList<PermissionState> all = permissions();
     for (Feature feature : allFeatures())
-        m_statuses.insert(feature, evaluateFeature(feature, m_permissions));
+        m_statuses.insert(feature, evaluateFeature(feature, all));
     updateTimer();
 
     if (!different)
@@ -71,11 +72,51 @@ FeatureStatus FeatureAvailabilityService::status(Feature feature) const
 
 bool FeatureAvailabilityService::anyRequiredPermissionMissing() const
 {
+    for (const PermissionState &p : permissions()) {
+        if (!p.granted && !p.requiredFor.isEmpty())
+            return true;
+    }
+    return false;
+}
+
+bool FeatureAvailabilityService::anyOsPermissionMissing() const
+{
     for (const PermissionState &p : m_permissions) {
         if (!p.granted && !p.requiredFor.isEmpty())
             return true;
     }
     return false;
+}
+
+void FeatureAvailabilityService::setRuntimeRequirement(const PermissionState &requirement)
+{
+    PermissionState r = requirement;
+    r.runtime = true;
+    for (PermissionState &existing : m_runtime) {
+        if (existing.id == r.id) {
+            if (existing.granted == r.granted && existing.explanation == r.explanation)
+                return;
+            existing = r;
+            m_initialized = false; // force changed()
+            refresh();
+            return;
+        }
+    }
+    m_runtime.append(r);
+    m_initialized = false;
+    refresh();
+}
+
+void FeatureAvailabilityService::clearRuntimeRequirement(const QString &id)
+{
+    for (int i = 0; i < m_runtime.size(); ++i) {
+        if (m_runtime.at(i).id == id) {
+            m_runtime.removeAt(i);
+            m_initialized = false;
+            refresh();
+            return;
+        }
+    }
 }
 
 QString FeatureAvailabilityService::sessionDescription() const

@@ -7,6 +7,10 @@ add_library(ergopro2_core STATIC
     core/Clock.h
     core/CrashHandler.cpp core/CrashHandler.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
+    core/input/HookWatchdog.cpp core/input/HookWatchdog.h
+    core/input/InputDispatcher.cpp core/input/InputDispatcher.h
+    core/input/InputEvent.cpp core/input/InputEvent.h
+    core/input/KeyCombo.cpp core/input/KeyCombo.h
     core/LocationClassifier.cpp core/LocationClassifier.h
     core/StartupMode.cpp core/StartupMode.h
     core/LogCategories.cpp core/LogCategories.h
@@ -31,20 +35,62 @@ add_library(ergopro2_platform STATIC
     platform/PlatformResult.h
     platform/stub/StubPlatform.cpp platform/stub/StubPlatform.h
     platform/common/FileOperations.cpp platform/common/FileOperations.h
+    platform/common/Synthetic.h
 )
 if(APPLE)
     target_sources(ergopro2_platform PRIVATE
         platform/mac/MacAutostart.cpp platform/mac/MacAutostart.h
         platform/mac/MacDesktopIntegration.mm platform/mac/MacDesktopIntegration.h
+        platform/mac/MacInput.mm platform/mac/MacInput.h
         platform/mac/MacInstaller.cpp platform/mac/MacInstaller.h
         platform/mac/MacPermissions.mm platform/mac/MacPermissions.h)
+    # Objective-C++ files use ARC (automatic reference counting).
+    target_compile_options(ergopro2_platform PRIVATE $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
     target_link_libraries(ergopro2_platform PRIVATE
         "-framework AppKit" "-framework CoreServices" "-framework ApplicationServices" "-framework IOKit"
         "-framework Security")
 elseif(WIN32)
-    target_sources(ergopro2_platform PRIVATE platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
+    target_sources(ergopro2_platform PRIVATE
+        platform/win/WinInput.cpp platform/win/WinInput.h
+        platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
+    target_link_libraries(ergopro2_platform PRIVATE user32 shcore wtsapi32)
+    target_compile_definitions(ergopro2_platform PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN)
 elseif(UNIX)
-    target_sources(ergopro2_platform PRIVATE platform/linux/LinuxPlatform.cpp platform/linux/LinuxPlatform.h)
+    target_sources(ergopro2_platform PRIVATE
+        platform/linux/LinuxInput.h
+        platform/linux/LinuxPlatform.cpp platform/linux/LinuxPlatform.h
+        platform/linux/LinuxPowerEvents.cpp
+        platform/linux/LinuxX11Input.cpp)
+
+    # X11: XRecord + XTest (libXtst) and Xkb (libX11) - required.
+    find_package(X11 REQUIRED)
+    if(NOT TARGET X11::Xtst)
+        message(FATAL_ERROR "libXtst (XTest + XRecord) development files are missing - install libxtst-dev")
+    endif()
+    target_link_libraries(ergopro2_platform PRIVATE X11::X11 X11::Xtst)
+
+    # Wayland (best effort): libevdev is optional.
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(LIBEVDEV QUIET IMPORTED_TARGET libevdev)
+    endif()
+    if(LIBEVDEV_FOUND)
+        target_sources(ergopro2_platform PRIVATE platform/linux/LinuxEvdevInput.cpp)
+        target_compile_definitions(ergopro2_platform PRIVATE ERGOPRO2_HAVE_LIBEVDEV)
+        target_link_libraries(ergopro2_platform PRIVATE PkgConfig::LIBEVDEV)
+        message(STATUS "libevdev found: Wayland input support enabled")
+    else()
+        message(STATUS "libevdev not found: Wayland input support disabled (install libevdev-dev to enable)")
+    endif()
+
+    # Sleep / lock notifications over D-Bus (optional).
+    find_package(Qt6 QUIET COMPONENTS DBus)
+    if(TARGET Qt6::DBus)
+        target_compile_definitions(ergopro2_platform PRIVATE ERGOPRO2_HAVE_QTDBUS)
+        target_link_libraries(ergopro2_platform PRIVATE Qt6::DBus)
+    else()
+        message(STATUS "QtDBus not found: no sleep/lock notifications on Linux")
+    endif()
 endif()
 target_link_libraries(ergopro2_platform PUBLIC ergopro2_core PRIVATE ergopro2_warnings)
 
@@ -57,6 +103,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/AppController.cpp ui/AppController.h
     ui/ErgoApplication.cpp ui/ErgoApplication.h
     ui/FeatureAvailabilityService.cpp ui/FeatureAvailabilityService.h
+    ui/InputService.cpp ui/InputService.h
     ui/InstallController.cpp ui/InstallController.h
     ui/MainWindow.cpp ui/MainWindow.h
     ui/PermissionActions.cpp ui/PermissionActions.h
@@ -66,6 +113,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/TrayController.cpp ui/TrayController.h
     ui/tabs/DiagnosticsCard.cpp ui/tabs/DiagnosticsCard.h
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
+    ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h
     ui/tabs/InstallCard.cpp ui/tabs/InstallCard.h
     ui/widgets/CardWidget.cpp ui/widgets/CardWidget.h
     ui/widgets/FeatureBanner.cpp ui/widgets/FeatureBanner.h

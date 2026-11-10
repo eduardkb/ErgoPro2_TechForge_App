@@ -3,6 +3,7 @@
 #include "platform/PlatformFactory.h"
 #include "ui/AppContext.h"
 #include "ui/FeatureAvailabilityService.h"
+#include "ui/InputService.h"
 #include "ui/InstallController.h"
 #include "ui/PermissionActions.h"
 #include "ui/TextUtils.h"
@@ -43,6 +44,7 @@ DiagnosticsCard::DiagnosticsCard(AppContext &context, QWidget *parent)
 
     connect(&m_context.availability, &FeatureAvailabilityService::changed, this, &DiagnosticsCard::refresh);
     connect(&m_context.install, &InstallController::changed, this, &DiagnosticsCard::refresh);
+    connect(&m_context.input, &InputService::statusChanged, this, &DiagnosticsCard::refresh);
     refresh();
 }
 
@@ -107,19 +109,22 @@ void DiagnosticsCard::refresh()
     }
 
     auto *hook = new StatusBadge(m_body);
-    const bool hookRunning = m_context.platform.inputHook->isRunning();
-    hook->setState(hookRunning ? StatusBadge::State::Active : StatusBadge::State::Inactive,
-                   hookRunning ? tr("RUNNING") : tr("NOT RUNNING"));
+    const InputService::Stats input = m_context.input.stats();
+    hook->setState(input.running ? StatusBadge::State::Active : StatusBadge::State::Error,
+                   input.running ? tr("RUNNING") : tr("NOT RUNNING"));
     auto *hookValue = new QWidget(m_body);
     auto *h = new QHBoxLayout(hookValue);
     h->setContentsMargins(0, 0, 0, 0);
     h->addWidget(hook);
-    if (!hookRunning) {
-        auto *why = new QLabel(tr("The global mouse/keyboard hook is added in a later version."), hookValue);
-        why->setObjectName(QStringLiteral("hint"));
-        why->setWordWrap(true);
-        h->addWidget(why, 1);
-    }
+    QString detail = input.backend;
+    if (!input.running)
+        detail = input.lastError.isEmpty() ? tr("Waiting for the permissions above.") : input.lastError;
+    else if (!input.canSuppressKeys)
+        detail += tr(" – cannot block keys");
+    auto *why = new QLabel(detail, hookValue);
+    why->setObjectName(QStringLiteral("hint"));
+    why->setWordWrap(true);
+    h->addWidget(why, 1);
     addRow(row++, tr("Input hook"), hookValue);
 
     const InstallController::Status install = m_context.install.status();

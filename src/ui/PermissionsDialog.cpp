@@ -80,7 +80,7 @@ void PermissionsDialog::rebuild()
 
     bool allGranted = true;
     for (const PermissionState &p : m_service.permissions()) {
-        if (p.requiredFor.isEmpty())
+        if (p.requiredFor.isEmpty() || p.runtime)
             continue;
         allGranted = allGranted && p.granted;
 

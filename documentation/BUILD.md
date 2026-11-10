@@ -20,6 +20,11 @@ Shared information:
 **Requirements on every OS:** a C++20 compiler, CMake ≥ 3.21, Ninja (recommended) and
 **Qt 6.8 or newer** with the modules *Core, Gui, Widgets, Network, Svg* (and *Test* for the unit tests).
 
+**Platform libraries for the input layer** (since v1.2.0, all linked automatically by CMake):
+macOS – AppKit, ApplicationServices, CoreServices, IOKit, Security, Carbon headers (all part of the
+Xcode Command Line Tools); Windows – `user32`, `shcore`, `wtsapi32` (part of the Windows SDK); Linux –
+see section 3.1.
+
 **Version number:** the app version comes from `project(ErgoPro2 VERSION x.y.z)` in the root
 `CMakeLists.txt`. You see it in the window title, on the General tab and in the tray tooltip.
 
@@ -314,10 +319,21 @@ works from a folder prepared with `windeployqt` (it must contain the Qt DLLs).
 ### 3.1 Install the prerequisites
 ```bash
 sudo apt update
-sudo apt install build-essential cmake ninja-build git \
-                 qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev
+sudo apt install build-essential cmake ninja-build git pkg-config \
+                 qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev \
+                 libx11-dev libxtst-dev libevdev-dev
 ```
 Debian 13 ships Qt 6.8, which is the minimum supported version.
+
+What the input-related packages are for (since v1.2.0):
+
+| Package | Needed for | Required? |
+|---------|------------|-----------|
+| `libx11-dev`, `libxtst-dev` | X11 input hook (XRecord), exclusive keys (XGrabKey), clicks (XTest) | **yes** – CMake stops with an error without them |
+| `libevdev-dev` (+ `pkg-config`) | Wayland input (evdev/uinput) | optional – without it CMake prints `libevdev not found: Wayland input support disabled` and the input features are unavailable on Wayland |
+| QtDBus (part of `qt6-base-dev`) | sleep/lock notifications (logind, screensaver) | optional – CMake prints a notice when missing |
+
+The CMake output tells you which optional parts are enabled.
 
 **System tray on GNOME:** GNOME (Debian's default desktop) has no tray area. Install the AppIndicator
 extension, then log out and in again:
@@ -591,6 +607,12 @@ programs running **as Administrator**, unless ErgoPro2 also runs as Administrato
 ---
 
 ## 8. How to test each stage
+
+> **Input features need the permissions of the copy you run.** From stage 2 on, test with the
+> **installed, signed** copy (`~/Applications/ErgoPro2.app`, section 5) that has Accessibility and
+> Input Monitoring granted (section 6.1). A freshly built `build/bin` copy is a "new app" for macOS
+> when signed ad-hoc, so it has no permissions until you grant them to it as well.
+
 
 1. Check the version: the window title shows `ErgoPro2 v1.N.x` and must match the stage
    (stage N ⇒ `1.N.0`, bug-fix releases increase the last number).

@@ -5,6 +5,44 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.2.0] - 2026-11-10
+
+Stage 2 – shared global input layer.
+
+### Added
+- Platform-independent input event model (mouse move, button down/up, wheel, key down/up with Qt key,
+  native code, modifiers, auto-repeat, synthetic and blocked flags, monotonic timestamp, logical-pixel
+  position and screen).
+- Global input hooks on one dedicated thread per OS:
+  - macOS: session-level CGEventTap (active, or listen-only without Accessibility); a tap disabled by
+    macOS is re-enabled immediately.
+  - Windows: WH_KEYBOARD_LL + WH_MOUSE_LL with their own message loop; hooks are re-armed by every
+    health check because Windows can drop them silently.
+  - Linux X11: XRecord monitoring and XGrabKey exclusive keys (all NumLock/CapsLock variants, re-grabbed
+    after keyboard mapping changes).
+  - Linux Wayland (best effort, needs libevdev at build time): evdev with device hotplug, relative pointer
+    positions, keyboard grab + uinput forwarding to block keys.
+- Key suppression registry: register/unregister key combos that must not reach other applications; the
+  key-up and auto-repeats of a blocked key are blocked too.
+- Click injection (left/right/middle click, double click with the OS double-click interval, press,
+  release) at the pointer position; every injected event is tagged and reported back as synthetic.
+- Sleep/resume and lock/unlock notifications (macOS NSWorkspace, Windows WM_POWERBROADCAST +
+  WTS session notifications, Linux logind and screensaver over D-Bus).
+- Health watchdog: checks the hook every 30 s, reinstalls it after failures, resume and unlock, logs every
+  reinstall and reports a persistent failure through the feature-availability banners.
+- Input dispatcher that delivers events from the hook thread to subscribers in their own threads.
+- General tab: collapsible **Input diagnostics** card (hook status, pointer position, last key and mouse
+  button, synthetic flag, events per second, watchdog counters, *Test left click in 3 s* and *Test: block
+  F9 for 30 s*); the diagnostics card's *Input hook* row shows the real status.
+- The input hook starts automatically as soon as the missing permissions are granted.
+- Unit tests for the event helpers, key-combo matching and blocking rules, the dispatcher and the
+  watchdog.
+
+### Changed
+- `SystemClock::monotonicMs()` uses a system-wide steady clock, shared with the input hooks.
+- Linux builds need the X11 and XTest development files; libevdev (Wayland) and QtDBus are optional.
+- CI installs `libx11-dev`, `libxtst-dev`, `libevdev-dev` and `pkg-config` for the Debian job.
+
 ## [1.1.4] - 2026-11-10
 
 Bug fix (permissions window layout).
