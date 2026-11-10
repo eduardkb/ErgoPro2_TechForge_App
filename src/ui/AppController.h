@@ -12,6 +12,7 @@
 namespace ergo {
 
 class AutoClickController;
+class BreakTimerController;
 class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
@@ -49,6 +50,7 @@ public slots:
 private:
     void showPermissionsWindowIfNeeded();
     void setupAutoClickTrayEntry();
+    void setupBreakTimerTrayEntries();
     void applySetting(const QString &key);
     void reportSettingsLoad(const SettingsLoadResult &result);
     void showError(const QString &title, const QString &message);
@@ -64,6 +66,7 @@ private:
     std::unique_ptr<InputService> m_input;
     std::unique_ptr<AutoClickController> m_autoclick;
     std::unique_ptr<KeyControlController> m_keycontrol;
+    std::unique_ptr<BreakTimerController> m_breaktimer;
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;
     std::unique_ptr<TrayController> m_tray;

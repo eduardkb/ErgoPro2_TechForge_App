@@ -125,6 +125,7 @@ void InputService::runHealthCheck()
 
 void InputService::onPowerEvent(PowerEvent event)
 {
+    emit powerEventOccurred(int(event)); // Break Timer: sleep/lock count as idle
     switch (event) {
     case PowerEvent::Sleep:
         qCInfo(lcPlatform) << "System is going to sleep";

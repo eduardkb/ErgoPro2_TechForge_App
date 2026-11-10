@@ -38,7 +38,7 @@ Platform createPlatform()
     p.powerEvents = std::make_unique<MacPowerEvents>();
 #elif defined(Q_OS_WIN)
     p.osName = QStringLiteral("Windows");
-    p.desktop = std::make_unique<GenericDesktopIntegration>();
+    p.desktop = std::make_unique<WinDesktopIntegration>();
     p.autostart = std::make_unique<WinAutostart>();
     p.installer = std::make_unique<WinInstaller>();
     p.permissions = std::make_unique<WinPermissions>();

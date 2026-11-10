@@ -29,6 +29,20 @@ public:
     PlatformResult disable() override;
 };
 
+// Dock/activation are no-ops on Windows; the break window uses HWND_TOPMOST and
+// full-screen apps are detected with SHQueryUserNotificationState.
+class WinDesktopIntegration final : public IDesktopIntegration {
+public:
+    void setDockIconVisible(bool) override {}
+    void activateApplication() override {}
+    bool isSessionEnding() const override { return false; }
+    bool prefersMonochromeTrayIcon() const override { return false; }
+    PlatformResult launchApplication(const QString &executablePath, const QStringList &arguments) override;
+    void raiseOverlayWindow(quintptr nativeWindow) override;
+    bool overlayUsesFullScreenState() const override { return true; }
+    std::optional<bool> isFullscreenAppActive() const override;
+};
+
 // Windows needs no special permission for global hooks.
 class WinPermissions final : public IPermissions {
 public:

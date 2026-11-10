@@ -18,6 +18,7 @@
 #include <QStringList>
 
 #include <functional>
+#include <optional>
 
 namespace ergo {
 
@@ -168,6 +169,18 @@ public:
     // Starts a new process of the given executable (used to restart the app).
     // macOS starts the enclosing .app bundle through LaunchServices.
     virtual PlatformResult launchApplication(const QString &executablePath, const QStringList &arguments) = 0;
+
+    // Break window (B.7): keep the native window (QWidget::winId()) above all
+    // other windows, including full-screen applications, on every Space/desktop.
+    virtual void raiseOverlayWindow(quintptr nativeWindow) = 0;
+    // True if the overlay must use the window system's full-screen state
+    // (X11/Windows); macOS uses a normal window at screen-saver level instead,
+    // because full-screen windows open a separate Space.
+    virtual bool overlayUsesFullScreenState() const = 0;
+
+    // Best-effort detection of a full-screen application in the foreground
+    // (B.17); std::nullopt when this OS is not supported.
+    virtual std::optional<bool> isFullscreenAppActive() const = 0;
 };
 
 } // namespace ergo

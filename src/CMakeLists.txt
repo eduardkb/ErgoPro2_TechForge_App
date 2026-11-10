@@ -7,6 +7,7 @@ add_library(ergopro2_core STATIC
     core/Clock.h
     core/CrashHandler.cpp core/CrashHandler.h
     core/autoclick/AutoClickEngine.cpp core/autoclick/AutoClickEngine.h
+    core/breaktimer/BreakTimerEngine.cpp core/breaktimer/BreakTimerEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
     core/keycontrol/KeyAction.cpp core/keycontrol/KeyAction.h
@@ -23,6 +24,7 @@ add_library(ergopro2_core STATIC
     core/LogLevel.cpp core/LogLevel.h
     core/Logger.cpp core/Logger.h
     core/settings/AutoClickSettings.cpp core/settings/AutoClickSettings.h
+    core/settings/BreakTimerSettings.cpp core/settings/BreakTimerSettings.h
     core/settings/GeneralSettings.cpp core/settings/GeneralSettings.h
     core/settings/KeyControlSettings.cpp core/settings/KeyControlSettings.h
     core/settings/SettingsRegistry.cpp core/settings/SettingsRegistry.h
@@ -61,7 +63,7 @@ elseif(WIN32)
     target_sources(ergopro2_platform PRIVATE
         platform/win/WinInput.cpp platform/win/WinInput.h
         platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
-    target_link_libraries(ergopro2_platform PRIVATE user32 shcore wtsapi32)
+    target_link_libraries(ergopro2_platform PRIVATE user32 shell32 shcore wtsapi32)
     target_compile_definitions(ergopro2_platform PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN)
 elseif(UNIX)
     target_sources(ergopro2_platform PRIVATE
@@ -115,6 +117,9 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/autoclick/AutoClickController.cpp ui/autoclick/AutoClickController.h
     ui/autoclick/AutoClickOverlay.cpp ui/autoclick/AutoClickOverlay.h
     ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
+    ui/breaktimer/BreakTimerController.cpp ui/breaktimer/BreakTimerController.h
+    ui/breaktimer/BreakWindow.cpp ui/breaktimer/BreakWindow.h
+    ui/breaktimer/BreakWindowManager.cpp ui/breaktimer/BreakWindowManager.h
     ui/keycontrol/HotkeyDialog.cpp ui/keycontrol/HotkeyDialog.h
     ui/keycontrol/KeyControlController.cpp ui/keycontrol/KeyControlController.h
     ui/InstallController.cpp ui/InstallController.h
@@ -126,6 +131,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/Theme.cpp ui/Theme.h
     ui/TrayController.cpp ui/TrayController.h
     ui/tabs/AutoClickTab.cpp ui/tabs/AutoClickTab.h
+    ui/tabs/BreakTimerTab.cpp ui/tabs/BreakTimerTab.h
     ui/tabs/DiagnosticsCard.cpp ui/tabs/DiagnosticsCard.h
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h

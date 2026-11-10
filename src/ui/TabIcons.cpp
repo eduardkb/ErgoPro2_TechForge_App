@@ -24,6 +24,26 @@ QPixmap render(const QByteArray &svg, int size)
 
 } // namespace
 
+QPixmap renderTintedSvg(const QString &svgResource, const QColor &color, const QSize &size, qreal devicePixelRatio)
+{
+    QFile file(svgResource);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCCritical(lcUi) << "Image resource missing:" << svgResource;
+        return {};
+    }
+    QByteArray svg = file.readAll();
+    svg.replace("#0D9488", color.name(QColor::HexRgb).toLatin1());
+    QSvgRenderer renderer(svg);
+    QPixmap pixmap(size * devicePixelRatio);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    renderer.render(&painter);
+    painter.end();
+    pixmap.setDevicePixelRatio(devicePixelRatio);
+    return pixmap;
+}
+
 QIcon makeTabIcon(const QString &svgResource, const QColor &normalColor, const QColor &selectedColor)
 {
     QFile file(svgResource);

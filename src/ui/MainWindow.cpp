@@ -5,6 +5,7 @@
 #include "ui/TabIcons.h"
 #include "ui/Theme.h"
 #include "ui/tabs/AutoClickTab.h"
+#include "ui/tabs/BreakTimerTab.h"
 #include "ui/tabs/GeneralTab.h"
 #include "ui/tabs/KeyControlTab.h"
 #include "ui/widgets/FeaturePage.h"
@@ -30,15 +31,12 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
     m_tabs->setUsesScrollButtons(false);
 
     m_general = new GeneralTab(context, m_tabs);
-    const QString later = tr("Coming in a later version.");
 
     // Tab order is fixed by the specification (B.1.1). Function tabs show the
     // availability banner (B.1.4) above their content.
     m_tabs->addTab(m_general, tr("General"));
     m_tabs->addTab(new FeaturePage(Feature::BreakTimerActivity, context.availability,
-                                   new PlaceholderPage(QStringLiteral(":/icons/ui/break.svg"), tr("Break Timer"),
-                                                       tr("Reminds you to rest after a period of continuous work.\n%1")
-                                                           .arg(later))),
+                                   new BreakTimerTab(context.breaktimer, context.settings)),
                    tr("Break Timer"));
     m_tabs->addTab(new FeaturePage(Feature::AutoClick, context.availability,
                                    new AutoClickTab(context.autoclick, context.settings, context.availability)),

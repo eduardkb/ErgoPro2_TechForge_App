@@ -10,6 +10,12 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <shellapi.h> // SHQueryUserNotificationState
+
 namespace ergo {
 
 namespace {
@@ -189,6 +195,34 @@ PlatformResult WinPermissions::openSettingsFor(const QString &permissionId)
 void WinPermissions::runFix(const QString &permissionId, std::function<void(PlatformResult)> done)
 {
     done(openSettingsFor(permissionId));
+}
+
+// ---------------------------------------------------------------- desktop
+
+PlatformResult WinDesktopIntegration::launchApplication(const QString &executablePath, const QStringList &arguments)
+{
+    if (!QProcess::startDetached(executablePath, arguments)) {
+        const QString message = tr("Cannot start '%1'.").arg(QDir::toNativeSeparators(executablePath));
+        qCCritical(lcPlatform).noquote() << message;
+        return PlatformResult::failed(message);
+    }
+    return PlatformResult::success();
+}
+
+void WinDesktopIntegration::raiseOverlayWindow(quintptr nativeWindow)
+{
+    // Topmost and in front without stealing the keyboard focus.
+    if (!SetWindowPos(reinterpret_cast<HWND>(nativeWindow), HWND_TOPMOST, 0, 0, 0, 0,
+                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW))
+        qCWarning(lcPlatform) << "SetWindowPos(HWND_TOPMOST) failed, error" << GetLastError();
+}
+
+std::optional<bool> WinDesktopIntegration::isFullscreenAppActive() const
+{
+    QUERY_USER_NOTIFICATION_STATE state;
+    if (FAILED(SHQueryUserNotificationState(&state)))
+        return std::nullopt;
+    return state == QUNS_BUSY || state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE;
 }
 
 } // namespace ergo

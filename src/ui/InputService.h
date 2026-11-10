@@ -64,6 +64,8 @@ public:
 
 signals:
     void statusChanged();
+    // Sleep / resume / lock / unlock (PowerEvent as int), on the GUI thread.
+    void powerEventOccurred(int event);
     // Emitted on the GUI thread for every synthetic mouse-down seen by the hook.
     void syntheticClickSeen(const ergo::InputEvent &event);
 

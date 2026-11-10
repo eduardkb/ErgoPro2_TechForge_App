@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="110" viewBox="0 0 160 110" fill="none" stroke="#0D9488" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Arm straight, palm down; gently press the back of the hand down -->
+  <path d="M10 40 H88"/>
+  <path d="M88 32 h14 a8 8 0 0 1 8 8 v0 a8 8 0 0 1 -8 8 h-14 z" fill="#0D9488" fill-opacity="0.15"/>
+  <path d="M110 40 c10 4 14 16 10 34"/>
+  <path d="M116 22 c14 0 24 8 26 20" stroke-opacity="0.6"/>
+  <path d="M136 50 l6 -8 l4 10" stroke-opacity="0.9"/>
+  <path d="M100 26 c0 -8 6 -12 14 -12" stroke-opacity="0.6"/>
+</svg>

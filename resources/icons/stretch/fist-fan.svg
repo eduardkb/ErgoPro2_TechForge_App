@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="110" viewBox="0 0 160 110" fill="none" stroke="#0D9488" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Soft fist, then spread the fingers wide -->
+  <rect x="14" y="36" width="40" height="44" rx="14" fill="#0D9488" fill-opacity="0.15"/>
+  <path d="M22 48 h24 M22 58 h24 M22 68 h24" stroke-opacity="0.5"/>
+  <path d="M66 58 h20 m-8 -8 l8 8 l-8 8"/>
+  <path d="M104 86 c-6 -10 -6 -22 0 -30 h26 c6 8 6 20 0 30 z" fill="#0D9488" fill-opacity="0.15"/>
+  <path d="M106 56 l-12 -26 M114 54 l-4 -34 M122 54 l4 -34 M130 56 l12 -26 M134 66 l18 -6"/>
+</svg>

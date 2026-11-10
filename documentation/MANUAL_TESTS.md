@@ -396,3 +396,59 @@ tab: **Activate** and switch on **Show countdown cross**.
 | 3 | Move more than the minimum distance and stop completely. | After about half the click time (e.g. 75 ms of a 150 ms click time) the X appears at the pointer tip, grows, and the click happens on time. |
 | 4 | Set *Wait before clicking* to 1000 ms; move, stop, and touch the mouse slightly after ~0.7 s. | The X appears after 0.5 s and disappears when you touch the mouse. The click still happens at 1 s (tiny movements do not delay the click). |
 | 5 | Repeat step 3 with the cross switched off. | The click happens as before; no X. |
+
+---
+
+## Stage 5 – v1.5.0
+
+Goal: Function 3 – Break Timer.
+
+**Preparation (macOS):** build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); reset and
+grant the permissions again if needed (BUILD.md 1.6.6, 6.1). Start with `open ~/Applications/ErgoPro2.app`.
+
+> **Tip – short values for testing:** *Break after working* **5** min, *Reset after a pause of* **1** min,
+> *Break length* **1** min, *Postpone by* **1** min. Set them back to your normal values afterwards.
+
+### A. Tab and settings
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 13 test programs pass (adds `tst_breaktimer`, 21 cases). |
+| 2 | Open **Break Timer**. | No banner; *Break reminders* switched on, badge **ACTIVE**; the four durations (defaults 50 / 5 / 5 / 10 min) and the full-screen option (off); Status panel. No "break now" or "reset" button. |
+| 3 | Set the short test values (tip above). | `settings.json` → `breaktimer` section shows them. |
+| 4 | Do not touch mouse or keyboard for a moment, then move the mouse. | State changes from **Idle** to **Working**; *Active work time* counts up every second; *Next break in* counts down from 05:00. |
+
+### B. Breaks
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 5 | Keep working (move the mouse / type now and then) for 5 min. | The break window covers **every** screen: semi-transparent, the main screen shows "Time to rest your wrists", a 01:00 countdown, five stretching tips with pictures, **Dismiss** and **Postpone 1 min**. Other screens show "Time for a break – see the main screen" and the countdown. State **On break**. |
+| 6 | Press **Esc**, **Cmd+W**, **Cmd+Q**, click outside the card. | The window stays. Cmd+Tab still switches apps, but the break window stays on top. |
+| 7 | Keep using the mouse during the break. | Nothing changes; the countdown continues. |
+| 8 | Wait until the countdown reaches 00:00. | The window closes by itself; state **Idle**; the next activity starts a new work period from 00:00. |
+| 9 | Work until the next break, click **Dismiss**. | The window closes immediately; work time restarts from 00:00. |
+| 10 | Work until the next break, click **Postpone 1 min**, keep working. | The window closes; state **Postponed**; *Active work time* keeps counting (e.g. 05:30); after 1 min the window appears again. Postpone can be used again. |
+| 11 | Postpone again and do not touch mouse/keyboard for 1 min (idle reset). | The postponed break is cancelled: state **Idle**, the window does not come back. |
+| 12 | With Auto Click active, rest the pointer on **Dismiss**. | Auto Click clicks it (A-06). A Key Control click on **Postpone** also works. |
+| 13 | Open a full-screen app (e.g. a video in full-screen, or a full-screen Safari window) and wait for a break. | The break window appears **above** the full-screen app. |
+| 14 | Tray → **Start break now**. | The break window appears immediately; the entry is disabled while the break is shown. |
+| 15 | Tray → **Break Timer on/off** (off) during a break. | The window closes; state **Disabled**; badge **INACTIVE**; no more breaks. Switching on again starts at **Idle**. The tab switch follows the tray entry and vice versa. |
+
+### C. Idle, sleep and lock
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 16 | Work 2 min, then leave mouse and keyboard alone for 1 min. | State **Idle**; work time reset (the pause counted as a break). |
+| 17 | Work 2 min, put the Mac to sleep for more than 1 min, wake and unlock. | State **Idle**; work time reset. Log: `System is going to sleep` … `Break Timer: Working -> Idle`. |
+| 18 | Work 2 min, lock the screen (Ctrl+Cmd+Q) for more than 1 min, unlock. | Same as 17 (typing the password does not count as work). |
+| 19 | Work 4 min 50 s, lock the screen for 30 s (less than the idle reset), unlock. | The break window appears **after** unlocking, not behind the lock screen. |
+| 20 | Change *Break after working* while Working (e.g. to a value below the current work time). | The break starts at once (changes apply to the running period). |
+
+### D. Full-screen option and screens
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 21 | Switch on **No breaks during full-screen apps**, play a video full-screen when the break is due. | *Next break in* shows "waiting (full-screen app)"; the break appears when you leave full-screen. |
+| 22 | During a break, connect or disconnect an external display. | The overlay follows: every connected screen is covered. |
+| 23 | Look at the break window in light and dark mode. | Readable and consistent with the app in both. |
+| 24 | Debian (when available): the full-screen option is disabled with "Not available on this system…". Windows: steps 5–15, Alt+F4 does not close the window. | As described. |

@@ -11,4 +11,7 @@ namespace ergo {
 // (QTabBar draws the selected tab's icon in the QIcon::On state).
 QIcon makeTabIcon(const QString &svgResource, const QColor &normalColor, const QColor &selectedColor);
 
+// Renders such an SVG in 'color' at 'size' (logical pixels), sharp on HiDPI screens.
+QPixmap renderTintedSvg(const QString &svgResource, const QColor &color, const QSize &size, qreal devicePixelRatio);
+
 } // namespace ergo

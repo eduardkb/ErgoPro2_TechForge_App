@@ -12,5 +12,10 @@
         <file>icons/ui/autoclick.svg</file>
         <file>icons/ui/keyboard.svg</file>
         <file>icons/ui/statistics.svg</file>
+        <file>icons/stretch/wrist-flexor.svg</file>
+        <file>icons/stretch/wrist-extensor.svg</file>
+        <file>icons/stretch/fist-fan.svg</file>
+        <file>icons/stretch/shoulder-rolls.svg</file>
+        <file>icons/stretch/look-away.svg</file>
     </qresource>
 </RCC>

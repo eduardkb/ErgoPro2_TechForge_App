@@ -5,6 +5,35 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.5.0] - 2026-11-10
+
+Stage 5 – Function 3: Break Timer.
+
+### Added
+- **Break reminders based on real activity:** the work time (INTERACTION_TIMER) starts with the first mouse or
+  keyboard use and counts wall-clock time; short pauses keep counting, a pause of `BREAKTIMER_IDLE_RESET`
+  (also sleep or a locked screen, including the time asleep) resets it. After `BREAKTIMER_MAX_WORK_TIME` the
+  break window appears. Only real input counts – clicks from Auto Click and Key Control do not.
+- **Break window** on every screen (one per screen, also screens connected during the break): semi-transparent
+  overlay, always on top (macOS: screen-saver level on all Spaces and over full-screen apps; Windows:
+  topmost; Linux: stay-on-top + full-screen state). The main screen shows "Time to rest your wrists", an mm:ss
+  countdown, five illustrated stretching tips and **Dismiss** / **Postpone N min**. It cannot be closed with
+  Esc, Alt+F4 or Cmd+W; it closes when the countdown reaches zero. Auto Click and hotkeys work on it.
+- Rules: auto-close after `BREAKTIMER_BREAK_TIME` and reset; Dismiss resets immediately; Postpone brings the
+  window back after `BREAKTIMER_POSTPONE_TIME` while the work time keeps counting (unlimited); resting for the
+  idle-reset time during a postpone cancels it; activity during a break changes nothing; no break starts
+  while the screen is locked; parameter changes apply to the running work period; disabling ends a break.
+- Optional **"No breaks during full-screen apps"** (off by default): macOS and Windows detect full-screen
+  applications; on Linux the option is disabled with an explanation.
+- **Break Timer tab:** enable switch with status badge, the four durations (minutes), the full-screen option
+  and a live status panel (active work time, next break in, state) updated every second. No "break now" or
+  "reset" buttons (B-04).
+- Tray menu: **Break Timer on/off** and **Start break now**.
+- Signal `breakWindowShown()` for stage 6 (Drag Lock release).
+- Settings `breaktimer.enabled`, `breaktimer.BREAKTIMER_IDLE_RESET`, `…_MAX_WORK_TIME`, `…_BREAK_TIME`,
+  `…_POSTPONE_TIME`, `breaktimer.suppressWhenFullscreen`.
+- Break Timer engine (pure state machine) with 21 unit tests driven by the fake clock.
+
 ## [1.4.2] - 2026-11-10
 
 Owner-requested change (specification B.4 updated).

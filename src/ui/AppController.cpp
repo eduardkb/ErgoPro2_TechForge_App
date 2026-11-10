@@ -9,6 +9,7 @@
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/InputService.h"
 #include "ui/autoclick/AutoClickController.h"
+#include "ui/breaktimer/BreakTimerController.h"
 #include "ui/keycontrol/KeyControlController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
@@ -40,6 +41,8 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 
 AppController::~AppController()
 {
+    if (m_breaktimer)
+        m_breaktimer->shutdown();
     if (m_keycontrol)
         m_keycontrol->shutdown();
     if (m_autoclick)
@@ -69,8 +72,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
     m_autoclick = std::make_unique<AutoClickController>(m_settings, *m_availability, *m_input, m_platform);
     m_keycontrol =
         std::make_unique<KeyControlController>(m_settings, *m_availability, *m_input, *m_autoclick, m_platform);
-    m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability,
-                                                        *m_install, *m_input, *m_autoclick, *m_keycontrol});
+    m_breaktimer = std::make_unique<BreakTimerController>(m_settings, *m_availability, *m_input, m_platform);
+    m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install,
+                                                        *m_input, *m_autoclick, *m_keycontrol, *m_breaktimer});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -114,6 +118,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
     setupAutoClickTrayEntry();
     // Function 2 – Key Control (stage 4).
     m_keycontrol->start();
+    // Function 3 – Break Timer (stage 5).
+    m_breaktimer->start();
+    setupBreakTimerTrayEntries();
     reportSettingsLoad(loadResult);
 }
 
@@ -167,6 +174,8 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
+    if (m_breaktimer)
+        m_breaktimer->shutdown();
     if (m_keycontrol)
         m_keycontrol->shutdown(); // release all hotkeys
     if (m_autoclick)
@@ -202,6 +211,32 @@ void AppController::setupAutoClickTrayEntry()
     };
     connect(m_autoclick.get(), &AutoClickController::activeChanged, this, updateIcon);
     updateIcon(m_autoclick->isActive());
+}
+
+void AppController::setupBreakTimerTrayEntries()
+{
+    if (!m_tray)
+        return;
+    auto *toggle = new QAction(tr("Break Timer on/off"), m_tray.get());
+    toggle->setCheckable(true);
+    toggle->setChecked(m_breaktimer->isEnabled());
+    connect(toggle, &QAction::toggled, this, [this](bool on) { m_breaktimer->setEnabled(on); });
+    connect(m_breaktimer.get(), &BreakTimerController::enabledChanged, toggle, [toggle](bool on) {
+        const QSignalBlocker block(toggle);
+        toggle->setChecked(on);
+    });
+    m_tray->addFeatureAction(toggle);
+
+    auto *breakNow = new QAction(tr("Start break now"), m_tray.get());
+    connect(breakNow, &QAction::triggered, m_breaktimer.get(), &BreakTimerController::startBreakNow);
+    // Only while the timer runs and no break is shown.
+    const auto updateBreakNow = [this, breakNow] {
+        const auto s = m_breaktimer->state();
+        breakNow->setEnabled(s != BreakTimerEngine::State::Disabled && s != BreakTimerEngine::State::BreakShown);
+    };
+    connect(m_breaktimer.get(), &BreakTimerController::ticked, breakNow, updateBreakNow);
+    updateBreakNow();
+    m_tray->addFeatureAction(breakNow);
 }
 
 void AppController::showPermissionsWindowIfNeeded()

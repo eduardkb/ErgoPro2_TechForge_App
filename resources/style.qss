@@ -146,6 +146,43 @@ QLabel#warningText {
     font-weight: 600;
 }
 
+/* ---------- Break window ---------- */
+
+QFrame#breakCard {
+    background: @surface@;
+    border: 1px solid @border@;
+    border-radius: 20px;
+}
+
+QFrame#breakTip {
+    background: @surfaceAlt@;
+    border-radius: 12px;
+}
+
+QLabel#breakTitle {
+    font-size: 26px;
+    font-weight: 700;
+    color: @text@;
+}
+
+QLabel#breakCountdown {
+    font-size: 56px;
+    font-weight: 700;
+    color: @accent@;
+}
+
+QLabel#breakNote {
+    font-size: 24px;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+QLabel#breakCountdownSmall {
+    font-size: 40px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
 /* ---------- Status badge ---------- */
 
 QLabel[badgeState] {
