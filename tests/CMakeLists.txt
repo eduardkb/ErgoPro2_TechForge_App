@@ -24,3 +24,14 @@ ergopro2_add_test(tst_breaktimer)
 ergopro2_add_test(tst_draglock)
 ergopro2_add_test(tst_statistics)
 ergopro2_add_test(tst_statisticsstore)
+
+# macOS platform test (Objective-C++, links the platform library): sleep/lock
+# notifications after MacPowerEvents::start() returned (1.7.3).
+if(APPLE)
+    qt_add_executable(tst_macpowerevents tst_macpowerevents.mm)
+    target_link_libraries(tst_macpowerevents PRIVATE ergopro2_platform ergopro2_core Qt6::Test ergopro2_warnings
+        "-framework AppKit")
+    target_compile_options(tst_macpowerevents PRIVATE -fobjc-arc)
+    add_test(NAME tst_macpowerevents COMMAND tst_macpowerevents)
+    set_tests_properties(tst_macpowerevents PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()

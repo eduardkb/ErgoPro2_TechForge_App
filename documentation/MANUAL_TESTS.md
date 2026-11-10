@@ -623,3 +623,18 @@ download the three files under **Artifacts**.
 | 4 | Windows 11: download `ErgoPro2-1.7.2-windows-x64.zip`, right-click › *Extract All*, open the `ErgoPro2` folder. | About 10–15 files: `ErgoPro2.exe`, `Qt6*.dll`, `msvcp140*.dll` / `vcruntime140*.dll`, folders `platforms`, `imageformats`, `iconengines` – no `translations`, no `opengl32sw.dll`, no `D3Dcompiler_47.dll`. |
 | 5 | Double-click `ErgoPro2.exe` (SmartScreen: *More info › Run anyway*), also on a PC without Visual Studio or the VC++ Redistributable. | The app starts, icons are visible (tabs, tray). |
 | 6 | Debian 13: `sudo apt install ./ergopro2_1.7.2_amd64.deb`, start ErgoPro2 from the menu. | Installs with its dependencies; the app starts with icons. `sudo apt remove ergopro2` removes it. |
+
+---
+
+## Bug fix – v1.7.3
+
+macOS: install the 1.7.3 build (BUILD.md 5.0) and start it from `~/Applications`. Set the log level to
+"… + Debug" (General tab) to see the notifications.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass, including `tst_macpowerevents`. |
+| 2 | Lock the screen with **Ctrl+Cmd+Q**, wait 1 min, unlock. Repeat 3 times. | ErgoPro2 keeps running (tray icon still there). Log: `Screen locked` / `Screen unlocked`, no `CRITICAL`. |
+| 3 | Leave the Mac alone until it locks / the display sleeps by itself (as in the bug report), then unlock. | ErgoPro2 still runs; Break Timer shows **Idle** after the pause; Statistics continue. |
+| 4 | Apple menu › **Sleep**, wake after 1 min. | Log: `System is going to sleep` … `System resumed from sleep`, `Reinstalling the input hook: resume from sleep`; app keeps running, hotkeys work. |
+| 5 | Leave ErgoPro2 running overnight with the lid closed. | Next morning it is still running; no `CRITICAL` in the log. |

@@ -11,6 +11,7 @@
 #include <QCoreApplication>
 
 #include <future>
+#include <memory>
 
 namespace ergo {
 
@@ -547,11 +548,20 @@ PlatformResult MacPowerEvents::start(std::function<void(PowerEvent)> callback)
     NSDistributedNotificationCenter *distributed = NSDistributedNotificationCenter.defaultCenter;
     NSOperationQueue *main = NSOperationQueue.mainQueue;
 
+    // The blocks run long after start() returned, so each one must own the
+    // callback. 1.7.3: they referred to the 'callback' parameter itself (through
+    // the [&] lambda) - a dangling reference after return; a screen lock then
+    // crashed the app with std::bad_function_call / SIGSEGV.
+    const auto shared = std::make_shared<std::function<void(PowerEvent)>>(std::move(callback));
     auto add = [&](NSNotificationCenter *center, NSString *name, PowerEvent event) {
+        std::shared_ptr<std::function<void(PowerEvent)>> owned = shared; // copied into the block
         id token = [center addObserverForName:name
                                        object:nil
                                         queue:main
-                                   usingBlock:^(NSNotification *) { callback(event); }];
+                                   usingBlock:^(NSNotification *) {
+                                       qCDebug(lcPlatform) << "Power/session notification:" << int(event);
+                                       (*owned)(event);
+                                   }];
         m_observers.append((__bridge_retained void *)token);
     };
     add(workspace, NSWorkspaceWillSleepNotification, PowerEvent::Sleep);

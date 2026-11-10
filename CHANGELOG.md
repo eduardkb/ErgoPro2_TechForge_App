@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.3] - 2026-11-10
+
+### Fixed
+- **macOS: ErgoPro2 crashed when the screen locked** (or the Mac went to sleep / woke up) – the log showed
+  `CRITICAL … Uncaught exception in std::terminate: std::bad_function_call`. Cause: the sleep/lock
+  notification handlers kept a reference to a temporary that no longer existed after start-up, so the first
+  lock or sleep notification called an empty function (undefined behavior: it could also work by chance,
+  which is why earlier lock tests passed). Each handler now owns its copy of the callback. Windows and Linux
+  were not affected (they store the callback).
+- New macOS regression test `tst_macpowerevents` (posts lock/unlock/sleep/wake notifications inside the test
+  process after start-up; it crashed before the fix).
+
 ## [1.7.2] - 2026-11-10
 
 Build and packaging fixes (CI artifacts).
