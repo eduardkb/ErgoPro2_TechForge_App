@@ -19,6 +19,10 @@ void AutoClickWorker::initialize()
     m_timer->setSingleShot(true);
     m_timer->setTimerType(Qt::PreciseTimer);
     connect(m_timer, &QTimer::timeout, this, &AutoClickWorker::onTimeout);
+    m_feedbackTimer = new QTimer(this);
+    m_feedbackTimer->setSingleShot(true);
+    m_feedbackTimer->setTimerType(Qt::PreciseTimer);
+    connect(m_feedbackTimer, &QTimer::timeout, this, &AutoClickWorker::publish);
 }
 
 void AutoClickWorker::setEnabled(bool enabled)
@@ -46,6 +50,10 @@ void AutoClickWorker::setFeedbackEnabled(bool enabled)
 {
     m_feedback = enabled;
     m_lastDeadline = -2;
+    m_lastShowAt = -2;
+    m_lastVisible = false;
+    if (!enabled && m_feedbackTimer)
+        m_feedbackTimer->stop();
     schedule();
 }
 
@@ -119,13 +127,24 @@ void AutoClickWorker::publish()
         m_lastReason = reason;
         emit stateChanged(state, reason);
     }
-    if (!m_feedback)
+    if (!m_feedback || !m_feedbackTimer)
         return;
+    // The X waits until the pointer has been completely still for half the
+    // trigger time; any movement hides it again (the click is not affected).
+    const qint64 now = m_clock.monotonicMs();
+    const qint64 showAt = m_engine.feedbackShowAtMs();
     const qint64 deadline = m_engine.nextDeadlineMs();
-    if (deadline == m_lastDeadline)
+    const bool visible = showAt >= 0 && now >= showAt;
+    if (showAt >= 0 && !visible)
+        m_feedbackTimer->start(int(showAt - now));
+    else
+        m_feedbackTimer->stop();
+    if (visible == m_lastVisible && (!visible || (deadline == m_lastDeadline && showAt == m_lastShowAt)))
         return;
+    m_lastVisible = visible;
     m_lastDeadline = deadline;
-    emit countdownChanged(deadline >= 0, m_engine.position(), m_positionKnown, deadline, m_engine.config().triggerMs);
+    m_lastShowAt = showAt;
+    emit countdownChanged(visible, m_engine.position(), m_positionKnown, showAt, deadline);
 }
 
 } // namespace ergo

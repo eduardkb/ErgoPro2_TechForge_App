@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.4.2] - 2026-11-10
+
+Owner-requested change (specification B.4 updated).
+
+### Changed
+- **Auto Click countdown cross:** the orange X no longer flashes while the mouse is moved slowly. It now
+  appears only after the pointer has made no movement at all (not even tiny tremor movements) for half the
+  click time, and then grows until the click. Any movement hides it again. The click itself is unchanged.
+  Cause of the flashing: movements smaller than the tremor tolerance do not restart the click countdown, so
+  a slowly creeping pointer kept starting short countdowns that each showed the X.
+
 ## [1.4.1] - 2026-11-10
 
 Owner-requested changes (specification updated in `implementation_stages.md` Part B).

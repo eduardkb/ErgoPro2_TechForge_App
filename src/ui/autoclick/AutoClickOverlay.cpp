@@ -29,16 +29,16 @@ AutoClickOverlay::AutoClickOverlay()
     });
 }
 
-void AutoClickOverlay::setCountdown(bool active, const QPointF &position, bool positionKnown, qint64 deadlineMs,
-                                    int totalMs)
+void AutoClickOverlay::setCountdown(bool active, const QPointF &position, bool positionKnown, qint64 startMs,
+                                    qint64 deadlineMs)
 {
     if (!active || !positionKnown) {
         m_animation.stop();
         hide();
         return;
     }
-    m_deadlineMs = deadlineMs;
-    m_totalMs = std::max(1, totalMs);
+    m_startMs = startMs;
+    m_deadlineMs = std::max(deadlineMs, startMs + 1);
     // Centered on the pointer tip (where the click will happen).
     move(int(position.x()) - kSize / 2, int(position.y()) - kSize / 2);
     if (!isVisible())
@@ -49,8 +49,8 @@ void AutoClickOverlay::setCountdown(bool active, const QPointF &position, bool p
 
 double AutoClickOverlay::progress() const
 {
-    const qint64 remaining = m_deadlineMs - monotonicNowMs();
-    return std::clamp(1.0 - double(remaining) / m_totalMs, 0.0, 1.0);
+    // Grows from when it appears (startMs) until the click (deadlineMs).
+    return std::clamp(double(monotonicNowMs() - m_startMs) / double(m_deadlineMs - m_startMs), 0.0, 1.0);
 }
 
 void AutoClickOverlay::paintEvent(QPaintEvent *)

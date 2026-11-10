@@ -291,6 +291,66 @@ private slots:
         QVERIFY(!f.engine.isArmed());
     }
 
+    // ---------------------------------------------------------------- feedback timing (1.4.2)
+    void feedbackWaitsForHalfTheTriggerTimeOfStillness()
+    {
+        Fixture f; // trigger 200 ms
+        QCOMPARE(f.engine.feedbackShowAtMs(), qint64(-1)); // nothing pending
+        f.engine.onInputEvent(move(140, 100));            // armed at t0
+        const qint64 t0 = f.clock.monotonicMs();
+        QCOMPARE(f.engine.feedbackShowAtMs(), t0 + 100);
+        f.clock.advanceMs(90);
+        QVERIFY(!f.engine.isFeedbackVisible());
+        f.clock.advanceMs(10);
+        QVERIFY(f.engine.isFeedbackVisible()); // after 100 ms of stillness
+        QCOMPARE(f.engine.nextDeadlineMs(), t0 + 200); // the click time is unchanged
+    }
+
+    void anyMovementHidesTheFeedbackButKeepsTheClick()
+    {
+        Fixture f;
+        f.engine.onInputEvent(move(140, 100)); // armed, deadline t0 + 200
+        const qint64 deadline = f.engine.nextDeadlineMs();
+        f.clock.advanceMs(120);
+        QVERIFY(f.engine.isFeedbackVisible());
+        f.engine.onInputEvent(move(141, 100)); // 1 px tremor: below the tolerance
+        QVERIFY(!f.engine.isFeedbackVisible()); // the X disappears ...
+        QCOMPARE(f.engine.nextDeadlineMs(), deadline); // ... but the click stays on time
+        // Only 80 ms of stillness remain before the click: less than half the
+        // trigger time, so the X does not show again for this click.
+        QCOMPARE(f.engine.feedbackShowAtMs(), qint64(-1));
+        QCOMPARE(f.runFor(100), 1);
+    }
+
+    void slowMovementNeverShowsTheFeedback()
+    {
+        Fixture f;
+        f.engine.setConfig({150, 15, 3, 500});
+        f.engine.onInputEvent(move(140, 100)); // armed
+        bool everVisible = false;
+        int clicks = 0;
+        for (int i = 1; i <= 50; ++i) { // creeping 1 px every 20 ms
+            f.engine.onInputEvent(move(140 + i, 100));
+            for (int t = 0; t < 2; ++t) {
+                f.clock.advanceMs(10);
+                everVisible = everVisible || f.engine.isFeedbackVisible();
+                clicks += f.engine.poll() ? 1 : 0;
+            }
+        }
+        QVERIFY(!everVisible);
+        QCOMPARE(clicks, 0);
+    }
+
+    void feedbackHiddenWhileSuppressed()
+    {
+        Fixture f;
+        f.engine.onInputEvent(move(140, 100));
+        f.engine.onInputEvent(button(InputEventType::MouseDown, 140, 100));
+        f.clock.advanceMs(500);
+        QCOMPARE(f.engine.feedbackShowAtMs(), qint64(-1));
+        QVERIFY(!f.engine.isFeedbackVisible());
+    }
+
     void countdownProgressAndRemainingTime()
     {
         Fixture f;

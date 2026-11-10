@@ -381,3 +381,18 @@ installed copy.
 | 8 | Look at the tab bar in light and dark mode; click through all tabs. | Every tab (General, Break Timer, Auto Click, Key Control, Statistics) has an icon at the size of the tab text. Unselected icons are teal; the selected tab's icon is **black**. |
 | 9 | **Auto Click:** switch on **Show countdown cross**, activate Auto Click, move > distance and stop. | An orange X appears at the pointer tip, grows outward and is about cursor-sized when the click happens, then disappears. It does not block the click (the item under the pointer is clicked) and never takes focus. |
 | 10 | Move again before the click. | The X follows the pointer and starts small again. |
+
+---
+
+## Bug fix – v1.4.2
+
+Build, Reinstall, re-grant the permissions if needed (BUILD.md 1.6.6), start the installed copy. Auto Click
+tab: **Activate** and switch on **Show countdown cross**.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 12 test programs pass (`tst_autoclick`: 26 cases). |
+| 2 | Move the mouse very slowly across the screen for a few seconds. | **No orange X** appears while moving (previously it flashed constantly). |
+| 3 | Move more than the minimum distance and stop completely. | After about half the click time (e.g. 75 ms of a 150 ms click time) the X appears at the pointer tip, grows, and the click happens on time. |
+| 4 | Set *Wait before clicking* to 1000 ms; move, stop, and touch the mouse slightly after ~0.7 s. | The X appears after 0.5 s and disappears when you touch the mouse. The click still happens at 1 s (tiny movements do not delay the click). |
+| 5 | Repeat step 3 with the cross switched off. | The click happens as before; no X. |

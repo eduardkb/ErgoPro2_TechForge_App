@@ -34,10 +34,12 @@ public slots:
 signals:
     // State for the tab (AutoClickEngine::State / SuppressReason as int).
     void stateChanged(int state, int suppressReason);
-    // Visual feedback: a countdown towards deadlineMs (monotonicNowMs epoch) is
-    // running at 'position', or has stopped (active = false).
-    void countdownChanged(bool active, const QPointF &position, bool positionKnown, qint64 deadlineMs,
-                          int totalMs);
+    // Visual feedback: the countdown X is shown at 'position' and grows from
+    // startMs to deadlineMs (monotonicNowMs epoch), or is hidden (active = false).
+    // It is shown only after the pointer has been completely still for half
+    // the trigger time (AutoClickEngine::feedbackShowAtMs, 1.4.2).
+    void countdownChanged(bool active, const QPointF &position, bool positionKnown, qint64 startMs,
+                          qint64 deadlineMs);
     void clicked(const QPointF &position);
     void clickFailed(const QString &message);
 
@@ -50,11 +52,14 @@ private:
     SystemClock m_clock;
     AutoClickEngine m_engine;
     QTimer *m_timer = nullptr;
+    QTimer *m_feedbackTimer = nullptr; // fires when the X may become visible
     bool m_feedback = false;
     bool m_positionKnown = true;
     int m_lastState = -1;
     int m_lastReason = -1;
     qint64 m_lastDeadline = -2;
+    qint64 m_lastShowAt = -2;
+    bool m_lastVisible = false;
     qint64 m_ownClickSentMs = -1; // waiting for our click to come back as synthetic
 };
 

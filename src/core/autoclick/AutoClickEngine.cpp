@@ -44,6 +44,7 @@ void AutoClickEngine::resetMotion(const QPointF &position)
     m_position = position;
     m_lastSignificant = position;
     m_lastMoveMs = now();
+    m_lastAnyMoveMs = m_lastMoveMs;
 }
 
 void AutoClickEngine::resetReferencePoint(const QPointF &position)
@@ -74,6 +75,8 @@ void AutoClickEngine::onInputEvent(const InputEvent &event)
 
 void AutoClickEngine::onMove(const QPointF &position)
 {
+    if (position != m_position)
+        m_lastAnyMoveMs = now(); // any movement hides the visual feedback
     m_position = position;
     if (!m_hasReference) {
         resetMotion(position);
@@ -168,6 +171,21 @@ double AutoClickEngine::countdownProgress() const
     if (state() != State::Countdown || m_config.triggerMs <= 0)
         return 0.0;
     return std::clamp(double(now() - m_lastMoveMs) / m_config.triggerMs, 0.0, 1.0);
+}
+
+qint64 AutoClickEngine::feedbackShowAtMs() const
+{
+    const qint64 deadline = nextDeadlineMs();
+    if (deadline < 0)
+        return -1;
+    const qint64 showAt = m_lastAnyMoveMs + m_config.triggerMs / 2;
+    return showAt < deadline ? showAt : -1;
+}
+
+bool AutoClickEngine::isFeedbackVisible() const
+{
+    const qint64 showAt = feedbackShowAtMs();
+    return showAt >= 0 && now() >= showAt;
 }
 
 int AutoClickEngine::remainingMs() const

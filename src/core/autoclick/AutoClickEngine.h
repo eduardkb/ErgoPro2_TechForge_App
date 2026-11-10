@@ -76,8 +76,17 @@ public:
 
     State state() const;
     SuppressReason suppressReason() const;
-    // 0..1 progress of the countdown (Countdown state only), for visual feedback.
+    // 0..1 progress of the countdown (Countdown state only).
     double countdownProgress() const;
+
+    // Visual feedback timing (1.4.2): the countdown X is shown only after the
+    // pointer made no movement at all - not even tremor below the tolerance -
+    // for half the trigger time, and then grows until the click. Returns the
+    // monotonic time from which it is shown, or -1 if it must not be shown for
+    // the pending click (nothing pending, suppressed, or not enough still time
+    // left). The click timing itself is not affected.
+    qint64 feedbackShowAtMs() const;
+    bool isFeedbackVisible() const;
     int remainingMs() const;
 
     QPointF position() const { return m_position; }
@@ -102,6 +111,7 @@ private:
     QPointF m_position;
     QPointF m_lastSignificant; // last position that moved more than jitterPx
     qint64 m_lastMoveMs = 0;
+    qint64 m_lastAnyMoveMs = 0; // last movement of any size (for the visual feedback)
     qint64 m_suspendUntilMs = 0;
     QSet<int> m_heldButtons;
 };

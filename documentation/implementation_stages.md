@@ -210,7 +210,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   7. While **Drag Lock** is active: no auto-click. After drag-lock release, the reference point = release position (B.5.3).
 - Works **everywhere**, including the ErgoPro2 window and the break window (A-06, REVIEW 1.6). No app exclusion list.
 - Synthetic clicks are **tagged** (B.6) so they are never treated as manual clicks or as user activity.
-- Optional visual feedback (S-12, A-08, off by default): an orange X centered on the pointer tip that grows outward during the countdown, up to about the size of the mouse cursor when the click happens (changed in 1.4.1; was a ring). Click-through, never takes focus.
+- Optional visual feedback (S-12, A-08, off by default): an orange X centered on the pointer tip that grows outward until the click, up to about the size of the mouse cursor (changed in 1.4.1; was a ring). It appears only after the pointer has made no movement at all – not even tremor below the tolerance – for half the trigger time, and any movement hides it again (1.4.2); the click timing is not affected. Click-through, never takes focus.
 - Tray icon shows the active state if easily possible.
 - No sound, ever.
 
