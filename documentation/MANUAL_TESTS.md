@@ -535,3 +535,59 @@ Build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permiss
 | 9 | Use mouse/keyboard for 1 min, then do nothing for 1 min, watch *Active work time*. | It counts while you work, keeps counting for 20 s after the last input, then stands still; *Next break in* stands still too. It continues with the next mouse move. |
 | 10 | Short values (*Break after working* 5 min): work with pauses of ~1 min. | The break appears only after 5 min of **active** time, not 5 min of clock time. A pause of *Reset after a pause of* still resets the timer. |
 | 11 | `settings.json`: set `"BREAKTIMER_ACTIVITY_PAUSE": 5` in `breaktimer` (app closed), restart. | The work time stops 5 s after the last input. Log: `work time stops after 5 s without input`. |
+
+---
+
+## Stage 7 – v1.7.0
+
+Goal: Function 4 – Statistics.
+
+**Preparation (macOS):** build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permissions
+granted. Statistics folder: `~/Library/Application Support/techforge/ErgoPro2/statistics/` (General tab ›
+*Open statistics folder*).
+
+> **Tip – short values:** Break Timer › *Break after working* **5** min and *Break length* **1** min. Then
+> 5 minutes of continuous use reach 100 %, Dismiss lets it grow beyond 100 %, and 1 minute without input resets
+> it. Set your normal values back afterwards.
+
+### A. Tab and live data
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 16 test programs pass (adds `tst_statistics`, `tst_statisticsstore`). |
+| 2 | Open **Statistics** right after the first start. | No banner; "Today – <date>", "Live – updated every minute"; both charts show "No data for this day" (08:00–18:00); totals 0; *Today* and *Next day ›* disabled. |
+| 3 | Use mouse and keyboard for 3 minutes, wait for the next full minute. | A line appears in *Computer usage*, bars in *Activity*; totals count up once per minute; the x axis covers the hours with data. |
+| 4 | Point at the line and at a bar. | Tooltips: time + usage %, and the 5-minute values (clicks, key presses, distance). |
+| 5 | Short values (tip): use the computer continuously for 5 min. | The line reaches the dashed **100 %** line; a ▲ marker shows where the break window appeared. |
+| 6 | Click **Dismiss**, keep working 2 min. | ✕ marker; the line continues **above 100 %** (about 140 %). Postpone (◆) does the same. |
+| 7 | Leave mouse and keyboard alone for 1 min (break length), then use them. | The line starts again from about 0 %. A break that ends by its countdown shows ✓. |
+| 8 | Auto Click on: let it click 3 times; press a Key Control double-click hotkey once. | *Clicks done for you* +5; *Mouse clicks* counts only your own clicks. |
+| 9 | Hold a key down for 3 s in a text editor. | *Key presses* +1 (repeats are not counted). |
+| 10 | Move the mouse about 10 cm on the desk. | *Mouse distance* grows by roughly the distance the pointer moved on screen (approximate). |
+| 11 | Lock the screen for 2 min, type the password, unlock. | No activity is recorded while locked; the usage starts again from 0 % (pause ≥ break length). |
+| 12 | Switch the Break Timer **off**, use the computer. | The usage percent is still calculated. |
+
+### B. Files
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 13 | Open the folder, open today's `ergopro2-stats-YYYY-MM-DD.csv` in Numbers/Excel. | Header `time,clicks_left,…,usage_percent,events`; one row per minute with data; no key names or positions. |
+| 14 | Exit ErgoPro2 and start it again within a minute. | Today's totals and chart continue (nothing lost; a minute written twice is merged). Log: `Statistics: continuing today with N stored minute(s)`. |
+| 15 | With ErgoPro2 closed, append a broken line (e.g. `12:00,1,2`) without a line break to today's file; start ErgoPro2. | The line is removed (log WARNING "removed an incomplete last line"); the rest is shown. |
+| 16 | Add a line `garbage` in the middle of a file and view that day. | The day is shown; the log names the skipped line. |
+
+### C. History and retention
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 17 | With ErgoPro2 closed, copy today's file to two older dates (e.g. `…-2026-11-01.csv`, `…-2026-11-05.csv`); start. | *‹ Previous day* shows 5 Nov, then 1 Nov (days without a file are skipped), then it is disabled. *Next day ›* goes forward; *Today* returns. Past days say "Saved statistics (read-only)". |
+| 18 | Set **Keep statistics for** to 3 days. | Files older than 3 days (today counts) are deleted immediately; log `Statistics: deleted …`; navigation updates. |
+| 19 | Leave ErgoPro2 running over midnight (or set the Mac clock forward). | A new file starts after midnight; the usage percent is not reset by midnight; old files beyond the retention are deleted. |
+
+### D. Look and other systems
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 20 | Light and dark mode; smallest window size. | Charts, markers and texts readable in both; the page scrolls, nothing is cut off. |
+| 21 | Without Input Monitoring. | Banner "Statistics recording is unavailable"; saved days can still be viewed. |
+| 22 | Windows / Debian (when available): steps 2–19. | As described (folder: `%APPDATA%\techforge\ErgoPro2\statistics` / `~/.local/share/techforge/ErgoPro2/statistics`). |

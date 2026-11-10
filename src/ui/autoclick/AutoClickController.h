@@ -50,6 +50,8 @@ signals:
     void enabledChanged(bool enabled);
     void stateChanged(int state, int suppressReason);
     void clickFailed(const QString &message);
+    // An automatic click was made (Statistics: "clicks done for you").
+    void clickPerformed();
 
 private:
     void applyConfig();

@@ -21,6 +21,10 @@ add_library(ergopro2_core STATIC
     core/input/KeyCombo.cpp core/input/KeyCombo.h
     core/LocationClassifier.cpp core/LocationClassifier.h
     core/StartupMode.cpp core/StartupMode.h
+    core/statistics/ChartAxis.cpp core/statistics/ChartAxis.h
+    core/statistics/StatisticsCollector.cpp core/statistics/StatisticsCollector.h
+    core/statistics/StatisticsStore.cpp core/statistics/StatisticsStore.h
+    core/statistics/StatisticsTypes.cpp core/statistics/StatisticsTypes.h
     core/LogCategories.cpp core/LogCategories.h
     core/LogLevel.cpp core/LogLevel.h
     core/Logger.cpp core/Logger.h
@@ -31,6 +35,7 @@ add_library(ergopro2_core STATIC
     core/settings/SettingsRegistry.cpp core/settings/SettingsRegistry.h
     core/settings/SettingsSchema.cpp core/settings/SettingsSchema.h
     core/settings/SettingsStore.cpp core/settings/SettingsStore.h
+    core/settings/StatisticsSettings.cpp core/settings/StatisticsSettings.h
 )
 target_include_directories(ergopro2_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -123,6 +128,8 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/breaktimer/BreakWindow.cpp ui/breaktimer/BreakWindow.h
     ui/breaktimer/BreakWindowManager.cpp ui/breaktimer/BreakWindowManager.h
     ui/keycontrol/DragLockController.cpp ui/keycontrol/DragLockController.h
+    ui/statistics/StatisticsCharts.cpp ui/statistics/StatisticsCharts.h
+    ui/statistics/StatisticsController.cpp ui/statistics/StatisticsController.h
     ui/keycontrol/HotkeyDialog.cpp ui/keycontrol/HotkeyDialog.h
     ui/keycontrol/KeyControlController.cpp ui/keycontrol/KeyControlController.h
     ui/InstallController.cpp ui/InstallController.h
@@ -140,6 +147,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h
     ui/tabs/InstallCard.cpp ui/tabs/InstallCard.h
     ui/tabs/KeyControlTab.cpp ui/tabs/KeyControlTab.h
+    ui/tabs/StatisticsTab.cpp ui/tabs/StatisticsTab.h
     ui/widgets/CardWidget.cpp ui/widgets/CardWidget.h
     ui/widgets/FeatureBanner.cpp ui/widgets/FeatureBanner.h
     ui/widgets/FeaturePage.cpp ui/widgets/FeaturePage.h

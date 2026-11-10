@@ -8,8 +8,8 @@
 #include "ui/tabs/BreakTimerTab.h"
 #include "ui/tabs/GeneralTab.h"
 #include "ui/tabs/KeyControlTab.h"
+#include "ui/tabs/StatisticsTab.h"
 #include "ui/widgets/FeaturePage.h"
-#include "ui/widgets/PlaceholderPage.h"
 
 #include <QApplication>
 #include <QCloseEvent>
@@ -44,8 +44,8 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
     m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
                                    new KeyControlTab(context.keycontrol, context.input)),
                    tr("Key Control"));
-    m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/statistics.svg"), tr("Statistics"),
-                                       tr("Coming soon."), m_tabs),
+    m_tabs->addTab(new FeaturePage(Feature::Statistics, context.availability,
+                                   new StatisticsTab(context.statistics, context.settings)),
                    tr("Statistics"));
 
     setCentralWidget(m_tabs);

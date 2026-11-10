@@ -12,6 +12,7 @@
 #include "ui/breaktimer/BreakTimerController.h"
 #include "ui/keycontrol/DragLockController.h"
 #include "ui/keycontrol/KeyControlController.h"
+#include "ui/statistics/StatisticsController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
 #include "ui/PermissionsDialog.h"
@@ -42,6 +43,8 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 
 AppController::~AppController()
 {
+    if (m_statistics)
+        m_statistics->shutdown();
     if (m_breaktimer)
         m_breaktimer->shutdown();
     if (m_keycontrol)
@@ -74,8 +77,11 @@ void AppController::start(const SettingsLoadResult &loadResult)
     m_keycontrol =
         std::make_unique<KeyControlController>(m_settings, *m_availability, *m_input, *m_autoclick, m_platform);
     m_breaktimer = std::make_unique<BreakTimerController>(m_settings, *m_availability, *m_input, m_platform);
+    m_statistics = std::make_unique<StatisticsController>(m_settings, *m_availability, *m_input, *m_autoclick,
+                                                          *m_keycontrol, *m_breaktimer);
     m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install,
-                                                        *m_input, *m_autoclick, *m_keycontrol, *m_breaktimer});
+                                                        *m_input, *m_autoclick, *m_keycontrol, *m_breaktimer,
+                                                        *m_statistics});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -125,6 +131,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Drag Lock (stage 6): an active drag lock is released when the break window appears (D-06).
     connect(m_breaktimer.get(), &BreakTimerController::breakWindowShown, this,
             [this] { m_keycontrol->dragLock().release(DragLockController::Reason::BreakWindow); });
+    // Function 4 – Statistics (stage 7).
+    m_statistics->start();
     reportSettingsLoad(loadResult);
 }
 
@@ -178,6 +186,8 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
+    if (m_statistics)
+        m_statistics->shutdown(); // writes the current minute
     if (m_breaktimer)
         m_breaktimer->shutdown();
     if (m_keycontrol)

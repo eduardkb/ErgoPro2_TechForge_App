@@ -12,6 +12,7 @@ class InputService;
 class InstallController;
 class Logger;
 class SettingsStore;
+class StatisticsController;
 struct Platform;
 
 // Services shared by the windows and tabs (owned by AppController / main).
@@ -25,6 +26,7 @@ struct AppContext {
     AutoClickController &autoclick;
     KeyControlController &keycontrol;
     BreakTimerController &breaktimer;
+    StatisticsController &statistics;
 };
 
 } // namespace ergo

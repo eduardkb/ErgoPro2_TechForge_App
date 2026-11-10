@@ -61,6 +61,9 @@ public:
 signals:
     void changed();
     void actionFailed(const QString &message);
+    // Clicks made by a hotkey (double click = 2, drag-lock press = 1) for the
+    // Statistics ("clicks done for you").
+    void clicksDoneForYou(int count);
 
 private:
     class Registrar;

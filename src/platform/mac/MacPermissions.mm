@@ -117,13 +117,15 @@ QList<PermissionState> MacPermissions::check() const
     inputMonitoring.displayName = tr("Input Monitoring");
     inputMonitoring.granted = inputMonitoringGranted();
     inputMonitoring.explanation = tr("Lets ErgoPro2 notice mouse movement and key presses in all applications "
-                                     "(Auto Click, Key Control hotkeys and the Break Timer's activity tracking). "
-                                     "ErgoPro2 never records or stores what you type.");
+                                     "(Auto Click, Key Control hotkeys, the Break Timer's activity tracking and the "
+                                     "Statistics). ErgoPro2 only counts key presses and clicks; it never records "
+                                     "or stores what you type.");
     inputMonitoring.howToGrant =
         tr("Turn on ErgoPro2 in System Settings › Privacy & Security › Input Monitoring.");
     inputMonitoring.fixKind = FixKind::OpenSettings;
     inputMonitoring.fixLabel = tr("Open System Settings");
-    inputMonitoring.requiredFor = {Feature::AutoClick, Feature::KeyControl, Feature::BreakTimerActivity};
+    inputMonitoring.requiredFor = {Feature::AutoClick, Feature::KeyControl, Feature::BreakTimerActivity,
+                                   Feature::Statistics};
 
     return {accessibility, inputMonitoring};
 }

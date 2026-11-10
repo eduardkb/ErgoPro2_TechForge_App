@@ -5,6 +5,7 @@
 #include "core/settings/GeneralSettings.h"
 #include "core/settings/KeyControlSettings.h"
 #include "core/settings/SettingsSchema.h"
+#include "core/settings/StatisticsSettings.h"
 
 namespace ergo {
 
@@ -13,9 +14,8 @@ void registerAllSettings(SettingsSchema &schema)
     GeneralSettings::registerSettings(schema);
     AutoClickSettings::registerSettings(schema);        // stage 3
     KeyControlSettings::registerSettings(schema);       // stage 4
-    BreakTimerSettings::registerSettings(schema);       // stage 5
-    // Later stages register their sections here:
-    //   DragLockSettings::registerSettings(schema);    // stage 6
+    BreakTimerSettings::registerSettings(schema);       // stage 5 (draglock: KeyControlSettings, stage 6)
+    StatisticsSettings::registerSettings(schema);       // stage 7
 }
 
 } // namespace ergo

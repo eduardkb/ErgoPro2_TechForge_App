@@ -7,7 +7,7 @@
 namespace ergo {
 
 // Features whose availability depends on OS permissions (B.1.4).
-enum class Feature { AutoClick, KeyControl, BreakTimerActivity };
+enum class Feature { AutoClick, KeyControl, BreakTimerActivity, Statistics };
 
 QString featureDisplayName(Feature feature);
 

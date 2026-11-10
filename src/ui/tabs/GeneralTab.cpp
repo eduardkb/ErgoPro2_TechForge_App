@@ -6,6 +6,7 @@
 #include "core/settings/GeneralSettings.h"
 #include "core/settings/SettingsStore.h"
 #include "ui/AppContext.h"
+#include "ui/statistics/StatisticsController.h"
 #include "ui/TextUtils.h"
 #include "ui/tabs/DiagnosticsCard.h"
 #include "ui/tabs/InputDiagnosticsCard.h"
@@ -179,18 +180,26 @@ QWidget *GeneralTab::buildLoggingCard(QWidget *parent)
     const QString logDir = m_context.logger.directory();
     const QString settingsDir = QFileInfo(m_context.settings.filePath()).absolutePath();
 
+    const QString statisticsDir = m_context.statistics.directory();
     auto *folder = new QLabel(tr("Log folder: %1").arg(wrappablePath(logDir)), card);
     folder->setObjectName(QStringLiteral("hint"));
     folder->setWordWrap(true);
     folder->setTextInteractionFlags(Qt::TextSelectableByMouse);
     card->contentLayout()->addWidget(folder);
+    auto *statsFolder = new QLabel(tr("Statistics folder: %1").arg(wrappablePath(statisticsDir)), card);
+    statsFolder->setObjectName(QStringLiteral("hint"));
+    statsFolder->setWordWrap(true);
+    statsFolder->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    card->contentLayout()->addWidget(statsFolder);
 
     auto *buttons = new QHBoxLayout;
     buttons->addStretch(1);
     auto *openSettings = button(tr("Open settings folder"), card);
     auto *openLogs = button(tr("Open log folder"), card);
+    auto *openStatistics = button(tr("Open statistics folder"), card);
     buttons->addWidget(openSettings);
     buttons->addWidget(openLogs);
+    buttons->addWidget(openStatistics);
     card->contentLayout()->addLayout(buttons);
 
     connect(m_logLevel, &QComboBox::currentIndexChanged, this, [this](int index) {
@@ -204,6 +213,7 @@ QWidget *GeneralTab::buildLoggingCard(QWidget *parent)
     });
     connect(openLogs, &QPushButton::clicked, this, [this, logDir] { openFolder(logDir); });
     connect(openSettings, &QPushButton::clicked, this, [this, settingsDir] { openFolder(settingsDir); });
+    connect(openStatistics, &QPushButton::clicked, this, [this, statisticsDir] { openFolder(statisticsDir); });
     return card;
 }
 

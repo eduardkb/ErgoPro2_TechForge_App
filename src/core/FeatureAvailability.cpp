@@ -13,13 +13,15 @@ QString featureDisplayName(Feature feature)
         return QCoreApplication::translate("ergo::FeatureAvailability", "Key Control");
     case Feature::BreakTimerActivity:
         return QCoreApplication::translate("ergo::FeatureAvailability", "Break Timer activity monitoring");
+    case Feature::Statistics:
+        return QCoreApplication::translate("ergo::FeatureAvailability", "Statistics recording");
     }
     return {};
 }
 
 QList<Feature> allFeatures()
 {
-    return {Feature::AutoClick, Feature::KeyControl, Feature::BreakTimerActivity};
+    return {Feature::AutoClick, Feature::KeyControl, Feature::BreakTimerActivity, Feature::Statistics};
 }
 
 FeatureStatus evaluateFeature(Feature feature, const QList<PermissionState> &permissions)

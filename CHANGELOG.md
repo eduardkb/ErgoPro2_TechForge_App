@@ -5,6 +5,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.0] - 2026-11-10
+
+Stage 7 – Function 4: Statistics.
+
+### Added
+- **Statistics tab** (replaces "Coming soon"):
+  - **Computer usage** chart: one point per minute.
+    - 100 % = mouse/keyboard use for the whole *Break after working* time. Only seconds with real input count.
+    - The value keeps growing beyond 100 % when a break is dismissed or postponed, and goes back to 0 % only
+      after a pause of *Break length* without input (sleep, a locked screen and ErgoPro2 not running count as a
+      pause).
+    - It also works with the Break Timer switched off.
+    - Dashed 100 % line, markers for break shown / dismissed / postponed / completed, tooltip on hover; gaps are
+      not connected.
+  - **Activity** chart: mouse clicks, key presses and mouse distance in 5-minute bars on the same time axis,
+    each with its own scale, with a tooltip.
+  - **Day totals:** clicks (left / right / other), *clicks done for you* (Auto Click, Key Control and Drag Lock
+    clicks), key presses, wheel, approximate mouse distance (from the screen's DPI), mouse / keyboard / total
+    active time (h:mm:ss), highest usage.
+  - **‹ Previous day / Today / Next day ›:** jumps only between days that have a file. Today updates live once
+    per minute; past days are read-only.
+  - **Options:** *Open statistics folder* and **Keep statistics for** 1–360 days (default 90).
+- **CSV files:** one file per day, `ergopro2-stats-YYYY-MM-DD.csv`, in the `statistics` folder next to the logs
+  (also shown on the General tab with an *Open statistics folder* button).
+  - One row per minute with data. Each finished minute is appended and the current minute is written on exit.
+  - Today's file is continued after a restart, and the usage percent continues if the restart was within the
+    break length.
+  - A partial last line after a crash is repaired; unreadable lines are skipped and logged.
+  - Old files are deleted at startup, at midnight and immediately when the retention is lowered.
+- **Privacy:** only counts and durations are stored – never which keys were pressed, pointer positions or
+  application names.
+- New signals for the statistics: Auto Click and Key Control clicks, and Break Timer events (shown, dismissed,
+  postponed, completed).
+- New availability entry "Statistics recording" (macOS: needs Input Monitoring) with the usual banner on the
+  tab.
+- Setting `statistics.retentionDays`.
+- 31 unit tests: `tst_statistics` (collector, usage percent, totals, chart axes) and `tst_statisticsstore` (CSV
+  format, continuing a file, repair, invalid lines, navigation, retention).
+
 ## [1.6.1] - 2026-11-10
 
 Bug fixes and owner-requested changes (specification Part B updated).

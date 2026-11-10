@@ -13,6 +13,7 @@ namespace ergo {
 
 class AutoClickController;
 class BreakTimerController;
+class StatisticsController;
 class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
@@ -67,6 +68,7 @@ private:
     std::unique_ptr<AutoClickController> m_autoclick;
     std::unique_ptr<KeyControlController> m_keycontrol;
     std::unique_ptr<BreakTimerController> m_breaktimer;
+    std::unique_ptr<StatisticsController> m_statistics;
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;
     std::unique_ptr<TrayController> m_tray;

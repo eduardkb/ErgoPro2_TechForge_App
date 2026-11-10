@@ -46,26 +46,46 @@ private:
 // What actions do: clicks at the pointer via the injector, AutoClick hooks.
 class KeyControlController::Context final : public KeyActionContext {
 public:
-    Context(Platform &platform, InputService &input, AutoClickController &autoclick, DragLockController &dragLock)
-        : m_platform(platform)
+    Context(KeyControlController &owner, Platform &platform, InputService &input, AutoClickController &autoclick,
+            DragLockController &dragLock)
+        : m_owner(owner)
+        , m_platform(platform)
         , m_input(input)
         , m_autoclick(autoclick)
         , m_dragLock(dragLock)
     {
     }
-    OpResult leftClick() override { return toOp(m_platform.clickInjector->click(MouseButton::Left)); }
-    OpResult rightClick() override { return toOp(m_platform.clickInjector->click(MouseButton::Right)); }
-    OpResult doubleLeftClick() override { return toOp(m_platform.clickInjector->doubleClick(MouseButton::Left)); }
+    OpResult leftClick() override { return counted(m_platform.clickInjector->click(MouseButton::Left), 1); }
+    OpResult rightClick() override { return counted(m_platform.clickInjector->click(MouseButton::Right), 1); }
+    OpResult doubleLeftClick() override
+    {
+        return counted(m_platform.clickInjector->doubleClick(MouseButton::Left), 2);
+    }
     void notifyKeyControlClick() override { m_autoclick.notifyExternalClick(m_input.stats().pointer); }
     OpResult toggleAutoClick() override
     {
         m_autoclick.toggle();
         return OpResult::success();
     }
-    OpResult toggleDragLock() override { return m_dragLock.toggle(); }
+    OpResult toggleDragLock() override
+    {
+        const bool wasHolding = m_dragLock.isHolding();
+        const OpResult r = m_dragLock.toggle();
+        if (r.ok && !wasHolding && m_dragLock.isHolding())
+            emit m_owner.clicksDoneForYou(1); // the press of the drag lock
+        return r;
+    }
     void releaseDragLock() override { m_dragLock.release(DragLockController::Reason::KeyPressed); }
 
 private:
+    OpResult counted(const PlatformResult &r, int clicks)
+    {
+        if (r.ok())
+            emit m_owner.clicksDoneForYou(clicks);
+        return toOp(r);
+    }
+
+    KeyControlController &m_owner;
     Platform &m_platform;
     InputService &m_input;
     AutoClickController &m_autoclick;
@@ -84,7 +104,7 @@ KeyControlController::KeyControlController(SettingsStore &settings, FeatureAvail
     , m_os(styleFor(platform.osName))
     , m_dragLock(std::make_unique<DragLockController>(settings, input, autoclick, platform))
     , m_registrar(std::make_unique<Registrar>(input))
-    , m_context(std::make_unique<Context>(platform, input, autoclick, *m_dragLock))
+    , m_context(std::make_unique<Context>(*this, platform, input, autoclick, *m_dragLock))
     , m_engine(std::make_unique<KeyControlEngine>(*m_registrar, m_actions, *m_context, m_os))
 {
     m_engine->setInputAvailable(false); // until start() checks the input layer

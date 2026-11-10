@@ -34,6 +34,7 @@ AutoClickController::AutoClickController(SettingsStore &settings, FeatureAvailab
         emit stateChanged(state, reason);
     });
     connect(m_worker, &AutoClickWorker::clickFailed, this, &AutoClickController::clickFailed);
+    connect(m_worker, &AutoClickWorker::clicked, this, &AutoClickController::clickPerformed);
 
     m_overlay = std::make_unique<AutoClickOverlay>();
     connect(m_worker, &AutoClickWorker::countdownChanged, m_overlay.get(), &AutoClickOverlay::setCountdown);

@@ -1,6 +1,7 @@
 #include "ui/breaktimer/BreakTimerController.h"
 
 #include "core/LogCategories.h"
+#include "core/statistics/StatisticsTypes.h"
 #include "core/settings/BreakTimerSettings.h"
 #include "core/settings/SettingsStore.h"
 #include "platform/PlatformFactory.h"
@@ -174,6 +175,10 @@ void BreakTimerController::onPowerEvent(int event)
 void BreakTimerController::dismiss()
 {
     qCInfo(lcApp) << "Break dismissed by the user";
+    if (m_engine.state() == BreakTimerEngine::State::BreakShown) {
+        m_closedByUser = true;
+        emit breakEvent(int(BreakEvent::Dismissed));
+    }
     m_engine.dismiss();
     sync();
 }
@@ -181,6 +186,10 @@ void BreakTimerController::dismiss()
 void BreakTimerController::postpone()
 {
     qCInfo(lcApp) << "Break postponed by" << m_settings.intValue(BT::PostponeMin) << "min";
+    if (m_engine.state() == BreakTimerEngine::State::BreakShown) {
+        m_closedByUser = true;
+        emit breakEvent(int(BreakEvent::Postponed));
+    }
     m_engine.postpone();
     sync();
 }
@@ -204,10 +213,16 @@ void BreakTimerController::sync()
             m_windows->setPostponeMinutes(m_settings.intValue(BT::PostponeMin));
             m_windows->showAll(m_engine.breakRemainingMs());
             emit breakWindowShown();
+            emit breakEvent(int(BreakEvent::Shown));
         } else if (wasBreak && m_windows) {
             m_windows->hideAll();
             emit breakWindowClosed();
         }
+        // The countdown ran out (not Dismiss/Postpone, not switched off).
+        if (wasBreak && !m_closedByUser && s == BreakTimerEngine::State::WaitingForActivity)
+            emit breakEvent(int(BreakEvent::Completed));
+        if (wasBreak)
+            m_closedByUser = false;
     }
     if (s == BreakTimerEngine::State::BreakShown && m_windows)
         m_windows->setRemaining(m_engine.breakRemainingMs());

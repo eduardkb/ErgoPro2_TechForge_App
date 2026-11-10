@@ -52,6 +52,8 @@ signals:
     // Emitted when the break window appears / disappears (stage 6: release Drag Lock).
     void breakWindowShown();
     void breakWindowClosed();
+    // Statistics (stage 7): BreakEvent (core/statistics/StatisticsTypes.h) as int.
+    void breakEvent(int event);
 
 private:
     void applyConfig();
@@ -72,6 +74,7 @@ private:
     BreakTimerEngine::State m_lastState = BreakTimerEngine::State::Disabled;
     bool m_started = false;
     bool m_lastAvailable = false;
+    bool m_closedByUser = false; // Dismiss / Postpone: not "completed"
 };
 
 } // namespace ergo
