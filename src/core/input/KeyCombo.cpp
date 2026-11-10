@@ -89,4 +89,37 @@ bool KeySuppressionRegistry::shouldSwallow(const InputEvent &event)
     return swallow;
 }
 
+void KeySuppressionRegistry::setDragLockHolding(bool holding)
+{
+    if (holding)
+        m_consumedButtons.store(0); // forget a release lost by a hook restart
+    m_consumeArmed.store(holding);
+    m_dragHolding.store(holding);
+}
+
+bool KeySuppressionRegistry::shouldSwallowMouse(const InputEvent &event)
+{
+    if (!event.isMouseButton() || event.synthetic)
+        return false;
+    const quint32 bit = 1u << quint32(event.button);
+    if (event.type == InputEventType::MouseDown) {
+        if (m_consumedButtons.load() & bit) {
+            m_swallowed.fetch_add(1);
+            return true; // repeated press while the consumed one is still down
+        }
+        bool armed = true;
+        if (!m_consumeArmed.compare_exchange_strong(armed, false))
+            return false;
+        m_consumedButtons.fetch_or(bit);
+        m_swallowed.fetch_add(1);
+        return true;
+    }
+    // MouseUp: swallow the release of a consumed press, even after the drag
+    // lock ended, so applications never see a release without a press.
+    if (!(m_consumedButtons.fetch_and(~bit) & bit))
+        return false;
+    m_swallowed.fetch_add(1);
+    return true;
+}
+
 } // namespace ergo

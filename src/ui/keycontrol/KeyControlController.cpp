@@ -7,6 +7,7 @@
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/InputService.h"
 #include "ui/autoclick/AutoClickController.h"
+#include "ui/keycontrol/DragLockController.h"
 
 #include <QJsonArray>
 
@@ -45,10 +46,11 @@ private:
 // What actions do: clicks at the pointer via the injector, AutoClick hooks.
 class KeyControlController::Context final : public KeyActionContext {
 public:
-    Context(Platform &platform, InputService &input, AutoClickController &autoclick)
+    Context(Platform &platform, InputService &input, AutoClickController &autoclick, DragLockController &dragLock)
         : m_platform(platform)
         , m_input(input)
         , m_autoclick(autoclick)
+        , m_dragLock(dragLock)
     {
     }
     OpResult leftClick() override { return toOp(m_platform.clickInjector->click(MouseButton::Left)); }
@@ -60,11 +62,14 @@ public:
         m_autoclick.toggle();
         return OpResult::success();
     }
+    OpResult toggleDragLock() override { return m_dragLock.toggle(); }
+    void releaseDragLock() override { m_dragLock.release(DragLockController::Reason::KeyPressed); }
 
 private:
     Platform &m_platform;
     InputService &m_input;
     AutoClickController &m_autoclick;
+    DragLockController &m_dragLock;
 };
 
 KeyControlController::KeyControlController(SettingsStore &settings, FeatureAvailabilityService &availability,
@@ -77,8 +82,9 @@ KeyControlController::KeyControlController(SettingsStore &settings, FeatureAvail
     , m_autoclick(autoclick)
     , m_platform(platform)
     , m_os(styleFor(platform.osName))
+    , m_dragLock(std::make_unique<DragLockController>(settings, input, autoclick, platform))
     , m_registrar(std::make_unique<Registrar>(input))
-    , m_context(std::make_unique<Context>(platform, input, autoclick))
+    , m_context(std::make_unique<Context>(platform, input, autoclick, *m_dragLock))
     , m_engine(std::make_unique<KeyControlEngine>(*m_registrar, m_actions, *m_context, m_os))
 {
     m_engine->setInputAvailable(false); // until start() checks the input layer
@@ -95,6 +101,9 @@ void KeyControlController::start()
         return;
     m_started = true;
     connect(&m_input.dispatcher(), &InputDispatcher::inputEvent, this, &KeyControlController::onInputEvent);
+    m_dragLock->start();
+    connect(m_dragLock.get(), &DragLockController::holdingChanged, this, &KeyControlController::changed);
+    connect(m_dragLock.get(), &DragLockController::failed, this, &KeyControlController::actionFailed);
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
         if (key == KeyControlSettings::Actions && !m_saving)
             loadFromSettings(); // e.g. "Reset all settings": the list is cleared and keys released
@@ -115,6 +124,7 @@ void KeyControlController::shutdown()
 {
     if (!m_started)
         return;
+    m_dragLock->shutdown(); // never leave the left button down
     m_engine->releaseAll();
     m_started = false;
     qCInfo(lcApp) << "Key Control stopped; all hotkeys released";
@@ -144,6 +154,8 @@ void KeyControlController::updateAvailability()
     const bool available = isAvailable();
     if (available == m_engine->isInputAvailable())
         return;
+    if (!available)
+        m_dragLock->release(DragLockController::Reason::KeyControlOff);
     m_engine->setInputAvailable(available);
     qCInfo(lcApp) << "Key Control is" << (available ? "available" : "unavailable");
     emit changed();
@@ -157,6 +169,7 @@ void KeyControlController::loadFromSettings()
     for (const QString &p : std::as_const(problems))
         qCWarning(lcApp).noquote() << "Key Control:" << p;
     m_engine->load(list);
+    releaseDragLockIfInactive(); // e.g. "Reset all settings" removed the hotkey
     int active = 0;
     for (const KeyBinding &b : list) {
         const BindingState s = m_engine->state(b.id);
@@ -192,6 +205,8 @@ OpResult KeyControlController::add(const KeyCombo &combo, const QString &actionI
 
 OpResult KeyControlController::modify(const QString &id, const KeyCombo &combo, const QString &actionId)
 {
+    if (isDragLockBinding(id) || actionId == KeyActionRegistry::DragLock)
+        m_dragLock->release(DragLockController::Reason::BindingChanged);
     const OpResult r = m_engine->modify(id, combo, actionId);
     if (r.ok) {
         qCInfo(lcApp).noquote() << "Hotkey modified:" << displayText(combo) << "->" << actionName(actionId);
@@ -204,6 +219,8 @@ OpResult KeyControlController::modify(const QString &id, const KeyCombo &combo, 
 
 OpResult KeyControlController::setEnabled(const QString &id, bool enabled)
 {
+    if (!enabled && isDragLockBinding(id))
+        m_dragLock->release(DragLockController::Reason::BindingChanged);
     const OpResult r = m_engine->setEnabled(id, enabled);
     if (const KeyBinding *b = m_engine->binding(id))
         qCInfo(lcApp).noquote() << "Hotkey" << displayText(b->combo) << (enabled ? "enabled" : "disabled");
@@ -213,6 +230,8 @@ OpResult KeyControlController::setEnabled(const QString &id, bool enabled)
 
 OpResult KeyControlController::resetBinding(const QString &id)
 {
+    if (isDragLockBinding(id))
+        m_dragLock->release(DragLockController::Reason::BindingChanged);
     const OpResult r = m_engine->resetBinding(id);
     if (const KeyBinding *b = m_engine->binding(id))
         qCInfo(lcApp).noquote() << "Hotkey binding reset:" << displayText(b->combo) << (r.ok ? "OK" : r.message);
@@ -224,6 +243,8 @@ OpResult KeyControlController::remove(const QString &id)
 {
     const KeyBinding *b = m_engine->binding(id);
     const QString text = b && b->isValid() ? displayText(b->combo) : id;
+    if (isDragLockBinding(id))
+        m_dragLock->release(DragLockController::Reason::BindingChanged);
     const OpResult r = m_engine->remove(id);
     if (r.ok) {
         qCInfo(lcApp).noquote() << "Hotkey deleted:" << text;
@@ -234,6 +255,8 @@ OpResult KeyControlController::remove(const QString &id)
 
 void KeyControlController::setPaused(bool paused)
 {
+    if (paused)
+        m_dragLock->release(DragLockController::Reason::KeyControlOff);
     m_engine->setPaused(paused);
     qCInfo(lcApp) << "Key Control hotkeys" << (paused ? "paused (hotkey dialog open)" : "resumed");
     emit changed();
@@ -255,6 +278,28 @@ void KeyControlController::onInputEvent(const InputEvent &event)
         qCWarning(lcApp).noquote() << "Hotkey action failed:" << result.message;
         emit actionFailed(result.message);
     }
+}
+
+bool KeyControlController::isDragLockHolding() const
+{
+    return m_dragLock->isHolding();
+}
+
+bool KeyControlController::isDragLockBinding(const QString &id) const
+{
+    const KeyBinding *b = m_engine->binding(id);
+    return b && b->actionId == KeyActionRegistry::DragLock;
+}
+
+void KeyControlController::releaseDragLockIfInactive()
+{
+    if (!m_dragLock->isHolding())
+        return;
+    for (const KeyBinding &b : bindings()) {
+        if (b.actionId == KeyActionRegistry::DragLock && m_engine->state(b.id).status == BindingStatus::Active)
+            return;
+    }
+    m_dragLock->release(DragLockController::Reason::BindingChanged);
 }
 
 } // namespace ergo

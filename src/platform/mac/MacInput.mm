@@ -296,6 +296,19 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef cgEvent, vo
 
     if (e.isKey() && s->active && s->suppression && s->suppression->shouldSwallow(e))
         e.swallowed = true;
+    if (s->active && s->suppression) {
+        // Drag Lock (B.5.3, D-03): the click that releases the drag is consumed.
+        if (e.isMouseButton() && s->suppression->shouldSwallowMouse(e))
+            e.swallowed = true;
+        // A left button held by CGEventPost does not turn hardware moves into
+        // drags: applications would get plain mouse-moved events and nothing
+        // would be dragged or selected. While the drag lock holds the button,
+        // real moves are therefore re-typed as left-mouse-dragged events.
+        if (type == kCGEventMouseMoved && !e.synthetic && s->suppression->isDragLockHolding()) {
+            CGEventSetType(cgEvent, kCGEventLeftMouseDragged);
+            CGEventSetIntegerValueField(cgEvent, kCGMouseEventButtonNumber, kCGMouseButtonLeft);
+        }
+    }
     s->sink(e);
     return e.swallowed ? nullptr : cgEvent; // nullptr = event never reaches other apps
 }

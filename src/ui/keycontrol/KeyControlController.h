@@ -10,6 +10,7 @@
 namespace ergo {
 
 class AutoClickController;
+class DragLockController;
 class FeatureAvailabilityService;
 class InputService;
 class SettingsStore;
@@ -53,6 +54,10 @@ public:
     // K-14: no hotkey is active while the Add/Modify dialog is open.
     void setPaused(bool paused);
 
+    // Drag Lock (stage 6): the break window, the tray icon and the tab use it.
+    DragLockController &dragLock() { return *m_dragLock; }
+    bool isDragLockHolding() const;
+
 signals:
     void changed();
     void actionFailed(const QString &message);
@@ -65,6 +70,9 @@ private:
     void save();
     void updateAvailability();
     void onInputEvent(const InputEvent &event);
+    bool isDragLockBinding(const QString &id) const;
+    // Releases the drag lock when its hotkey is no longer active.
+    void releaseDragLockIfInactive();
 
     SettingsStore &m_settings;
     FeatureAvailabilityService &m_availability;
@@ -73,6 +81,7 @@ private:
     Platform &m_platform;
     OsStyle m_os;
     KeyActionRegistry m_actions;
+    std::unique_ptr<DragLockController> m_dragLock;
     std::unique_ptr<Registrar> m_registrar;
     std::unique_ptr<Context> m_context;
     std::unique_ptr<KeyControlEngine> m_engine;

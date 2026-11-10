@@ -27,6 +27,7 @@ public:
     void stop() override;
     bool isRunning() const override { return m_running.load(); }
     bool canSuppressKeys() const override { return m_active.load(); }
+    bool canSuppressMouseClicks() const override { return m_active.load(); }
     QString backendName() const override;
     bool checkHealth() override;
     int selfRepairCount() const override { return m_selfRepairs.load(); }

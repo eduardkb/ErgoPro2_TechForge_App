@@ -62,6 +62,11 @@ public:
 
     PlatformResult injectLeftClick();
 
+    // Drag Lock (stage 6): while holding, the hook swallows the next real
+    // click and (macOS) turns pointer moves into left-button drags.
+    void setDragLockHolding(bool holding) { m_suppression.setDragLockHolding(holding); }
+    bool canSuppressMouseClicks() const;
+
 signals:
     void statusChanged();
     // Sleep / resume / lock / unlock (PowerEvent as int), on the GUI thread.

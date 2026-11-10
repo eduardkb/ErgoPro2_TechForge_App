@@ -19,6 +19,7 @@ public:
     void stop() override;
     bool isRunning() const override { return m_running.load(); }
     bool canSuppressKeys() const override { return true; }
+    bool canSuppressMouseClicks() const override { return true; }
     QString backendName() const override { return QStringLiteral("WH_KEYBOARD_LL + WH_MOUSE_LL"); }
 
     // Windows silently removes low-level hooks whose callback was too slow and

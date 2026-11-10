@@ -10,6 +10,7 @@
 #include "ui/InputService.h"
 #include "ui/autoclick/AutoClickController.h"
 #include "ui/breaktimer/BreakTimerController.h"
+#include "ui/keycontrol/DragLockController.h"
 #include "ui/keycontrol/KeyControlController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
@@ -121,6 +122,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Function 3 – Break Timer (stage 5).
     m_breaktimer->start();
     setupBreakTimerTrayEntries();
+    // Drag Lock (stage 6): an active drag lock is released when the break window appears (D-06).
+    connect(m_breaktimer.get(), &BreakTimerController::breakWindowShown, this,
+            [this] { m_keycontrol->dragLock().release(DragLockController::Reason::BreakWindow); });
     reportSettingsLoad(loadResult);
 }
 
@@ -205,12 +209,19 @@ void AppController::setupAutoClickTrayEntry()
     });
     m_tray->addFeatureAction(action);
 
-    // Tray icon variant while AutoClick is active (A-09).
-    const auto updateIcon = [this](bool active) {
-        m_tray->setIconState(active ? TrayController::IconState::AutoClickActive : TrayController::IconState::Normal);
+    // Tray icon variant while AutoClick is active (A-09) or a drag lock holds
+    // the left button (D-05; has priority).
+    const auto updateIcon = [this] {
+        TrayController::IconState state = TrayController::IconState::Normal;
+        if (m_keycontrol->isDragLockHolding())
+            state = TrayController::IconState::DragLockActive;
+        else if (m_autoclick->isActive())
+            state = TrayController::IconState::AutoClickActive;
+        m_tray->setIconState(state);
     };
     connect(m_autoclick.get(), &AutoClickController::activeChanged, this, updateIcon);
-    updateIcon(m_autoclick->isActive());
+    connect(&m_keycontrol->dragLock(), &DragLockController::holdingChanged, this, updateIcon);
+    updateIcon();
 }
 
 void AppController::setupBreakTimerTrayEntries()

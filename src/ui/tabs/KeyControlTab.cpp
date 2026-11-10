@@ -1,9 +1,13 @@
 #include "ui/tabs/KeyControlTab.h"
 
 #include "core/LogCategories.h"
+#include "core/keycontrol/KeyAction.h"
+#include "core/settings/KeyControlSettings.h"
+#include "core/settings/SettingsStore.h"
 #include "ui/keycontrol/HotkeyDialog.h"
 #include "ui/keycontrol/KeyControlController.h"
 #include "ui/widgets/CardWidget.h"
+#include "ui/widgets/ParameterRow.h"
 #include "ui/widgets/StatusBadge.h"
 
 #include <QHBoxLayout>
@@ -31,10 +35,12 @@ QPushButton *rowButton(const QString &text, QWidget *parent)
 
 } // namespace
 
-KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &input, QWidget *parent)
+KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &input, SettingsStore &settings,
+                             QWidget *parent)
     : QWidget(parent)
     , m_controller(controller)
     , m_input(input)
+    , m_settings(settings)
 {
     auto *outer = new QVBoxLayout(this);
     outer->setContentsMargins(0, 12, 0, 20);
@@ -85,6 +91,26 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
     card->contentLayout()->addWidget(m_lastError);
     outer->addWidget(card, 1);
 
+    // Drag Lock (stage 6, B.5.3).
+    namespace KC = KeyControlSettings;
+    auto *drag = new CardWidget(tr("Drag lock"),
+                                tr("The “Drag lock (left button)” hotkey holds the left mouse button down so you can "
+                                   "drag without holding it. Press the hotkey again, any other key or any mouse "
+                                   "button to let go. A releasing click only lets go and is not passed on."),
+                                this);
+    m_dragTimeout = new ParameterRow(tr("Drag lock timeout"), KC::kDragLockTimeoutMin, KC::kDragLockTimeoutMax,
+                                     tr("s"), drag);
+    m_dragTimeout->setHint(tr("The button is let go after this many seconds without mouse movement."));
+    m_dragTimeout->setValue(m_settings.intValue(KC::DragLockTimeoutS));
+    drag->contentLayout()->addWidget(m_dragTimeout);
+    outer->addWidget(drag);
+    connect(m_dragTimeout, &ParameterRow::valueChanged, this,
+            [this](int v) { m_settings.setValue(KeyControlSettings::DragLockTimeoutS, v); });
+    connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
+        if (key == KeyControlSettings::DragLockTimeoutS)
+            m_dragTimeout->setValue(m_settings.intValue(key)); // e.g. "Reset all settings"
+    });
+
     auto *tips = new CardWidget(tr("Tips"), {}, this);
     auto *text = new QLabel(tr("• Function keys (F1–F24) and keypad keys work best; other keys need a modifier "
                                "(Shift, Ctrl, Alt/Option, Cmd/Win).\n"
@@ -115,6 +141,7 @@ void KeyControlTab::rebuild()
     // action, so Add is also disabled when every action has a hotkey.
     const bool actionsLeft = !m_controller.selectableActions().isEmpty();
     m_add->setEnabled(available && actionsLeft);
+    m_dragTimeout->setEnabled(available);
     m_add->setToolTip(actionsLeft ? QString()
                                   : tr("Every action already has a hotkey. Delete a hotkey to free its action."));
     m_allAssigned->setVisible(!actionsLeft);
@@ -150,7 +177,19 @@ void KeyControlTab::rebuild()
         case BindingStatus::Unavailable: badge->setState(StatusBadge::State::Warning, tr("UNAVAILABLE")); break;
         case BindingStatus::Error: badge->setState(StatusBadge::State::Error, tr("ERROR")); break;
         }
+        // Drag lock holding the left button (B.5.3): shown on its row.
+        const bool holding = s.status == BindingStatus::Active && b.actionId == KeyActionRegistry::DragLock
+                             && m_controller.isDragLockHolding();
+        if (holding)
+            badge->setState(StatusBadge::State::Warning, tr("HOLDING"));
         statusLayout->addWidget(badge, 0, Qt::AlignLeft);
+        if (holding) {
+            auto *hint = new QLabel(tr("Left button held. Press the hotkey, any key or a mouse button to let go."),
+                                    statusCell);
+            hint->setObjectName(QStringLiteral("hint"));
+            hint->setWordWrap(true);
+            statusLayout->addWidget(hint);
+        }
         if (!s.reason.isEmpty() && s.status == BindingStatus::Error) {
             auto *reason = new QLabel(s.reason, statusCell);
             reason->setObjectName(QStringLiteral("hint"));

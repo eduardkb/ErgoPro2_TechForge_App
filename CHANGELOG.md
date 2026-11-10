@@ -5,6 +5,43 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.6.0] - 2026-11-10
+
+Stage 6 – Drag Lock (Key Control action) and its interaction with Auto Click and the Break Timer.
+
+### Added
+- **Drag lock (left button)** is now selectable in the Add/Modify Hotkey dialog. Pressing its hotkey holds the
+  left mouse button down at the pointer, so you can drag files, select text or move windows without holding
+  the button. The button is let go (at the current pointer position) when:
+  - the drag-lock hotkey is pressed again (the key is not passed on),
+  - `DRAGLOCK_TIMEOUT` seconds pass **without mouse movement** (D-02),
+  - any non-modifier key is pressed (the key reaches the application normally; Shift/Ctrl/Option/Cmd alone
+    do not let go, D-01); another hotkey lets go first and then does its action,
+  - any mouse button is pressed – that click only lets go and is **not passed on** (D-03),
+  - the break window appears (D-06),
+  - the hotkey is disabled, deleted, modified or reset, Key Control is paused (hotkey dialog open) or
+    becomes unavailable, Auto Click is switched off, the input hook stops, or the application exits.
+- **Auto Click while drag-locked:** no auto-click while the button is held and none on release; the release
+  position becomes the reference point, so the pointer must move `AUTOCLICK_TRIGGER_DISTANCE` before the next
+  auto-click (B.4 rule 7, D-04).
+- **Indicators:** the tray icon shows the drag-lock variant while the button is held (D-05; takes priority
+  over the Auto Click variant), and the hotkey's row in the Key Control list shows **HOLDING**.
+- **Drag lock timeout** parameter (1–60 s, default 10) on the Key Control tab; setting
+  `draglock.DRAGLOCK_TIMEOUT`.
+- Input layer: the hooks can now swallow the click that ends a drag lock (macOS event tap, Windows
+  `WH_MOUSE_LL`). On macOS, pointer moves while the button is held are turned into left-mouse-dragged events,
+  because a button pressed by ErgoPro2 does not make macOS report drags by itself.
+- **Safety:** if ErgoPro2 crashes or is killed (SIGSEGV, SIGABRT, SIGTERM, …, Windows unhandled exception,
+  `std::terminate`) while the button is held, the button is released before the process ends. Every press and
+  release is logged with its reason; a failed release is logged as CRITICAL and shown on the Key Control tab.
+- Drag Lock state machine (pure, fake clock) with 21 unit tests (`tst_draglock`, incl. the Auto Click
+  reference point and the click consumption); 3 new Key Control tests.
+
+### Known limitations
+- Linux (X11 and Wayland/evdev): the click that ends a drag lock cannot be swallowed – XRecord and evdev only
+  observe the mouse. The drag lock still ends; a left click merges with the held button, other buttons also
+  reach the application.
+
 ## [1.5.0] - 2026-11-10
 
 Stage 5 – Function 3: Break Timer.

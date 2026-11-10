@@ -531,7 +531,25 @@ ACCEPTANCE: drag-lock works for drag-and-drop and text selection on macOS, all r
 Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```
 
-## Stage 7 – Hardening, packaging and final documentation (v1.7.0)
+## Stage 7 – Statistics (future)
+
+Analyze the functionality description below. if needed make questions to make sure functionality is completely understood. then replace this entire section (## Stage 7 – Statistics (future)) with a new section removing the (future) part describing the implementaion of this stage as it was done with all previous stages.
+
+base functionality description:
+the statistics tab will have 2 main sections:
+1. Daily statistics:
+- on top of the statistics screen 2 charts will be displayed (both charts only show one day of data):
+- Chart 1: displays a calculated value in percent on y axis and 24 hours time of the day on the x axis. this calculated value will be called "computer usage percent" and can range from 0 to more than 100 (so the x axis will be dynamicly sized). y axis containig the hours of the day can also be dynamicly sized depending if there is data or not. The "computer usage percent" value is a consilidated value that considers how much keyboard and/or mouse was used. 0% = none. 100% is only reached when the customer used keyboard and mouse the whole time from when the break timer was last reset and the REAKTIMER_MAX_WORK_TIME time is reached. if the user clicks the break window away, this usage percent grows beyond 100% if needed following the same scale. If the user pauses for BREAKTIMER_BREAK_TIME minutes this percent is reset to 0% not mattering if he postponed the break or not or how many times it was postponed. if the user stops using the computer for BREAKTIMER_BREAK_TIME minutes but the break was not triggered, the percentage should also be reset to 0%. The graphic should however, with a line show all details and how much percentage was reached for each minute of the day.
+- Chart 2: this is a chart that shows individually how much mouse movement, clicking and keyboard pressing was done throughout the day. display the graphing on best format possible so that a person can visually identify at what time of the day each was used.
+- after the two charts, daily general data will be displayed like at least: mouse clicks, mouse distance moved, keyboard pressed, accumulated mouse usage in hours/minures seconds, accumulated keyboard usage in hours/minutes seconds and total active computer use (mouse and/or keyboard usage) in hours/minures/seconds.
+- on the bottom of this section let the user navigate to previous daily statistics which the app reads from .csv files stored as per description on "options" section below. It will limit the navigation to existing files only (one per day). so, there should be one button to go back, one button to advance and one button to go back to "today".
+
+2. options:
+- define a folder that will store one file per day with all past keyboard and mouse usage statistics in .csv format including the calculated "computer usage percent". 
+- below the charts and data inert a button to open the folder where the statistics files are stored.
+- on the end of the screen on the statistics tabput a setting option that will define how many days of data will be retained on the .csv files (minimum 1 to maximum 360 days default = 90)
+
+## Stage 8 – Hardening, packaging and final documentation (v1.7.0)
 
 ```text
 You are implementing STAGE 7 of ErgoPro2: hardening, packaging and final documentation. Current version must be 1.6.x.
@@ -564,6 +582,5 @@ ACCEPTANCE: packages produced by the scripts install and run on macOS (manually 
 Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```
 
-## Stage 8 – Statistics (future)
 
 No prompt yet. Function 4 is out of scope for now (baseDescription.md). When it is time to implement it, write the requirements first (as was done with `ai_questions.md`), and then add a Stage 8 prompt here that bumps the version to `1.8.0`.

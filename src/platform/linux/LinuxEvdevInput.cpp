@@ -158,6 +158,9 @@ public:
 
     bool isRunning() const override { return m_running.load(); }
     bool canSuppressKeys() const override { return m_canForward.load(); }
+    // Pointer devices are not grabbed (a broken forwarding would leave the
+    // user without a mouse), so the Drag Lock releasing click is not swallowed.
+    bool canSuppressMouseClicks() const override { return false; }
     QString backendName() const override { return QStringLiteral("evdev (Wayland)"); }
     bool checkHealth() override { return m_running.load() && m_deviceCount.load() > 0; }
     int selfRepairCount() const override { return m_rescans.load(); }

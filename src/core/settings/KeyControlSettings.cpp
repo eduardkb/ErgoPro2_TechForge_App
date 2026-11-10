@@ -9,6 +9,8 @@ void registerSettings(SettingsSchema &schema)
     // Entries are validated by KeyBindingStore: invalid ones are kept and shown
     // with an Error status instead of being dropped.
     schema.add(SettingDefinition::list(Actions));
+    schema.add(SettingDefinition::integer(DragLockTimeoutS, kDragLockTimeoutDefault, kDragLockTimeoutMin,
+                                          kDragLockTimeoutMax));
 }
 
 } // namespace ergo::KeyControlSettings

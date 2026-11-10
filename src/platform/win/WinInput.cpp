@@ -125,7 +125,13 @@ LRESULT CALLBACK mouseProc(int code, WPARAM wParam, LPARAM lParam)
     case WM_MOUSEHWHEEL: e.type = InputEventType::Wheel; e.wheelDeltaX = wheel; break;
     default: return CallNextHookEx(nullptr, code, wParam, lParam);
     }
+    // Drag Lock (B.5.3, D-03): the click that releases the drag is consumed.
+    // Pointer moves need no conversion: Windows tracks the injected button.
+    if (e.isMouseButton() && g_hook->suppression && g_hook->suppression->shouldSwallowMouse(e))
+        e.swallowed = true;
     g_hook->sink(e);
+    if (e.swallowed)
+        return 1; // the click never reaches other applications
     return CallNextHookEx(nullptr, code, wParam, lParam);
 }
 

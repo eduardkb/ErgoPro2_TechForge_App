@@ -27,6 +27,10 @@ public:
     // A Key Control click happened: AutoClick treats it like a manual click (B.4 rule 4).
     virtual void notifyKeyControlClick() = 0;
     virtual OpResult toggleAutoClick() = 0;
+    // Drag Lock (stage 6, B.5.3): hold the left button / release it again.
+    virtual OpResult toggleDragLock() = 0;
+    // Any other hotkey press releases an active drag lock first ("any key releases").
+    virtual void releaseDragLock() = 0;
 };
 
 // One action type (B.5.2, pluggable). Stable ids are stored in settings.json.
@@ -43,7 +47,7 @@ public:
 class KeyActionRegistry {
 public:
     // Registers the built-in actions: left-click, right-click, double-left-click,
-    // toggle-autoclick, and the hidden drag-lock placeholder (stage 6).
+    // toggle-autoclick and drag-lock (stage 6).
     KeyActionRegistry();
 
     void add(std::unique_ptr<IKeyAction> action);

@@ -30,6 +30,7 @@ public:
     void stop() override;
     bool isRunning() const override { return m_running.load(); }
     bool canSuppressKeys() const override { return true; }
+    bool canSuppressMouseClicks() const override { return false; } // XRecord only observes
     QString backendName() const override { return QStringLiteral("X11 XRecord + XGrabKey"); }
     bool checkHealth() override;
     int selfRepairCount() const override { return m_regrabs.load(); }
@@ -86,6 +87,7 @@ public:
     void stop() override {}
     bool isRunning() const override { return false; }
     bool canSuppressKeys() const override { return false; }
+    bool canSuppressMouseClicks() const override { return false; }
     QString backendName() const override { return QStringLiteral("none"); }
     bool checkHealth() override { return false; }
     int selfRepairCount() const override { return 0; }

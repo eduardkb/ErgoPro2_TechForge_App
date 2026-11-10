@@ -10,6 +10,7 @@ add_library(ergopro2_core STATIC
     core/breaktimer/BreakTimerEngine.cpp core/breaktimer/BreakTimerEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
+    core/keycontrol/DragLockEngine.cpp core/keycontrol/DragLockEngine.h
     core/keycontrol/KeyAction.cpp core/keycontrol/KeyAction.h
     core/keycontrol/KeyBinding.cpp core/keycontrol/KeyBinding.h
     core/keycontrol/KeyComboText.cpp core/keycontrol/KeyComboText.h
@@ -44,6 +45,7 @@ add_library(ergopro2_platform STATIC
     platform/PlatformInterfaces.h
     platform/PlatformResult.h
     platform/stub/StubPlatform.cpp platform/stub/StubPlatform.h
+    platform/common/EmergencyRelease.cpp platform/common/EmergencyRelease.h
     platform/common/FileOperations.cpp platform/common/FileOperations.h
     platform/common/Synthetic.h
 )
@@ -120,6 +122,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/breaktimer/BreakTimerController.cpp ui/breaktimer/BreakTimerController.h
     ui/breaktimer/BreakWindow.cpp ui/breaktimer/BreakWindow.h
     ui/breaktimer/BreakWindowManager.cpp ui/breaktimer/BreakWindowManager.h
+    ui/keycontrol/DragLockController.cpp ui/keycontrol/DragLockController.h
     ui/keycontrol/HotkeyDialog.cpp ui/keycontrol/HotkeyDialog.h
     ui/keycontrol/KeyControlController.cpp ui/keycontrol/KeyControlController.h
     ui/InstallController.cpp ui/InstallController.h

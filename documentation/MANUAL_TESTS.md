@@ -452,3 +452,66 @@ grant the permissions again if needed (BUILD.md 1.6.6, 6.1). Start with `open ~/
 | 22 | During a break, connect or disconnect an external display. | The overlay follows: every connected screen is covered. |
 | 23 | Look at the break window in light and dark mode. | Readable and consistent with the app in both. |
 | 24 | Debian (when available): the full-screen option is disabled with "Not available on this system…". Windows: steps 5–15, Alt+F4 does not close the window. | As described. |
+
+---
+
+## Stage 6 – v1.6.0
+
+Goal: Drag Lock (Key Control action) and its interaction with Auto Click and the Break Timer.
+
+**Preparation (macOS):** build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); reset and
+grant the permissions again if needed (BUILD.md 1.6.6, 6.1). Start with `open ~/Applications/ErgoPro2.app`.
+Key Control → **Add Hotkey** → press e.g. **F8** → *Confirm* → action **Drag lock (left button)** → *Save*.
+Keep the log open (General tab › *Open log folder*): every press and release is logged with its reason.
+
+### A. Setup and indicators
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 14 test programs pass (adds `tst_draglock`). |
+| 2 | Open the Add Hotkey dialog. | **Drag lock (left button)** is in the action list (unless it already has a hotkey). |
+| 3 | Look at the Key Control tab. | New card **Drag lock** with *Drag lock timeout* (default **10 s**, range 1–60). Changing it is stored in `settings.json` → `draglock` → `DRAGLOCK_TIMEOUT`. |
+| 4 | Show the ErgoPro2 window (Key Control tab) next to some empty desktop space. Point at the empty space and press **F8**. Look at the tray icon and the hotkey row without clicking. | Tray icon shows the drag-lock variant; the F8 row shows **HOLDING** with "Left button held…". Log: `Drag lock: left button held at (x, y)`. |
+| 5 | Press **F8** again. | Button released; tray icon and row back to normal. Log: `… released at (x, y) - hotkey pressed again`. |
+
+### B. Dragging (acceptance)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 6 | Finder: point at a file, **F8**, move the pointer onto a folder, **F8**. | The file is moved into the folder (the drag shows the usual file image while moving). |
+| 7 | Same as 6, but hold **Option** while moving. | Modifiers do not release the drag: the file is **copied** (green +). |
+| 8 | TextEdit / Safari: point before a word, **F8**, move across some text, **F8**. | The text is selected. |
+| 9 | Point at a window's title bar, **F8**, move, **F8**. | The window moves with the pointer and stays where released. |
+| 10 | Drag a slider or a scroll bar thumb with F8. | It follows the pointer. |
+
+### C. Release conditions
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 11 | **F8**, then do not move the mouse for 10 s. | Released after 10 s (log: `timeout without mouse movement`). Keep moving slowly for 20 s instead: it stays held; it is released 10 s after the last movement. |
+| 12 | **F8** in TextEdit after selecting with the drag, then press a letter key (e.g. **A**). | Released; the letter **is typed** (the key is passed on). Log: `key pressed`. |
+| 13 | **F8**, press and release **Shift**, **Ctrl**, **Option**, **Cmd** alone. | Still held (badge HOLDING). |
+| 14 | **F8**, move a little, then **click** the left mouse button. | Released. The click itself does nothing else (e.g. a click on a button under the pointer does **not** press it; no double click). Log: `mouse click (consumed)`. |
+| 15 | Same as 14 with the **right** button over a Finder item. | Released; **no** context menu opens. |
+| 16 | Add a second hotkey (e.g. F9 = Left mouse click). **F8**, then **F9**. | The drag is released first, then F9 clicks. |
+| 17 | Break Timer short values (Stage 5 tip). **F8** shortly before the break is due and keep moving. | When the break window appears the button is released (log: `break window shown`). |
+| 18 | **F8**, then press **Cmd+Tab**. | Released by the Tab key (Cmd alone would not release). Note: disabling, modifying or deleting the hotkey and opening the hotkey dialog always need a click or a key press first, which already releases the drag; those extra release rules are safety nets covered by the code and the log (`drag-lock hotkey disabled, deleted or modified`). |
+| 19 | **F8**, then quit ErgoPro2 with `killall ErgoPro2` in Terminal (SIGTERM). | The button is released before the app ends (test: click and drag something normally afterwards; no stuck button). |
+| 20 | **F8**, then tray → **Exit** (that click itself releases). Repeat with **F8** and logout. | Never a stuck left button after ErgoPro2 has ended. |
+
+### D. Auto Click interaction
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 21 | Auto Click **on**. **F8**, drag a file far away, stop moving and wait 2 s. | No auto-click while held (it would drop the file early). |
+| 22 | Release with **F8** and leave the pointer still. | No auto-click after the release. |
+| 23 | Move the pointer by less than the *trigger distance* (default 15 px) and stop. | Still no auto-click. |
+| 24 | Move further than the trigger distance and stop. | Auto Click clicks again as usual. |
+| 25 | With *Show countdown cross* on, hold a drag lock and stop. | No orange X while held. |
+
+### E. Other systems (when available)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 26 | Windows: steps 4–24 in Explorer / Notepad. | As described; a releasing click is not passed on. |
+| 27 | Debian (X11): steps 4–24. | As described, **except** 14–15: the releasing click cannot be swallowed on Linux; a left click just ends the drag, a right click may also open a context menu (known limitation). |

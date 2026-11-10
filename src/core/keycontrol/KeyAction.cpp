@@ -57,17 +57,12 @@ public:
     OpResult execute(KeyActionContext &c) override { return c.toggleAutoClick(); }
 };
 
-// Registered so that a stored drag-lock binding stays valid; implemented and
-// shown in stage 6.
-class DragLockPlaceholder final : public IKeyAction {
+// Hold the left button until released (B.5.3); pressing the hotkey again releases it.
+class DragLockAction final : public IKeyAction {
 public:
     QString id() const override { return KeyActionRegistry::DragLock; }
     QString displayName() const override { return tr("Drag lock (left button)"); }
-    bool isVisible() const override { return false; }
-    OpResult execute(KeyActionContext &) override
-    {
-        return OpResult::failure(tr("Drag lock is not available in this version yet."));
-    }
+    OpResult execute(KeyActionContext &c) override { return c.toggleDragLock(); }
 };
 
 } // namespace
@@ -78,7 +73,7 @@ KeyActionRegistry::KeyActionRegistry()
     add(std::make_unique<RightClickAction>());
     add(std::make_unique<DoubleLeftClickAction>());
     add(std::make_unique<ToggleAutoClickAction>());
-    add(std::make_unique<DragLockPlaceholder>());
+    add(std::make_unique<DragLockAction>());
 }
 
 void KeyActionRegistry::add(std::unique_ptr<IKeyAction> action)

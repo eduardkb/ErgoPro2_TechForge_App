@@ -29,7 +29,10 @@ using InputEventSink = std::function<void(const InputEvent &)>;
 // Global mouse/keyboard monitoring on ONE dedicated thread with its own OS
 // event loop (B.6). Key events for which suppression->shouldSwallow() returns
 // true are blocked from reaching other applications (they are still delivered
-// to the sink with swallowed = true).
+// to the sink with swallowed = true). The same applies to mouse button events
+// and suppression->shouldSwallowMouse() where canSuppressMouseClicks() is true.
+// While suppression->isDragLockHolding(), real pointer moves must reach
+// applications as left-button drags (macOS converts them in the tap).
 class IInputHook {
 public:
     virtual ~IInputHook() = default;
@@ -41,6 +44,11 @@ public:
     // False when the hook runs but cannot block keys (e.g. macOS without
     // Accessibility: listen-only event tap).
     virtual bool canSuppressKeys() const = 0;
+    // True if the hook can swallow the Drag Lock releasing click
+    // (KeySuppressionRegistry::shouldSwallowMouse, B.5.3 / D-03). X11 (XRecord)
+    // and evdev only observe the mouse: there the click also reaches the
+    // application (a left click merges with the held button).
+    virtual bool canSuppressMouseClicks() const = 0;
     virtual QString backendName() const = 0;
 
     // Health probe for the watchdog (B.5.4). Repairs what can be repaired in

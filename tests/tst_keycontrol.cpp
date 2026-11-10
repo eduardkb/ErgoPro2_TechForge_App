@@ -50,12 +50,15 @@ struct FakeRegistrar : IKeyRegistrar {
 };
 
 struct FakeContext : KeyActionContext {
-    int left = 0, right = 0, doubles = 0, notified = 0, toggles = 0;
-    OpResult leftClick() override { ++left; return {}; }
+    int left = 0, right = 0, doubles = 0, notified = 0, toggles = 0, dragToggles = 0, dragReleases = 0;
+    QStringList calls; // order of the context calls
+    OpResult leftClick() override { ++left; calls << QStringLiteral("left"); return {}; }
     OpResult rightClick() override { ++right; return {}; }
     OpResult doubleLeftClick() override { ++doubles; return {}; }
     void notifyKeyControlClick() override { ++notified; }
     OpResult toggleAutoClick() override { ++toggles; return {}; }
+    OpResult toggleDragLock() override { ++dragToggles; calls << QStringLiteral("toggleDrag"); return {}; }
+    void releaseDragLock() override { ++dragReleases; calls << QStringLiteral("releaseDrag"); }
 };
 
 struct EngineFixture {
@@ -190,11 +193,13 @@ private slots:
         QVERIFY(r.find(KeyActionRegistry::RightClick));
         QVERIFY(r.find(KeyActionRegistry::DoubleLeftClick));
         QVERIFY(r.find(KeyActionRegistry::ToggleAutoClick));
-        QVERIFY(r.find(KeyActionRegistry::DragLock));        // registered (stage 6) ...
-        QCOMPARE(r.visibleActions().size(), 4);              // ... but not offered yet
+        QVERIFY(r.find(KeyActionRegistry::DragLock));
+        QCOMPARE(r.visibleActions().size(), 5); // drag lock is offered since stage 6
         QVERIFY(!r.find(QStringLiteral("nope")));
         FakeContext c;
-        QVERIFY(!r.find(KeyActionRegistry::DragLock)->execute(c).ok);
+        QVERIFY(r.find(KeyActionRegistry::DragLock)->execute(c).ok);
+        QCOMPARE(c.dragToggles, 1);
+        QCOMPARE(c.left, 0);
     }
 
     // ---------------------------------------------------------------- store
@@ -312,15 +317,49 @@ private slots:
     void availableActionsExcludeAssignedOnes()
     {
         EngineFixture f;
-        QCOMPARE(f.engine.availableActionIds().size(), 4); // all visible actions
+        QCOMPARE(f.engine.availableActionIds().size(), 5); // all visible actions
         QString id;
         f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &id);
         QStringList free = f.engine.availableActionIds();
-        QCOMPARE(free.size(), 3);
+        QCOMPARE(free.size(), 4);
         QVERIFY(!free.contains(KeyActionRegistry::LeftClick));
         // When modifying that hotkey, its own action stays selectable.
         QVERIFY(f.engine.availableActionIds(id).contains(KeyActionRegistry::LeftClick));
-        QVERIFY(!f.engine.availableActionIds().contains(KeyActionRegistry::DragLock)); // hidden
+        QVERIFY(f.engine.availableActionIds().contains(KeyActionRegistry::DragLock)); // selectable (stage 6)
+    }
+
+    // ---------------------------------------------------------------- drag lock (stage 6)
+    void dragLockHotkeyTogglesWithoutReleasingFirst()
+    {
+        EngineFixture f;
+        f.engine.add(combo(Qt::Key_F8), KeyActionRegistry::DragLock);
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyDown, combo(Qt::Key_F8)));
+        QCOMPARE(f.context.dragToggles, 1);
+        QCOMPARE(f.context.dragReleases, 0);
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyDown, combo(Qt::Key_F8), true)); // repeat: nothing
+        QCOMPARE(f.context.dragToggles, 1);
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyUp, combo(Qt::Key_F8)));
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyDown, combo(Qt::Key_F8)));
+        QCOMPARE(f.context.dragToggles, 2); // pressed again: the action releases
+    }
+
+    void otherHotkeysReleaseTheDragLockBeforeTheirAction()
+    {
+        EngineFixture f;
+        f.engine.add(combo(Qt::Key_F8), KeyActionRegistry::DragLock);
+        f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick);
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyDown, combo(Qt::Key_F9)));
+        QCOMPARE(f.context.calls, (QStringList{QStringLiteral("releaseDrag"), QStringLiteral("left")}));
+    }
+
+    void allActionsCanHaveAHotkeyIncludingDragLock()
+    {
+        EngineFixture f;
+        int key = Qt::Key_F1;
+        for (const QString &id : f.engine.availableActionIds())
+            QVERIFY(f.engine.add(combo(key++), id).ok);
+        QCOMPARE(f.engine.bindings().size(), 5);
+        QVERIFY(f.engine.availableActionIds().isEmpty());
     }
 
     void disabledHotkeyStillOccupiesItsAction()

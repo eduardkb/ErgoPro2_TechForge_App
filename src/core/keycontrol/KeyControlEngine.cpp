@@ -281,6 +281,10 @@ std::optional<QString> KeyControlEngine::onKeyEvent(const InputEvent &event)
         if (!b.isValid() || !b.enabled || state(b.id).status != BindingStatus::Active || !b.combo.matches(event))
             continue;
         IKeyAction *action = m_actions.find(b.actionId);
+        // B.5.3: any key press releases an active drag lock; the drag-lock
+        // hotkey itself toggles it (inside its action).
+        if (b.actionId != KeyActionRegistry::DragLock)
+            m_context.releaseDragLock();
         m_lastActionResult = action ? action->execute(m_context) : OpResult::failure(tr("Unknown action."));
         return b.id;
     }

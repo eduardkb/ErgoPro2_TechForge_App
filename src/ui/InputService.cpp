@@ -230,6 +230,11 @@ PlatformResult InputService::unregisterKey(const KeyCombo &combo)
     return r;
 }
 
+bool InputService::canSuppressMouseClicks() const
+{
+    return m_platform.inputHook->isRunning() && m_platform.inputHook->canSuppressMouseClicks();
+}
+
 PlatformResult InputService::injectLeftClick()
 {
     const PlatformResult r = m_platform.clickInjector->click(MouseButton::Left);
