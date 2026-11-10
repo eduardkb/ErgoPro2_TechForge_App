@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.1] - 2026-11-10
+
+Owner-requested changes (specification Part B updated: B.3, B.7, B.8.4).
+
+### Changed
+- **No file is deleted when a retention setting is changed.** Lowering *Keep statistics for* (Statistics tab) or
+  *Keep log files for* (General tab) no longer deletes files right away – a slider moved by mistake cannot
+  delete anything. Old files are deleted only when ErgoPro2 starts and once a day. The hints on both settings
+  say so; the text "also right away when you lower this" is gone. Cause: both settings triggered a cleanup on
+  every change (and the log cleanup also ran every hour).
+- **Break Timer – State "Paused":** while the active work time stands still because there was no mouse or
+  keyboard input for 20 s, the Status box shows **Paused** instead of *Working*. During a postpone it keeps
+  showing *Postponed*.
+- 1 new Break Timer unit test (`tst_breaktimer`: 26).
+
 ## [1.7.0] - 2026-11-10
 
 Stage 7 – Function 4: Statistics.

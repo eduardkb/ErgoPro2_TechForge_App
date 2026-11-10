@@ -27,7 +27,7 @@
 namespace ergo {
 
 namespace {
-constexpr int kMaintenanceIntervalMs = 60 * 60 * 1000; // hourly log retention check
+constexpr int kMaintenanceIntervalMs = 60 * 60 * 1000; // hourly check for a new day (log cleanup once a day)
 }
 
 AppController::AppController(SettingsStore &settings, Logger &logger, Platform &platform, SingleInstance &instance,
@@ -60,6 +60,10 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Logging options from settings.
     applySetting(GeneralSettings::LogLevel);
     applySetting(GeneralSettings::LogRetentionDays);
+    // Old log files are deleted only now (startup) and once per day, never when
+    // the retention slider is moved (1.7.1, owner request).
+    m_logger.cleanupOldFiles();
+    m_lastLogCleanup = QDate::currentDate();
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) { applySetting(key); });
     connect(&m_settings, &SettingsStore::saveFailed, this, [this](const QString &message) {
         showError(tr("Settings not saved"), message);
@@ -102,7 +106,14 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(&m_instance, &SingleInstance::activationRequested, this, &AppController::showMainWindow);
 
     m_maintenanceTimer.setInterval(kMaintenanceIntervalMs);
-    connect(&m_maintenanceTimer, &QTimer::timeout, this, [this] { m_logger.cleanupOldFiles(); });
+    connect(&m_maintenanceTimer, &QTimer::timeout, this, [this] {
+        // Once per day (the logger also cleans up when it opens the new day's file).
+        if (QDate::currentDate() == m_lastLogCleanup)
+            return;
+        m_lastLogCleanup = QDate::currentDate();
+        const int removed = m_logger.cleanupOldFiles();
+        qCInfo(lcApp) << "Daily log cleanup:" << removed << "old log file(s) deleted";
+    });
     m_maintenanceTimer.start();
 
     // Startup behavior (W-02): depends on how the app was started.
@@ -149,8 +160,8 @@ void AppController::applySetting(const QString &key)
         qCInfo(lcApp) << "Log level set to" << id;
     } else if (key == GeneralSettings::LogRetentionDays) {
         m_logger.setRetentionDays(m_settings.intValue(key));
-        m_logger.cleanupOldFiles();
-        qCInfo(lcApp) << "Log retention set to" << m_settings.intValue(key) << "day(s)";
+        qCInfo(lcApp) << "Log retention set to" << m_settings.intValue(key)
+                      << "day(s); applied at the next start or day change";
     }
 }
 

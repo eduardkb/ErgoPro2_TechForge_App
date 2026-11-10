@@ -226,6 +226,11 @@ void BreakTimerController::sync()
     }
     if (s == BreakTimerEngine::State::BreakShown && m_windows)
         m_windows->setRemaining(m_engine.breakRemainingMs());
+    if (const bool paused = m_engine.isWorkTimePaused(); paused != m_lastPaused) {
+        m_lastPaused = paused;
+        qCDebug(lcApp) << "Break Timer: work time" << (paused ? "paused (no input)" : "counting again") << "at"
+                       << m_engine.interactionMs() / 1000 << "s";
+    }
     emit ticked();
 }
 

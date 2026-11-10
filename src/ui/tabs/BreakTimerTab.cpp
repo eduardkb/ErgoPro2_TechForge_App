@@ -195,7 +195,10 @@ void BreakTimerTab::refreshStatus()
     switch (s) {
     case S::Disabled: state = tr("Disabled"); break;
     case S::WaitingForActivity: state = tr("Idle"); break;
-    case S::Working: state = tr("Working"); break;
+    case S::Working:
+        // The work time stands still after a short pause without input (1.7.1).
+        state = m_controller.isWorkTimePaused() ? tr("Paused") : tr("Working");
+        break;
     case S::BreakShown: state = tr("On break"); break;
     case S::Postponed: state = tr("Postponed"); break;
     }

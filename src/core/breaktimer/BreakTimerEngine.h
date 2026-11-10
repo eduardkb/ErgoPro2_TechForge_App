@@ -79,6 +79,9 @@ public:
     qint64 breakRemainingMs() const;   // BreakShown only, else -1
     qint64 idleMs() const;             // time since the last activity (0 without a cycle)
     bool isBreakDelayedByFullscreen() const;
+    // Working, but the work time stands still: no input for pauseAfterMs (1.7.1:
+    // shown as "Paused" on the tab). Always false in the other states.
+    bool isWorkTimePaused() const;
 
 private:
     qint64 now() const { return m_clock.now().toMSecsSinceEpoch(); }

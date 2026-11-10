@@ -175,6 +175,7 @@ QWidget *GeneralTab::buildLoggingCard(QWidget *parent)
 
     m_retention = new ParameterRow(tr("Keep log files for"), Logger::kMinRetentionDays, Logger::kMaxRetentionDays,
                                    tr("days"), card);
+    m_retention->setHint(tr("Older log files are deleted when ErgoPro2 starts and once a day."));
     card->contentLayout()->addWidget(m_retention);
 
     const QString logDir = m_context.logger.directory();

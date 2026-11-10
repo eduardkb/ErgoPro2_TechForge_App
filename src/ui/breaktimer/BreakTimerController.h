@@ -35,6 +35,7 @@ public:
     void setEnabled(bool enabled);
 
     BreakTimerEngine::State state() const { return m_engine.state(); }
+    bool isWorkTimePaused() const { return m_engine.isWorkTimePaused(); }
     qint64 interactionMs() const { return m_engine.interactionMs(); }
     qint64 timeUntilBreakMs() const { return m_engine.timeUntilBreakMs(); }
     bool isBreakDelayedByFullscreen() const { return m_engine.isBreakDelayedByFullscreen(); }
@@ -74,6 +75,7 @@ private:
     BreakTimerEngine::State m_lastState = BreakTimerEngine::State::Disabled;
     bool m_started = false;
     bool m_lastAvailable = false;
+    bool m_lastPaused = false;
     bool m_closedByUser = false; // Dismiss / Postpone: not "completed"
 };
 

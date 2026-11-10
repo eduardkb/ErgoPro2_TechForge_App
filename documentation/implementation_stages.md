@@ -194,7 +194,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   3. Info + Warning + Error
   4. Info + Warning + Error + Critical (**default**)
   5. Info + Warning + Error + Critical + Debug
-- Files in `QStandardPaths::AppDataLocation/logs/`, one file per day (`ergopro2-YYYY-MM-DD.log`). If a file gets larger than 5 MB, roll over to `...-1.log`, `...-2.log`. Files older than `general.logRetentionDays` are deleted at startup and every day at midnight.
+- Files in `QStandardPaths::AppDataLocation/logs/`, one file per day (`ergopro2-YYYY-MM-DD.log`). If a file gets larger than 5 MB, roll over to `...-1.log`, `...-2.log`. Files older than `general.logRetentionDays` are deleted at startup and once per day (day change) – never when the setting is changed (1.7.1, owner request: a slider moved by mistake must not delete anything). This rule applies to every automatic file deletion in the app.
 - Line format: `2026-11-09 14:33:01.123 [LEVEL] [thread] [module] message`.
 - Qt messages (`qDebug`/`qWarning`/…) are redirected through `qInstallMessageHandler`.
 - Thread-safe. In debug builds, also print to the console.
@@ -277,7 +277,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - **Power/session events**: sleep, resume, screen lock, unlock → signals (used by the watchdog and Break Timer).
 
 ## B.7 Function 3 – Break Timer
-- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; right below it (above the parameters, 1.6.1) a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), time until next break, current state (*Working*, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
+- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; right below it (above the parameters, 1.6.1) a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), time until next break, current state (*Working*, *Paused* – Working, but the work time stands still because there was no input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (1.7.1; a running postpone keeps showing *Postponed*) –, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
 - **INTERACTION_TIMER = active work time** of the current work cycle (changed in 1.6.1 at the owner's request; was wall-clock time, B-01 a). The cycle starts at the first real user activity after a reset. Time counts while input continues; when there is no mouse/keyboard input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (default 20) the timer stops – those seconds still count – and it resumes with the next input. The break starts when this active time reaches `BREAKTIMER_MAX_WORK_TIME`. The idle reset (`BREAKTIMER_IDLE_RESET`) still uses the time since the last input. While the break window is shown nothing counts; after Postpone the time continues (the Postpone click counts as input).
 - Activity = real mouse movement, clicks, wheel, key presses. Synthetic events excluded (B-02).
 - **Idle reset**: if there is no activity for ≥ `BREAKTIMER_IDLE_RESET` minutes, the timer resets (counts as a break taken) (B-03). Sleep and screen lock count as idle (B-16).
@@ -341,7 +341,7 @@ Layout from top to bottom (scrollable, card style of B.1.1, light and dark mode)
   (`time` = `HH:MM`, `usage_percent` with one decimal, `events` = break events of that minute separated by `;`, e.g. `break_shown;break_postponed`).
 - Written once per minute (the finished minute is appended) and on exit; at most the current minute is lost after a crash. A file that ends with a partial line is repaired on the next start (partial line dropped, logged as WARNING). Unreadable lines are skipped and logged.
 - When the app starts again the same day, the existing file is read so the day's totals continue.
-- **Retention:** files older than `statistics.retentionDays` are deleted at startup, at midnight and immediately when the setting is lowered (no confirmation) – same mechanism as the log retention (B.3).
+- **Retention:** files older than `statistics.retentionDays` are deleted at startup and once per day (midnight) – never when the setting is changed (1.7.1, owner request; same rule as the log retention, B.3).
 ---
 
 # Part C – Stage prompts

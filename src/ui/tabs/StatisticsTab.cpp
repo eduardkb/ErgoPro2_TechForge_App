@@ -173,7 +173,7 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     options->contentLayout()->addLayout(folderRow);
     m_retention = new ParameterRow(tr("Keep statistics for"), SS::kRetentionMin, SS::kRetentionMax, tr("days"),
                                    options);
-    m_retention->setHint(tr("One file per day. Older files are deleted (also right away when you lower this)."));
+    m_retention->setHint(tr("One file per day. Older files are deleted when ErgoPro2 starts and once a day."));
     m_retention->setValue(m_settings.intValue(SS::RetentionDays));
     options->contentLayout()->addWidget(m_retention);
     layout->addWidget(options);

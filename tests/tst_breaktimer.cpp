@@ -65,6 +65,25 @@ private slots:
         QCOMPARE(f.engine.interactionMs(), 11 * kMin + 10000);
     }
 
+    void workTimeIsReportedAsPausedWithoutInput()
+    {
+        Fixture f;
+        QVERIFY(!f.engine.isWorkTimePaused()); // no cycle yet
+        f.engine.onActivity();
+        f.idle(19000);
+        QVERIFY(!f.engine.isWorkTimePaused()); // still counting
+        f.idle(1000);
+        QCOMPARE(f.engine.state(), S::Working);
+        QVERIFY(f.engine.isWorkTimePaused()); // 20 s without input: stopped (1.7.1)
+        f.engine.onActivity();
+        QVERIFY(!f.engine.isWorkTimePaused()); // resumes with the next input
+        f.work(50 * kMin);
+        f.engine.postpone();
+        f.idle(kMin);
+        QCOMPARE(f.engine.state(), S::Postponed);
+        QVERIFY(!f.engine.isWorkTimePaused()); // only for Working; Postponed stays Postponed
+    }
+
     void gapsShorterThanThePauseLimitCountFully()
     {
         Fixture f;

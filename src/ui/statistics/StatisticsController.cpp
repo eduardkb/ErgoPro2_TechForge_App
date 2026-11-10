@@ -97,7 +97,10 @@ void StatisticsController::start()
         if (key == BreakTimerSettings::MaxWorkMin || key == BreakTimerSettings::BreakMin)
             applyConfig();
         else if (key == StatisticsSettings::RetentionDays)
-            cleanup("retention changed");
+            // Applied at the next start or day change only, so moving the slider by
+            // mistake deletes nothing (1.7.1, owner request).
+            qCInfo(lcApp) << "Statistics retention set to" << m_settings.intValue(key)
+                          << "day(s); applied at the next start or day change";
     });
     const auto availabilityCheck = [this] {
         const bool available = isAvailable();

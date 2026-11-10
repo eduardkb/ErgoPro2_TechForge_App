@@ -50,7 +50,7 @@ public:
 
 signals:
     void todayChanged();     // a minute of today was finished (once per minute)
-    void daysChanged();      // files were added or deleted (new day, retention)
+    void daysChanged();      // files were added or deleted (startup, new day)
     void availabilityChanged();
 
 private:

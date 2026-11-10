@@ -3,6 +3,7 @@
 #include "core/settings/SettingsStore.h"
 #include "ui/AppContext.h"
 
+#include <QDate>
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
@@ -69,6 +70,7 @@ private:
     std::unique_ptr<KeyControlController> m_keycontrol;
     std::unique_ptr<BreakTimerController> m_breaktimer;
     std::unique_ptr<StatisticsController> m_statistics;
+    QDate m_lastLogCleanup; // log files are deleted at most once per day (and at startup)
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;
     std::unique_ptr<TrayController> m_tray;

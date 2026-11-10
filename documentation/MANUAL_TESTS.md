@@ -591,3 +591,19 @@ granted. Statistics folder: `~/Library/Application Support/techforge/ErgoPro2/st
 | 20 | Light and dark mode; smallest window size. | Charts, markers and texts readable in both; the page scrolls, nothing is cut off. |
 | 21 | Without Input Monitoring. | Banner "Statistics recording is unavailable"; saved days can still be viewed. |
 | 22 | Windows / Debian (when available): steps 2–19. | As described (folder: `%APPDATA%\techforge\ErgoPro2\statistics` / `~/.local/share/techforge/ErgoPro2/statistics`). |
+
+---
+
+## Bug fix – v1.7.1
+
+Build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permissions granted.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 16 test programs pass (`tst_breaktimer`: 26 cases). |
+| 2 | With ErgoPro2 closed, copy today's statistics file to an old date (e.g. `ergopro2-stats-2026-10-01.csv`); start ErgoPro2. Statistics tab › *Keep statistics for*: move the slider down to **1** day. | The file is **not** deleted (check the folder); the hint says "Older files are deleted when ErgoPro2 starts and once a day." Log: `Statistics retention set to 1 day(s); applied at the next start or day change`. |
+| 3 | Move the slider back to 90 and restart ErgoPro2. | The old file is still there (within 90 days) – nothing was lost by the mistake. |
+| 4 | Set it to 1 day and restart. | Now the old file is deleted at startup (log `Statistics: deleted … (startup)`). |
+| 5 | Same as 2–4 for General › *Keep log files for* with an old log file (`ergopro2-2026-10-01.log`). | Not deleted when the slider moves; deleted at the next start (or the next day) when it is outside the retention. |
+| 6 | Break Timer: work 1 min, then leave mouse and keyboard alone. | After 20 s *State* changes from **Working** to **Paused** (active work time and next break stand still); the next mouse move shows **Working** again. After *Reset after a pause of* it shows **Idle**. |
+| 7 | Postpone a break and do nothing for 30 s. | *State* stays **Postponed**. |

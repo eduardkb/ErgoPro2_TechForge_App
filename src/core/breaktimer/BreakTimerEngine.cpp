@@ -173,6 +173,11 @@ qint64 BreakTimerEngine::timeUntilBreakMs() const
     return -1;
 }
 
+bool BreakTimerEngine::isWorkTimePaused() const
+{
+    return m_state == State::Working && m_cycleStartMs != 0 && now() - m_markMs >= m_config.pauseAfterMs;
+}
+
 qint64 BreakTimerEngine::breakRemainingMs() const
 {
     if (m_state != State::BreakShown)
