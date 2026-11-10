@@ -62,8 +62,9 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
 
     // --- enable + badge ------------------------------------------------------
     auto *top = new CardWidget(tr("Break Timer"),
-                               tr("Reminds you to rest after a period of continuous work. Short pauses keep "
-                                  "counting; a longer pause resets the timer."),
+                               tr("Reminds you to rest after a period of continuous work. The work time counts "
+                                  "while you use the mouse or keyboard and stops after a short pause; a longer "
+                                  "pause resets it."),
                                content);
     auto *row = new QHBoxLayout;
     m_enabled = new ToggleSwitch(top);
@@ -123,7 +124,8 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
         grid->addWidget(values[i], 1, i);
     }
     status->contentLayout()->addLayout(grid);
-    layout->addWidget(status);
+    // Right below the on/off switch, above the settings (1.6.1, owner request).
+    layout->insertWidget(layout->indexOf(params), status);
     layout->addStretch(1);
 
     // --- wiring --------------------------------------------------------------
@@ -139,6 +141,9 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
             refresh();
     });
     connect(&m_controller, &BreakTimerController::ticked, this, &BreakTimerTab::refreshStatus);
+    // The tab is built before the input hook starts: enable the controls as
+    // soon as activity monitoring becomes available.
+    connect(&m_controller, &BreakTimerController::availabilityChanged, this, &BreakTimerTab::refresh);
     refresh();
 }
 

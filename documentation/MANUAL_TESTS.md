@@ -515,3 +515,23 @@ Keep the log open (General tab › *Open log folder*): every press and release i
 |---|-------|-----------------|
 | 26 | Windows: steps 4–24 in Explorer / Notepad. | As described; a releasing click is not passed on. |
 | 27 | Debian (X11): steps 4–24. | As described, **except** 14–15: the releasing click cannot be swallowed on Linux; a left click just ends the drag, a right click may also open a context menu (known limitation). |
+
+---
+
+## Bug fix – v1.6.1
+
+Build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permissions granted.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 14 test programs pass (`tst_breaktimer`: 25 cases). |
+| 2 | Key Control: have 5 hotkeys (one per action). | All 5 rows are visible, the list has **no** scroll bar of its own; "Every action already has a hotkey…" is shown in orange **above** the list, readable, not overlapping. *Add Hotkey* is disabled. |
+| 3 | Make the window smaller (height and width). | A scroll bar appears on the page (right edge); scrolling shows every hotkey and the Tips card. Rows never overlap. |
+| 4 | Delete one hotkey, add it again. | The warning disappears/appears again; the list shrinks/grows by one row. |
+| 5 | Key Control tab. | No **Drag lock** card. `settings.json` still contains `draglock.DRAGLOCK_TIMEOUT`; changing it there (app closed) changes the drag-lock timeout. |
+| 6 | Break Timer tab right after starting the app (permissions granted). | Switch, sliders and spin boxes are **enabled** and can be changed. |
+| 7 | Break Timer tab layout. | Order: on/off card, **Status**, Settings. |
+| 8 | General › *Reset all settings*, then Break Timer. | *Break length* = **4 min**. |
+| 9 | Use mouse/keyboard for 1 min, then do nothing for 1 min, watch *Active work time*. | It counts while you work, keeps counting for 20 s after the last input, then stands still; *Next break in* stands still too. It continues with the next mouse move. |
+| 10 | Short values (*Break after working* 5 min): work with pauses of ~1 min. | The break appears only after 5 min of **active** time, not 5 min of clock time. A pause of *Reset after a pause of* still resets the timer. |
+| 11 | `settings.json`: set `"BREAKTIMER_ACTIVITY_PAUSE": 5` in `breaktimer` (app closed), restart. | The work time stops 5 s after the last input. Log: `work time stops after 5 s without input`. |

@@ -47,6 +47,8 @@ public:
 signals:
     void ticked();           // once per second and after every state change
     void enabledChanged(bool enabled);
+    // Activity monitoring became available / unavailable (input hook started, permissions).
+    void availabilityChanged(bool available);
     // Emitted when the break window appears / disappears (stage 6: release Drag Lock).
     void breakWindowShown();
     void breakWindowClosed();
@@ -69,6 +71,7 @@ private:
     QTimer m_tick;
     BreakTimerEngine::State m_lastState = BreakTimerEngine::State::Disabled;
     bool m_started = false;
+    bool m_lastAvailable = false;
 };
 
 } // namespace ergo

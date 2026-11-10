@@ -14,8 +14,10 @@ namespace ergo {
 // counts as idle time.
 //
 // Rules:
-//  - INTERACTION_TIMER = wall-clock time since the first activity of the
-//    current cycle (WaitingForActivity -> Working).
+//  - INTERACTION_TIMER = active work time of the current cycle, which starts
+//    with the first activity (WaitingForActivity -> Working). Time counts
+//    while input continues; a pause counts only up to pauseAfterMs (20 s)
+//    after the last input, then the timer stops until the next input (1.6.1).
 //  - No activity for idleResetMs -> the cycle resets (counts as a break taken).
 //    Screen lock / sleep: activity is ignored until unlock/resume, the time is
 //    idle, and no break starts while locked (it is decided again afterwards).
@@ -32,9 +34,12 @@ public:
     struct Config {
         qint64 idleResetMs = 5 * 60000;
         qint64 maxWorkMs = 50 * 60000;
-        qint64 breakMs = 5 * 60000;
+        qint64 breakMs = 4 * 60000;
         qint64 postponeMs = 10 * 60000;
         bool suppressWhenFullscreen = false;
+        // The work time stops this long after the last input and resumes with
+        // the next input (1.6.1, owner request): pauses only count up to it.
+        qint64 pauseAfterMs = 20000;
     };
 
     enum class State { Disabled, WaitingForActivity, Working, BreakShown, Postponed };
@@ -79,12 +84,17 @@ private:
     qint64 now() const { return m_clock.now().toMSecsSinceEpoch(); }
     void resetCycle();
     void showBreak();
+    // Work time at time t: accumulated + the current gap up to pauseAfterMs.
+    qint64 workedAt(qint64 t) const;
 
     const IClock &m_clock;
     Config m_config;
     State m_state = State::WaitingForActivity;
     qint64 m_cycleStartMs = 0;
     qint64 m_lastActivityMs = 0;
+    qint64 m_workedMs = 0;   // work time up to m_markMs
+    qint64 m_markMs = 0;     // last input (or Postpone click) from which the gap counts
+    qint64 m_breakWorkedMs = 0; // work time frozen while the break window is shown
     qint64 m_breakStartMs = 0;
     qint64 m_postponeUntilMs = 0;
     bool m_locked = false;

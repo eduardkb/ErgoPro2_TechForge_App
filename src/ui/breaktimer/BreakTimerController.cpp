@@ -113,11 +113,13 @@ void BreakTimerController::applyConfig()
     c.maxWorkMs = qint64(m_settings.intValue(BT::MaxWorkMin)) * 60000;
     c.breakMs = qint64(m_settings.intValue(BT::BreakMin)) * 60000;
     c.postponeMs = qint64(m_settings.intValue(BT::PostponeMin)) * 60000;
+    c.pauseAfterMs = qint64(m_settings.intValue(BT::ActivityPauseS)) * 1000;
     c.suppressWhenFullscreen = m_settings.boolValue(BT::SuppressWhenFullscreen) && fullscreenDetectionSupported();
     m_engine.setConfig(c); // applies immediately, also to the running cycle
     qCDebug(lcApp) << "Break Timer config: idle reset" << c.idleResetMs / 60000 << "min, max work"
                    << c.maxWorkMs / 60000 << "min, break" << c.breakMs / 60000 << "min, postpone"
-                   << c.postponeMs / 60000 << "min, full-screen suppression" << c.suppressWhenFullscreen;
+                   << c.postponeMs / 60000 << "min, work time stops after" << c.pauseAfterMs / 1000
+                   << "s without input, full-screen suppression" << c.suppressWhenFullscreen;
     if (m_windows)
         m_windows->setPostponeMinutes(m_settings.intValue(BT::PostponeMin));
     sync();
@@ -128,7 +130,12 @@ void BreakTimerController::updateEnabled()
     if (!m_started)
         return;
     // Without the input hook no activity can be measured: the timer cannot run.
-    const bool run = isEnabled() && isAvailable();
+    const bool available = isAvailable();
+    if (available != m_lastAvailable) {
+        m_lastAvailable = available;
+        emit availabilityChanged(available); // the tab enables/disables its controls
+    }
+    const bool run = isEnabled() && available;
     if (run != m_engine.isEnabled()) {
         m_engine.setEnabled(run);
         qCInfo(lcApp) << "Break Timer" << (run ? "running" : "stopped") << "(enabled:" << isEnabled()

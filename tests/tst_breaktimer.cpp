@@ -9,17 +9,18 @@ namespace {
 
 constexpr qint64 kMin = 60000;
 
-// idle reset 5 min, max work 50 min, break 5 min, postpone 10 min (defaults).
+// idle reset 5 min, max work 50 min, break 5 min, postpone 10 min, work time
+// stops after 20 s without input (1.6.1).
 struct Fixture {
     FakeClock clock;
     BreakTimerEngine engine{clock};
     Fixture() { engine.setConfig({5 * kMin, 50 * kMin, 5 * kMin, 10 * kMin, false}); }
 
-    // Simulates continuous use: activity every 30 s for 'ms', updating every second.
+    // Simulates continuous use: activity every 10 s for 'ms', updating every second.
     void work(qint64 ms)
     {
         for (qint64 t = 0; t < ms; t += 1000) {
-            if (t % 30000 == 0)
+            if (t % 10000 == 0)
                 engine.onActivity();
             clock.advanceMs(1000);
             engine.update();
@@ -51,15 +52,55 @@ private slots:
         QCOMPARE(f.engine.state(), S::Working);
     }
 
-    void interactionTimerIsWallClockSinceFirstActivity()
+    void interactionTimerCountsOnlyWhileInputContinues()
     {
         Fixture f;
-        f.work(10 * kMin);
+        f.work(10 * kMin); // last input at 9:50
         QCOMPARE(f.engine.interactionMs(), 10 * kMin);
-        f.idle(4 * kMin); // short pause (< idle reset) still counts
-        QCOMPARE(f.engine.interactionMs(), 14 * kMin);
+        f.idle(4 * kMin); // pause (< idle reset): counts 20 s after the last input, then stops (1.6.1)
+        QCOMPARE(f.engine.interactionMs(), 10 * kMin + 10000);
         QCOMPARE(f.engine.state(), S::Working);
-        QCOMPARE(f.engine.timeUntilBreakMs(), 36 * kMin);
+        QCOMPARE(f.engine.timeUntilBreakMs(), 40 * kMin - 10000); // frozen while paused
+        f.work(kMin); // resumes with the next input
+        QCOMPARE(f.engine.interactionMs(), 11 * kMin + 10000);
+    }
+
+    void gapsShorterThanThePauseLimitCountFully()
+    {
+        Fixture f;
+        f.engine.onActivity();
+        for (int i = 0; i < 10; ++i) { // input every 19 s
+            f.idle(19000);
+            f.engine.onActivity();
+        }
+        QCOMPARE(f.engine.interactionMs(), qint64(190000));
+        f.idle(25000); // longer than 20 s: only 20 s count
+        f.engine.onActivity();
+        QCOMPARE(f.engine.interactionMs(), qint64(210000));
+    }
+
+    void pauseLimitIsConfigurable()
+    {
+        Fixture f;
+        BreakTimerEngine::Config c = f.engine.config();
+        QCOMPARE(c.pauseAfterMs, qint64(20000)); // default
+        c.pauseAfterMs = 5000;
+        f.engine.setConfig(c);
+        f.engine.onActivity();
+        f.idle(60000);
+        QCOMPARE(f.engine.interactionMs(), qint64(5000));
+    }
+
+    void noBreakWhileTheWorkTimeIsPaused()
+    {
+        Fixture f;
+        f.work(45 * kMin);
+        for (int i = 0; i < 10; ++i) { // 10 × (4 min pause + one input): 40 min of wall clock
+            f.idle(4 * kMin);
+            f.engine.onActivity();
+        }
+        QCOMPARE(f.engine.state(), S::Working); // only 45 min + 10 × 20 s of work
+        QCOMPARE(f.engine.interactionMs(), 45 * kMin - 10000 + 10 * 20000); // last work() input at 44:50
     }
 
     void breakAfterMaxWorkTime()
@@ -111,7 +152,7 @@ private slots:
         f.clock.advanceMs(2 * kMin);
         f.engine.onResume();
         QCOMPARE(f.engine.state(), S::Working);
-        QCOMPARE(f.engine.interactionMs(), 22 * kMin); // wall-clock time keeps counting
+        QCOMPARE(f.engine.interactionMs(), 20 * kMin + 10000); // only 20 s after the last input count
     }
 
     void lockCountsAsIdleAndIgnoresActivity()
@@ -132,9 +173,9 @@ private slots:
     void noBreakStartsWhileLocked()
     {
         Fixture f;
-        f.work(49 * kMin);
+        f.work(49 * kMin + 50000); // last input at 49:40
         f.engine.onScreenLocked();
-        f.idle(2 * kMin); // max work time passes while locked (but idle < reset)
+        f.idle(2 * kMin); // max work time reached while locked (20 s after the last input; idle < reset)
         QCOMPARE(f.engine.state(), S::Working);
         f.engine.onScreenUnlocked();
         QCOMPARE(f.engine.state(), S::BreakShown); // decided after unlock
@@ -227,6 +268,17 @@ private slots:
         f.engine.setEnabled(true);
         QCOMPARE(f.engine.state(), S::WaitingForActivity);
         QCOMPARE(f.engine.interactionMs(), qint64(0));
+    }
+
+    void postponeCountsFromThePostponeClick()
+    {
+        Fixture f;
+        f.work(50 * kMin);
+        f.idle(3 * kMin); // the break window is shown; no counting during the break
+        QCOMPARE(f.engine.interactionMs(), 50 * kMin);
+        f.engine.postpone();
+        f.idle(kMin); // the click on Postpone was the last input
+        QCOMPARE(f.engine.interactionMs(), 50 * kMin + 20000);
     }
 
     void startBreakNow()

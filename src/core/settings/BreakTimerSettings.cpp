@@ -12,6 +12,8 @@ void registerSettings(SettingsSchema &schema)
     schema.add(SettingDefinition::integer(BreakMin, kBreakDefault, kBreakMin, kBreakMax));
     schema.add(SettingDefinition::integer(PostponeMin, kPostponeDefault, kPostponeMin, kPostponeMax));
     schema.add(SettingDefinition::boolean(SuppressWhenFullscreen, false));
+    schema.add(SettingDefinition::integer(ActivityPauseS, kActivityPauseDefault, kActivityPauseMin,
+                                          kActivityPauseMax));
 }
 
 } // namespace ergo::BreakTimerSettings

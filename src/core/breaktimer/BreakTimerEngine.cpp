@@ -21,16 +21,26 @@ void BreakTimerEngine::setEnabled(bool enabled)
         return;
     m_state = enabled ? State::WaitingForActivity : State::Disabled;
     m_cycleStartMs = m_lastActivityMs = m_breakStartMs = m_postponeUntilMs = 0;
+    m_workedMs = m_markMs = m_breakWorkedMs = 0;
 }
 
 void BreakTimerEngine::resetCycle()
 {
     m_state = State::WaitingForActivity;
     m_cycleStartMs = m_lastActivityMs = m_breakStartMs = m_postponeUntilMs = 0;
+    m_workedMs = m_markMs = m_breakWorkedMs = 0;
+}
+
+qint64 BreakTimerEngine::workedAt(qint64 t) const
+{
+    if (m_cycleStartMs == 0)
+        return 0;
+    return m_workedMs + std::clamp<qint64>(t - m_markMs, 0, m_config.pauseAfterMs);
 }
 
 void BreakTimerEngine::showBreak()
 {
+    m_breakWorkedMs = workedAt(now()); // no counting while the break is shown (B-13)
     m_state = State::BreakShown;
     m_breakStartMs = now();
 }
@@ -40,16 +50,17 @@ void BreakTimerEngine::onActivity()
     if (m_state == State::Disabled || m_state == State::BreakShown || m_locked)
         return; // activity during a break changes nothing (B-13); locked = idle
     const qint64 t = now();
-    if (m_state == State::WaitingForActivity) {
-        m_state = State::Working;
-        m_cycleStartMs = t;
-    } else if (t - m_lastActivityMs >= m_config.idleResetMs) {
-        // Idle long enough since the last activity (e.g. update() was not
-        // called in between): this activity starts a new cycle.
+    if (m_state == State::WaitingForActivity || t - m_lastActivityMs >= m_config.idleResetMs) {
+        // First activity, or idle long enough since the last activity (e.g.
+        // update() was not called in between): this activity starts a new cycle.
         m_state = State::Working;
         m_cycleStartMs = t;
         m_postponeUntilMs = 0;
+        m_workedMs = 0;
+    } else {
+        m_workedMs = workedAt(t); // the gap counts up to pauseAfterMs
     }
+    m_markMs = t;
     m_lastActivityMs = t;
 }
 
@@ -92,7 +103,7 @@ void BreakTimerEngine::update()
     case State::Working:
         if (t - m_lastActivityMs >= m_config.idleResetMs)
             resetCycle(); // natural break taken (B-03)
-        else if (t - m_cycleStartMs >= m_config.maxWorkMs && !isBreakDelayedByFullscreen() && !m_locked)
+        else if (workedAt(t) >= m_config.maxWorkMs && !isBreakDelayedByFullscreen() && !m_locked)
             showBreak(); // never behind the lock screen; decided again after unlock
         return;
     case State::Postponed:
@@ -124,6 +135,10 @@ void BreakTimerEngine::postpone()
         m_cycleStartMs = m_breakStartMs;
         m_lastActivityMs = m_breakStartMs;
     }
+    // The work time continues from the break (B-08); the click on Postpone
+    // counts as the last input.
+    m_workedMs = m_breakWorkedMs;
+    m_markMs = now();
 }
 
 void BreakTimerEngine::startBreakNow()
@@ -137,14 +152,16 @@ qint64 BreakTimerEngine::interactionMs() const
 {
     if (m_cycleStartMs == 0 || m_state == State::WaitingForActivity || m_state == State::Disabled)
         return 0;
-    return std::max<qint64>(0, now() - m_cycleStartMs);
+    if (m_state == State::BreakShown)
+        return m_breakWorkedMs;
+    return workedAt(now());
 }
 
 qint64 BreakTimerEngine::timeUntilBreakMs() const
 {
     switch (m_state) {
     case State::Working:
-        return std::max<qint64>(0, m_cycleStartMs + m_config.maxWorkMs - now());
+        return std::max<qint64>(0, m_config.maxWorkMs - workedAt(now()));
     case State::Postponed:
         return std::max<qint64>(0, m_postponeUntilMs - now());
     case State::BreakShown:

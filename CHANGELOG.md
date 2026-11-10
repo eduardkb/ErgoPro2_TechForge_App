@@ -5,6 +5,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.6.1] - 2026-11-10
+
+Bug fixes and owner-requested changes (specification Part B updated).
+
+### Fixed
+- **Key Control tab – hotkeys missing from the list:** with more than two hotkeys, entries were cut off and the
+  "Every action already has a hotkey" text overlapped the list. The page now scrolls like the other tabs and the
+  list is always as tall as all its entries (no scroll bar of its own). Cause: the Key Control page was not in a
+  scroll area, so its card was squeezed to the window height.
+- **Break Timer tab – everything greyed out:** the settings and the on/off switch stayed disabled even with all
+  permissions granted. Cause: the tab is created before the input hook starts and never re-checked whether
+  activity monitoring had become available.
+
+### Changed
+- Key Control: "Every action already has a hotkey…" is shown **above** the list, in the warning color.
+- Key Control: the **Drag lock** card is removed from the tab. `draglock.DRAGLOCK_TIMEOUT` stays in
+  `settings.json` as a system-only setting.
+- Break Timer: the **Status** panel is now right below the on/off switch, above the settings.
+- Break Timer: **Break length** default is now **4 min** (was 5). Only new installations and "Reset all
+  settings" get the new default; a value already stored is kept.
+- Break Timer: **Active work time** now counts only while you use the computer: after 20 s without any mouse or
+  keyboard input it stops (those 20 s still count) and continues with the next input. The break appears when
+  this active time reaches *Break after working*. The 20 s are the system-only setting
+  `breaktimer.BREAKTIMER_ACTIVITY_PAUSE` (5–60 s) in `settings.json`.
+- 5 new / 3 adapted Break Timer unit tests (`tst_breaktimer`: 25).
+
 ## [1.6.0] - 2026-11-10
 
 Stage 6 – Drag Lock (Key Control action) and its interaction with Auto Click and the Break Timer.

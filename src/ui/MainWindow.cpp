@@ -42,7 +42,7 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
                                    new AutoClickTab(context.autoclick, context.settings, context.availability)),
                    tr("Auto Click"));
     m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
-                                   new KeyControlTab(context.keycontrol, context.input, context.settings)),
+                                   new KeyControlTab(context.keycontrol, context.input)),
                    tr("Key Control"));
     m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/statistics.svg"), tr("Statistics"),
                                        tr("Coming soon."), m_tabs),

@@ -23,10 +23,10 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 4 | 1.4.0 | Key Control (Function 2) – hotkeys and click actions |
 | 5 | 1.5.0 | Break Timer (Function 3) |
 | 6 | 1.6.0 | Drag Lock action + AutoClick interaction rules |
-| 7 | 1.7.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
-| 8 | – | Statistics (Function 4) – not planned yet, no prompt |
+| 7 | 1.7.0 | Statistics (Function 4) – daily usage charts, totals, CSV history |
+| 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
 
-> Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them.
+> Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, baseDescription.md), so the final stage reviews and packages every feature.
 
 ---
 
@@ -115,7 +115,7 @@ ergoPro2/
 - Modern look: Qt Fusion style + application stylesheet (`resources/style.qss`), card-like grouped sections with rounded corners, consistent spacing, one accent color, modern toggle-switch style for on/off states, clear "Active / Inactive" status badges. Must look good in **both light and dark OS mode** (follow the OS color scheme).
 - Every tab shows a small icon next to its name (accent color; black on the selected tab, in both themes – 1.4.1).
 - App and tray icons: create simple, clean SVG icons (a stylized hand/wrist or mouse). Tray icon variants: normal, **AutoClick active**, **Drag Lock active** (if easy to implement on the OS; not mandatory for AutoClick per A-09).
-- Statistics tab: placeholder "Coming soon".
+- Statistics tab: placeholder "Coming soon" until stage 7 (B.8).
 - Numeric parameters: **slider + spin box** side by side with units, applied immediately.
 
 ### B.1.2 Tray, close and exit
@@ -174,15 +174,17 @@ ergoPro2/
 | `autoclick.typingSuspendMs` | fixed 500 (constant) | 500 | 3 |
 | `autoclick.showVisualFeedback` | bool | false | 3 |
 | `keycontrol.actions` | list (see B.5) | empty | 4 |
-| `DRAGLOCK_TIMEOUT` (s) | 1–60 | 10 | 6 |
+| `DRAGLOCK_TIMEOUT` (s) | 1–60 | 10 | 6 (system-only since 1.6.1: settings.json, not on the tab) |
 | `breaktimer.enabled` | bool | true | 5 |
 | `BREAKTIMER_IDLE_RESET` (min) | 1–30 | 5 | 5 |
 | `BREAKTIMER_MAX_WORK_TIME` (min) | 5–180 | 50 | 5 |
-| `BREAKTIMER_BREAK_TIME` (min) | 1–30 | 5 | 5 |
+| `BREAKTIMER_BREAK_TIME` (min) | 1–30 | **4** (was 5 until 1.6.1) | 5 |
 | `BREAKTIMER_POSTPONE_TIME` (min) | 1–60 | 10 | 5 |
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
+| `BREAKTIMER_ACTIVITY_PAUSE` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
+| `statistics.retentionDays` | 1–360 | 90 | 7 |
 
-Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `draglock`, `breaktimer`). Each stage adds only its own keys (and their schema/validation).
+Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `draglock`, `breaktimer`, `statistics`). Each stage adds only its own keys (and their schema/validation).
 
 ## B.3 Logging
 - Levels: DEBUG, INFO, WARNING, ERROR, CRITICAL.
@@ -232,6 +234,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 
 ### B.5.2 Actions list (tab)
 - **Add Hotkey** flow (K-15): dialog "Press the key or key combination…" (Cancel) → shows the captured combination (e.g. `Ctrl+Shift+F9`) with *Confirm / Retry* → choose action from a dropdown → *Save* → register; on failure show a clear error and keep the dialog open to choose another key.
+- The tab page scrolls; the list has no scroll bar of its own and is always as tall as all its entries (1.6.1). When every action has a hotkey, the explanation is shown **above** the list in the warning color.
 - List columns: Key combination | Action | Status (Active / Disabled / Error + reason) | buttons **Enable/Disable**, **Modify** (key and/or action), **Reset binding**, **Delete** (with confirmation).
   - *Disable*: releases the key back to the OS (K-03).
   - *Reset binding*: unregisters and immediately re-registers the key with the OS (a "repair" action) (K-02a).
@@ -255,6 +258,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   - the app exits or AutoClick/Key Control is disabled (safety: never leave the button stuck down).
 - While active: AutoClick does not click. After release, AutoClick's reference point = release position, so the pointer must travel `AUTOCLICK_TRIGGER_DISTANCE` again before the next auto-click (D-04).
 - Tray icon shows drag-lock active (D-05).
+- `DRAGLOCK_TIMEOUT` is a system-only setting since 1.6.1 (owner request): it is changed in `settings.json` only; the Key Control tab shows no Drag lock card.
 
 ### B.5.4 Binding robustness (REVIEW 1.4)
 - One shared input hook (no thread per action). Keys stay exclusive over hours/days:
@@ -273,8 +277,8 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - **Power/session events**: sleep, resume, screen lock, unlock → signals (used by the watchdog and Break Timer).
 
 ## B.7 Function 3 – Break Timer
-- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; parameters; at the bottom a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), time until next break, current state (*Working*, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
-- **INTERACTION_TIMER = wall-clock time** since the start of the current work cycle (B-01 a). The cycle starts at the first real user activity after a reset.
+- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; right below it (above the parameters, 1.6.1) a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), time until next break, current state (*Working*, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
+- **INTERACTION_TIMER = active work time** of the current work cycle (changed in 1.6.1 at the owner's request; was wall-clock time, B-01 a). The cycle starts at the first real user activity after a reset. Time counts while input continues; when there is no mouse/keyboard input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (default 20) the timer stops – those seconds still count – and it resumes with the next input. The break starts when this active time reaches `BREAKTIMER_MAX_WORK_TIME`. The idle reset (`BREAKTIMER_IDLE_RESET`) still uses the time since the last input. While the break window is shown nothing counts; after Postpone the time continues (the Postpone click counts as input).
 - Activity = real mouse movement, clicks, wheel, key presses. Synthetic events excluded (B-02).
 - **Idle reset**: if there is no activity for ≥ `BREAKTIMER_IDLE_RESET` minutes, the timer resets (counts as a break taken) (B-03). Sleep and screen lock count as idle (B-16).
 - When INTERACTION_TIMER ≥ `BREAKTIMER_MAX_WORK_TIME` → show the **break window**.
@@ -291,9 +295,53 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - Disabling the Break Timer closes any break window and resets the timer.
 - Changing `BREAKTIMER_MAX_WORK_TIME` takes effect immediately on the current cycle.
 
-## B.8 Function 4 – Statistics
-- Not implemented. Placeholder tab only. Design events (clicks, breaks) so a statistics collector can subscribe later, but do not store anything (W-09).
+## B.8 Function 4 – Statistics (Stage 7)
+Owner description (stage 7 request) with the owner's answers to the clarification questions (all suggested defaults accepted).
 
+### B.8.1 What is recorded
+- Only **real** input (synthetic events excluded, B.6) while ErgoPro2 runs. Nothing is recorded while the app is not running, the machine sleeps or the screen is locked (that time is empty and counts as a pause).
+- **Privacy:** only counts and durations. Never which keys were pressed, never pointer positions, never window/app names.
+- Per **second** (time grid of the local wall clock):
+  - a second is a **mouse second** if it had mouse input (movement, button, wheel), a **keyboard second** if it had key input, an **active second** if it had either. Mouse seconds + keyboard seconds may exceed active seconds (both in the same second).
+- Counters:
+  - **mouse clicks** = real mouse-button presses (left / right / other counted separately);
+  - **clicks done for you** = clicks made by ErgoPro2 (Auto Click clicks, Key Control clicks; a double click counts 2; drag-lock press counts 1) – shows how many clicks were saved;
+  - **key presses** = key-down events without auto-repeat; modifier keys count; hotkey presses count;
+  - **wheel** = wheel events (shown in the daily totals, not in the charts);
+  - **mouse distance** = sum of the straight-line distances between consecutive pointer positions, in logical pixels; displayed as an approximate physical distance (cm / m) using the DPI of the screen the pointer is on (Qt `QScreen::physicalDotsPerInch`, falling back to 96 dpi; Wayland: relative motion as reported).
+- Day boundary: **local midnight**. Counters start at zero each day; the usage percent (B.8.2) is **not** reset at midnight.
+
+### B.8.2 Computer usage percent
+- `usage % = used seconds since the last usage reset ÷ (BREAKTIMER_MAX_WORK_TIME × 60) × 100`, where "used seconds" = active seconds (B.8.1). Only time with actual input counts (reading without touching anything does not).
+- **Reset to 0 %** only when there was **no input for `BREAKTIMER_BREAK_TIME` minutes** (owner's rule; this is intentionally the break length, not `BREAKTIMER_IDLE_RESET`). Sleep / lock / app not running count as no input. Resting through the whole break therefore resets it.
+- The break window buttons do **not** reset it: after Dismiss or Postpone, or when the break countdown ends while the user keeps working, the value keeps growing beyond 100 % on the same scale. Postponing any number of times changes nothing.
+- Calculated the same way when the Break Timer is disabled (with its current settings). A change of `BREAKTIMER_MAX_WORK_TIME` / `BREAKTIMER_BREAK_TIME` applies from that moment on; already recorded minutes are not recalculated.
+- Recorded **per minute**: the value at the end of each minute (minutes without data are empty, not 0).
+
+### B.8.3 Statistics tab
+Layout from top to bottom (scrollable, card style of B.1.1, light and dark mode):
+1. **Header:** the shown date (e.g. "Tuesday, 10 November 2026", "Today" when it is today).
+2. **Chart 1 – Computer usage percent:** line chart, one point per minute.
+   - x axis = time of day; shows the hours from the first to the last recorded minute of the day, rounded out to whole hours (empty day: 08:00–18:00 with "No data for this day"); hour labels.
+   - y axis = percent, starts at 0, auto-scales to the day's maximum but always shows at least 0–100 %; a highlighted reference line at 100 %.
+   - Gaps (no data) are not connected.
+   - Markers for break events: break shown, dismissed, postponed, completed (small symbols with a legend).
+   - Hover tooltip: time, percent, and the event if any.
+3. **Chart 2 – Activity:** three thin bar charts stacked on the **same** time axis as chart 1, in **5-minute buckets**: mouse clicks, key presses, mouse distance. Each has its own y scale and label; distinct colors from the accent palette; hover tooltip with the exact values of the bucket.
+4. **Daily totals** (grid of value tiles): mouse clicks (with left/right/other), clicks done for you, key presses, wheel events, mouse distance (cm/m), mouse usage time, keyboard usage time, total active computer time (all `h:mm:ss`), highest usage percent of the day.
+5. **Day navigation:** **‹ Previous day**, **Next day ›**, **Today**. Previous/next jump to the nearest day **that has a statistics file** (days without a file are skipped); buttons are disabled when there is no such day; Today is disabled when today is shown. Today's view updates live once per minute; past days are read-only.
+6. **Options card:** "Open statistics folder" button, then the setting **Keep statistics for** 1–360 days (default 90, slider + spin box).
+- No on/off switch: statistics are always recorded. The tab shows the usual availability banner when the input hook does not run (B.1.4).
+- Charts are drawn with the app's own `QPainter` widgets (no Qt Charts dependency).
+
+### B.8.4 Files
+- Folder: `QStandardPaths::AppDataLocation/statistics/` (next to `logs/`), created when needed; shown on the General tab next to the other folders.
+- One file per day: `ergopro2-stats-YYYY-MM-DD.csv`, UTF-8, comma separated, header line, one row per minute **that had data**:
+  `time,clicks_left,clicks_right,clicks_other,clicks_for_you,key_presses,wheel,mouse_distance_px,mouse_distance_cm,mouse_seconds,keyboard_seconds,active_seconds,usage_percent,events`
+  (`time` = `HH:MM`, `usage_percent` with one decimal, `events` = break events of that minute separated by `;`, e.g. `break_shown;break_postponed`).
+- Written once per minute (the finished minute is appended) and on exit; at most the current minute is lost after a crash. A file that ends with a partial line is repaired on the next start (partial line dropped, logged as WARNING). Unreadable lines are skipped and logged.
+- When the app starts again the same day, the existing file is read so the day's totals continue.
+- **Retention:** files older than `statistics.retentionDays` are deleted at startup, at midnight and immediately when the setting is lowered (no confirmation) – same mechanism as the log retention (B.3).
 ---
 
 # Part C – Stage prompts
@@ -531,35 +579,51 @@ ACCEPTANCE: drag-lock works for drag-and-drop and text selection on macOS, all r
 Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```
 
-## Stage 7 – Statistics (future)
-
-Analyze the functionality description below. if needed make questions to make sure functionality is completely understood. then replace this entire section (## Stage 7 – Statistics (future)) with a new section removing the (future) part describing the implementaion of this stage as it was done with all previous stages.
-
-base functionality description:
-the statistics tab will have 2 main sections:
-1. Daily statistics:
-- on top of the statistics screen 2 charts will be displayed (both charts only show one day of data):
-- Chart 1: displays a calculated value in percent on y axis and 24 hours time of the day on the x axis. this calculated value will be called "computer usage percent" and can range from 0 to more than 100 (so the x axis will be dynamicly sized). y axis containig the hours of the day can also be dynamicly sized depending if there is data or not. The "computer usage percent" value is a consilidated value that considers how much keyboard and/or mouse was used. 0% = none. 100% is only reached when the customer used keyboard and mouse the whole time from when the break timer was last reset and the REAKTIMER_MAX_WORK_TIME time is reached. if the user clicks the break window away, this usage percent grows beyond 100% if needed following the same scale. If the user pauses for BREAKTIMER_BREAK_TIME minutes this percent is reset to 0% not mattering if he postponed the break or not or how many times it was postponed. if the user stops using the computer for BREAKTIMER_BREAK_TIME minutes but the break was not triggered, the percentage should also be reset to 0%. The graphic should however, with a line show all details and how much percentage was reached for each minute of the day.
-- Chart 2: this is a chart that shows individually how much mouse movement, clicking and keyboard pressing was done throughout the day. display the graphing on best format possible so that a person can visually identify at what time of the day each was used.
-- after the two charts, daily general data will be displayed like at least: mouse clicks, mouse distance moved, keyboard pressed, accumulated mouse usage in hours/minures seconds, accumulated keyboard usage in hours/minutes seconds and total active computer use (mouse and/or keyboard usage) in hours/minures/seconds.
-- on the bottom of this section let the user navigate to previous daily statistics which the app reads from .csv files stored as per description on "options" section below. It will limit the navigation to existing files only (one per day). so, there should be one button to go back, one button to advance and one button to go back to "today".
-
-2. options:
-- define a folder that will store one file per day with all past keyboard and mouse usage statistics in .csv format including the calculated "computer usage percent". 
-- below the charts and data inert a button to open the folder where the statistics files are stored.
-- on the end of the screen on the statistics tabput a setting option that will define how many days of data will be retained on the .csv files (minimum 1 to maximum 360 days default = 90)
-
-## Stage 8 – Hardening, packaging and final documentation (v1.7.0)
+## Stage 7 – Statistics (v1.7.0)
 
 ```text
-You are implementing STAGE 7 of ErgoPro2: hardening, packaging and final documentation. Current version must be 1.6.x.
+You are implementing STAGE 7 of ErgoPro2: Function 4 – Statistics. Current version must be 1.6.x.
+
+FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.8, plus B.2, B.3, B.6 and B.7 which the statistics depend on). Then study the existing code (input layer and dispatcher, AutoClick and Key Control click paths, Break Timer controller and its signals, Logger retention, settings, tab widgets).
+
+GOAL: a Statistics tab with a daily usage-percent chart, an activity chart, daily totals and day-by-day history read from one CSV file per day, exactly as in Part B.8.
+
+IMPLEMENT:
+1. Version 1.7.0 + CHANGELOG entry. Remove the "Coming soon" placeholder of the Statistics tab.
+2. Setting statistics.retentionDays (1–360, default 90) with validation (Part B.2).
+3. Statistics collector in src/core as pure logic driven by input events, break events and the injectable clock: per-second mouse/keyboard/active seconds, click counters (left/right/other, real only), "clicks done for you" (Auto Click and Key Control clicks, double click = 2, drag-lock press = 1), key presses (no auto-repeat, modifiers count), wheel events, mouse distance in logical pixels; per-minute records; local-midnight day change without resetting the usage percent. Privacy: never store key identities, positions or app names.
+4. Computer usage percent in src/core (B.8.2): active seconds since the last reset ÷ (BREAKTIMER_MAX_WORK_TIME × 60) × 100; reset only after BREAKTIMER_BREAK_TIME minutes without input (sleep/lock/app not running count as no input); Dismiss, Postpone and the end of the break countdown do not reset it; grows beyond 100 %; works with the Break Timer disabled; setting changes apply from then on.
+5. Event sources: subscribe to the input dispatcher (real events only); get "clicks done for you" from the AutoClick worker and Key Control (add a clean signal/notification where missing, do not count synthetic events from the hook twice); get break events (shown, dismissed, postponed, completed) from the Break Timer controller (add signals where missing); sleep/lock from InputService. The collector must not slow down the input path (counting only, no I/O on the hook thread; per-second work on the GUI thread or a worker).
+6. CSV storage (B.8.4): folder AppDataLocation/statistics/, one file per day ergopro2-stats-YYYY-MM-DD.csv with the exact header and one row per minute that had data; append each finished minute and flush on exit; continue today's totals from an existing file after a restart; repair a partial last line; skip and log unreadable lines; retention cleanup at startup, at midnight and when the setting is lowered (reuse/extend the log-retention mechanism). Show the folder on the General tab with the other folders.
+7. Mouse distance display: convert pixels to cm/m with the DPI of the screen under the pointer (QScreen::physicalDotsPerInch, fallback 96 dpi), labelled as approximate.
+8. Statistics tab (B.8.3), all widgets in src/ui and drawn with QPainter (no Qt Charts):
+   - date header; Chart 1 line chart per minute (x = hours from first to last data rounded to whole hours, empty day 08:00–18:00 with "No data for this day"; y from 0, auto-scaled, at least 0–100 %, highlighted 100 % line; gaps not connected; break-event markers with legend; hover tooltip);
+   - Chart 2: three stacked thin bar charts on the same time axis, 5-minute buckets (clicks, key presses, mouse distance), own y scales, hover tooltip;
+   - daily totals tiles (clicks with left/right/other, clicks done for you, key presses, wheel, distance, mouse time, keyboard time, total active time as h:mm:ss, highest usage percent);
+   - navigation ‹ Previous day / Next day › / Today, skipping days without a file, buttons disabled when not possible; today updates live once per minute, past days read-only;
+   - options card: "Open statistics folder" button and "Keep statistics for" (days) parameter row;
+   - availability banner when the input hook is not running; good look in light and dark mode and at the minimum window size.
+9. Unit tests (fake clock) for the collector and the usage percent: per-second classification (mouse/keyboard/both), counters (repeat keys ignored, synthetic ignored, clicks done for you), distance, minute records, reset after BREAKTIMER_BREAK_TIME without input, no reset on dismiss/postpone/break end, growth beyond 100 %, sleep/lock counting as no input, midnight change keeps the percent, settings change mid-period. Unit tests for the CSV layer: write/read round trip, header, continue after restart, partial last line repair, invalid lines skipped, navigation finding previous/next existing day, retention cleanup. Unit tests for the chart axis logic (hour range, y scaling, 5-minute bucketing) kept in src/core.
+10. Add "Stage 7 – v1.7.0" to MANUAL_TESTS.md (tip: set BREAKTIMER_MAX_WORK_TIME 5 min and BREAKTIMER_BREAK_TIME 1 min to see 100 %, overflow after Dismiss and the reset within minutes; check the CSV in a spreadsheet; create files for older dates by copying/renaming a CSV to test navigation and retention).
+
+OUT OF SCOPE: hardening/packaging (stage 8), export or upload of statistics, statistics older than the retention, per-application statistics.
+
+ACCEPTANCE: the Statistics tab shows today's live data and older days from the CSV files; usage percent follows B.8.2 (100 % at BREAKTIMER_MAX_WORK_TIME of continuous use, keeps growing after Dismiss/Postpone, resets after BREAKTIMER_BREAK_TIME without input); counts match the user's activity; files are created, continued, navigated and cleaned up as specified; ctest passes; CI green.
+
+Follow all workflow rules in Part A.7 (no git commits; final report format).
+```
+
+## Stage 8 – Hardening, packaging and final documentation (v1.8.0)
+
+```text
+You are implementing STAGE 8 of ErgoPro2: hardening, packaging and final documentation. Current version must be 1.7.x.
 
 FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules and the full Part B specification), documentation/BUILD.md, documentation/MANUAL_TESTS.md and CHANGELOG.md. Then review the whole codebase.
 
-GOAL: a release-quality 1.7.0 build for all three OSes with complete documentation.
+GOAL: a release-quality 1.8.0 build for all three OSes with complete documentation.
 
 IMPLEMENT:
-1. Version 1.7.0 + CHANGELOG entry.
+1. Version 1.8.0 + CHANGELOG entry.
 2. Requirements audit: create documentation/REQUIREMENTS_TRACE.md – a table mapping every requirement in baseDescription.md, every answered question in ai_questions.md and every item in Part B to the implementing file(s)/class(es), the unit test(s) and the manual test(s). Mark gaps clearly. Fix every gap that is small and within the existing scope; list the others for the owner (do not add new features).
 3. Code review pass: error handling (no silent failures), thread safety (hook callbacks, shutdown order), resource cleanup on exit (hooks removed, keys released, mouse button never left down), memory leaks, log noise at INFO level, consistent UI texts and styling, light/dark mode check of every window.
 4. Cross-platform review of the Windows and Linux (X11 and Wayland) implementations against the macOS behavior; fix discrepancies found by reading the code and by CI. Make CI run the full test suite on all three OSes and publish packaged artifacts.
@@ -571,16 +635,14 @@ IMPLEMENT:
 6. Final documentation:
    - documentation/BUILD.md fully updated (build, package, install, run, autostart, signing, permissions, troubleshooting) for each OS.
    - documentation/USER_GUIDE.md: end-user guide for every tab and feature, including OS permission instructions and limitations (e.g. Wayland, elevated Windows apps, reserved key combos).
-   - documentation/ARCHITECTURE.md: modules, threads, event flow, how to add a new Key Control action, where statistics will hook in later.
-   - MANUAL_TESTS.md: "Stage 7 – v1.7.0" full regression checklist across all features (and a long-run/sleep-resume test).
+   - documentation/ARCHITECTURE.md: modules, threads, event flow, how to add a new Key Control action, how the statistics collector gets its events and stores its files.
+   - MANUAL_TESTS.md: "Stage 8 – v1.8.0" full regression checklist across all features (and a long-run/sleep-resume test).
 7. Make sure ctest passes and the app builds without relevant warnings.
 
-OUT OF SCOPE: Statistics (Function 4), new features.
+OUT OF SCOPE: new features.
 
 ACCEPTANCE: packages produced by the scripts install and run on macOS (manually verified by the owner) and are built by CI for Windows and Debian; trace document shows no unexplained gaps; documentation complete.
 
 Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```
 
-
-No prompt yet. Function 4 is out of scope for now (baseDescription.md). When it is time to implement it, write the requirements first (as was done with `ai_questions.md`), and then add a Stage 8 prompt here that bumps the version to `1.8.0`.

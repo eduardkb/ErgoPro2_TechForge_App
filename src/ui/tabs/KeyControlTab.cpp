@@ -2,12 +2,9 @@
 
 #include "core/LogCategories.h"
 #include "core/keycontrol/KeyAction.h"
-#include "core/settings/KeyControlSettings.h"
-#include "core/settings/SettingsStore.h"
 #include "ui/keycontrol/HotkeyDialog.h"
 #include "ui/keycontrol/KeyControlController.h"
 #include "ui/widgets/CardWidget.h"
-#include "ui/widgets/ParameterRow.h"
 #include "ui/widgets/StatusBadge.h"
 
 #include <QHBoxLayout>
@@ -15,6 +12,8 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QResizeEvent>
+#include <QTimer>
 #include <QScrollArea>
 #include <QTableWidget>
 #include <QVBoxLayout>
@@ -35,21 +34,31 @@ QPushButton *rowButton(const QString &text, QWidget *parent)
 
 } // namespace
 
-KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &input, SettingsStore &settings,
-                             QWidget *parent)
+KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &input, QWidget *parent)
     : QWidget(parent)
     , m_controller(controller)
     , m_input(input)
-    , m_settings(settings)
 {
-    auto *outer = new QVBoxLayout(this);
+    // The whole page scrolls (like the other tabs); before 1.6.1 the page was
+    // squeezed to the window height and the hotkey list could not grow.
+    auto *pageLayout = new QVBoxLayout(this);
+    pageLayout->setContentsMargins(0, 0, 0, 0);
+    auto *scroll = new QScrollArea(this);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    pageLayout->addWidget(scroll);
+    auto *content = new QWidget(scroll);
+    content->setObjectName(QStringLiteral("scrollContent"));
+    scroll->setWidget(content);
+    auto *outer = new QVBoxLayout(content);
     outer->setContentsMargins(0, 12, 0, 20);
     outer->setSpacing(16);
 
     auto *card = new CardWidget(tr("Hotkeys"),
                                 tr("Keyboard keys that click the mouse for you. While a hotkey is enabled, other "
                                    "applications do not receive that key."),
-                                this);
+                                content);
     m_add = new QPushButton(tr("Add Hotkey"), card);
     m_add->setProperty("variant", QStringLiteral("primary"));
     m_add->setCursor(Qt::PointingHandCursor);
@@ -68,7 +77,22 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
     m_table->horizontalHeader()->setSectionResizeMode(StatusColumn, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(ButtonsColumn, QHeaderView::ResizeToContents);
     m_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    m_table->setMinimumHeight(220);
+    // No own scroll bar: the table is always as tall as its rows (see fitTableHeight).
+    m_table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    // Rows change height when wrapped texts need more or fewer lines (layout,
+    // window resized): follow them.
+    connect(m_table->verticalHeader(), &QHeaderView::sectionResized, this, [this] { fitTableHeight(); });
+    m_table->installEventFilter(this);
+
+    // Above the table, as a warning (1.6.1).
+    m_allAssigned = new QLabel(tr("Every action already has a hotkey. Delete a hotkey to assign its action to "
+                                  "another key."),
+                               card);
+    m_allAssigned->setObjectName(QStringLiteral("warningText"));
+    m_allAssigned->setWordWrap(true);
+    m_allAssigned->hide();
+    card->contentLayout()->addWidget(m_allAssigned);
     card->contentLayout()->addWidget(m_table);
 
     m_empty = new QLabel(tr("No hotkeys yet. Click “Add Hotkey” and press the key you want to use."), card);
@@ -76,42 +100,14 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
     m_empty->setAlignment(Qt::AlignCenter);
     card->contentLayout()->addWidget(m_empty);
 
-    m_allAssigned = new QLabel(tr("Every action already has a hotkey. Delete a hotkey to assign its action to "
-                                  "another key."),
-                               card);
-    m_allAssigned->setObjectName(QStringLiteral("hint"));
-    m_allAssigned->setWordWrap(true);
-    m_allAssigned->hide();
-    card->contentLayout()->addWidget(m_allAssigned);
-
     m_lastError = new QLabel(card);
     m_lastError->setObjectName(QStringLiteral("warningText"));
     m_lastError->setWordWrap(true);
     m_lastError->hide();
     card->contentLayout()->addWidget(m_lastError);
-    outer->addWidget(card, 1);
+    outer->addWidget(card);
 
-    // Drag Lock (stage 6, B.5.3).
-    namespace KC = KeyControlSettings;
-    auto *drag = new CardWidget(tr("Drag lock"),
-                                tr("The “Drag lock (left button)” hotkey holds the left mouse button down so you can "
-                                   "drag without holding it. Press the hotkey again, any other key or any mouse "
-                                   "button to let go. A releasing click only lets go and is not passed on."),
-                                this);
-    m_dragTimeout = new ParameterRow(tr("Drag lock timeout"), KC::kDragLockTimeoutMin, KC::kDragLockTimeoutMax,
-                                     tr("s"), drag);
-    m_dragTimeout->setHint(tr("The button is let go after this many seconds without mouse movement."));
-    m_dragTimeout->setValue(m_settings.intValue(KC::DragLockTimeoutS));
-    drag->contentLayout()->addWidget(m_dragTimeout);
-    outer->addWidget(drag);
-    connect(m_dragTimeout, &ParameterRow::valueChanged, this,
-            [this](int v) { m_settings.setValue(KeyControlSettings::DragLockTimeoutS, v); });
-    connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
-        if (key == KeyControlSettings::DragLockTimeoutS)
-            m_dragTimeout->setValue(m_settings.intValue(key)); // e.g. "Reset all settings"
-    });
-
-    auto *tips = new CardWidget(tr("Tips"), {}, this);
+    auto *tips = new CardWidget(tr("Tips"), {}, content);
     auto *text = new QLabel(tr("• Function keys (F1–F24) and keypad keys work best; other keys need a modifier "
                                "(Shift, Ctrl, Alt/Option, Cmd/Win).\n"
                                "• On Mac keyboards the top row may need the fn key for F1–F12.\n"
@@ -124,6 +120,7 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
     text->setWordWrap(true);
     tips->contentLayout()->addWidget(text);
     outer->addWidget(tips);
+    outer->addStretch(1);
 
     connect(m_add, &QPushButton::clicked, this, [this] { openDialog({}); });
     connect(&m_controller, &KeyControlController::changed, this, &KeyControlTab::rebuild);
@@ -141,7 +138,6 @@ void KeyControlTab::rebuild()
     // action, so Add is also disabled when every action has a hotkey.
     const bool actionsLeft = !m_controller.selectableActions().isEmpty();
     m_add->setEnabled(available && actionsLeft);
-    m_dragTimeout->setEnabled(available);
     m_add->setToolTip(actionsLeft ? QString()
                                   : tr("Every action already has a hotkey. Delete a hotkey to free its action."));
     m_allAssigned->setVisible(!actionsLeft);
@@ -228,6 +224,37 @@ void KeyControlTab::rebuild()
         m_table->setCellWidget(row, ButtonsColumn, buttons);
     }
     m_table->resizeRowsToContents();
+    fitTableHeight();
+    // Row heights are final only after the layout has run.
+    QTimer::singleShot(0, this, [this] {
+        m_table->resizeRowsToContents();
+        fitTableHeight();
+    });
+}
+
+bool KeyControlTab::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_table && event->type() == QEvent::Resize) {
+        auto *resize = static_cast<QResizeEvent *>(event);
+        if (resize->size().width() != resize->oldSize().width()) // height changes come from fitTableHeight
+            QTimer::singleShot(0, this, [this] {
+                m_table->resizeRowsToContents();
+                fitTableHeight();
+            });
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
+void KeyControlTab::fitTableHeight()
+{
+    // Header + every row + frame: all hotkeys are always visible and the page
+    // scroll bar appears when the window is too small.
+    const int height = m_table->horizontalHeader()->sizeHint().height() + m_table->verticalHeader()->length()
+                       + 2 * m_table->frameWidth();
+    if (m_table->height() == height && m_table->minimumHeight() == height)
+        return;
+    m_table->setFixedHeight(height);
+    qCDebug(lcUi) << "Key Control table:" << m_table->rowCount() << "row(s)," << height << "px";
 }
 
 void KeyControlTab::openDialog(const QString &bindingId)
