@@ -80,12 +80,32 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::changeEvent(QEvent *event)
 {
     QMainWindow::changeEvent(event);
-    if (event->type() == QEvent::WindowStateChange && (windowState() & Qt::WindowMinimized) && m_hideToTray
-        && !m_exiting) {
-        // Hide after the minimize animation/state change has been processed.
+    if (event->type() != QEvent::WindowStateChange || m_exiting)
+        return;
+
+    const auto *change = static_cast<QWindowStateChangeEvent *>(event);
+    const bool wasMinimized = change->oldState() & Qt::WindowMinimized;
+    const bool isMinimized = windowState() & Qt::WindowMinimized;
+
+    if (isMinimized && !wasMinimized && m_hideToTray) {
+        // Hide the window while it stays minimized; showMainWindow() restores it
+        // with showNormal(). Do NOT clear the minimized state here: on macOS that
+        // request is lost while the minimize animation runs, so AppKit kept the
+        // window minimized in the Dock while Qt thought it was hidden and normal
+        // (blank window ignoring the close button - fixed in 1.1.2).
+        qCDebug(lcUi) << "Main window minimized: hiding it to the tray";
+        QTimer::singleShot(0, this, [this] { emit hideToTrayRequested(); });
+    } else if (wasMinimized && !isMinimized && !isVisible()) {
+        // The OS un-minimized the hidden window by itself (macOS: click on the
+        // Dock thumbnail). Show it through the normal path so Qt paints it and
+        // handles its close button again.
+        // Checked again after the event: showMainWindow()'s own showNormal() also
+        // leaves the minimized state shortly before the window becomes visible.
         QTimer::singleShot(0, this, [this] {
-            setWindowState(windowState() & ~Qt::WindowMinimized);
-            emit hideToTrayRequested();
+            if (isVisible())
+                return;
+            qCInfo(lcUi) << "Hidden main window was restored by the OS (e.g. Dock thumbnail): showing it";
+            emit showRequested();
         });
     }
 }

@@ -31,6 +31,9 @@ public:
 
 signals:
     void hideToTrayRequested();
+    // The OS restored the hidden, minimized window by itself (e.g. a click on
+    // its macOS Dock thumbnail): the controller must show it properly.
+    void showRequested();
     void exitRequested();
 
 protected:

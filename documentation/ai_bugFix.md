@@ -1,16 +1,3 @@
-# ErgoPro2 – AI Bug-Fix Prompt
-
-## How to use
-1. Copy the whole `text` block below into the AI tool, opened at the repository root.
-2. Fill in the **BUG REPORT** section at the end. The more detail, the better (logs are very helpful: General tab → *Open log folder*; set the log level to include Debug while reproducing the bug).
-3. One bug per run is recommended. If you report several related bugs in one run, they are fixed together under **one** patch version.
-4. Review, build and test the fix, then commit it yourself.
-
-Versioning reminder: each bug-fix run bumps only the **PATCH** number (`1.3.0` → `1.3.1` → `1.3.2`). The next stage resets it (`1.4.0`).
-
----
-
-```text
 You are fixing a bug in the ErgoPro2 desktop application (C++20 / Qt 6 Widgets / CMake; Windows 11, macOS 26 Tahoe, Debian 13).
 
 FIRST read:
@@ -55,4 +42,3 @@ BUG REPORT (filled in by the owner):
 - Relevant settings (e.g. AUTOCLICK_TRIGGER_TIMER, hotkeys configured):
 - Log excerpt (paste the lines around the time of the problem, or the log file path):
 - Screenshots / additional notes:
-```

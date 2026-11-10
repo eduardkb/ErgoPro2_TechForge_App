@@ -138,3 +138,20 @@ detection, the macOS permissions window and the "unavailable" banners.
 | 2 | macOS: `rm -rf build`, configure and build as in BUILD.md 1.2, run `ctest`. | Build succeeds, all tests pass (`tst_locationclassifier`: 16 passed). With Homebrew Qt 6.9+ the AGL message may appear but has no effect. |
 | 3 | macOS: start the app from `build/bin` and look at General → Installation. | No location warning (the build folder is a normal folder). |
 | 4 | Windows (when available): start a `windeployqt` folder from e.g. `C:\Tools\ErgoPro2` and look at General → Installation. | No "temporary folder" / "Downloads" warning. Copy the folder to `%USERPROFILE%\Downloads` and start it from there: the Downloads warning appears. |
+
+---
+
+## Bug fix – v1.1.2
+
+Start ErgoPro2 with the main window visible (macOS: `open build/bin/ErgoPro2.app`; if *Started manually*
+is set to *Hide in tray*, use tray → *Show window*).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | Click the yellow **minimize** button. | The window disappears (minimize animation) and ErgoPro2 stays in the menu bar; the Dock icon disappears. |
+| 2 | Menu bar icon → **Show window**. | The window comes back with all its content drawn (not blank). |
+| 3 | Minimize again. If a thumbnail of the ErgoPro2 window is shown on the right side of the Dock, click it. | The window comes back **with its content drawn**. The log contains `Hidden main window was restored by the OS (e.g. Dock thumbnail): showing it`. |
+| 4 | In that restored window, click the red **close** button. | The window hides to the menu bar (ErgoPro2 keeps running). Menu bar → Show window shows it again, drawn normally. |
+| 5 | Minimize with **Cmd+M**, then menu bar → Show window. | Same as steps 1–2. |
+| 6 | Repeat steps 1–4 three times in a row. | Same result every time; never a blank window. |
+| 7 | Windows / Linux (when available): minimize, then restore from the tray. Also try restoring via the taskbar if a button remains. | The window hides to the tray on minimize and comes back drawn and closable. |

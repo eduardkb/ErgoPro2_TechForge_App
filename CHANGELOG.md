@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.1.2] - 2026-11-10
+
+Bug fix (macOS minimize).
+
+### Fixed
+- **macOS:** after minimizing the main window, restoring it (e.g. by clicking its thumbnail in the Dock)
+  showed a completely blank window whose red close button did nothing; only the tray's *Show window*
+  brought it back. Minimize now hides the window to the tray as specified, and if macOS restores the
+  hidden window by itself it is shown normally (content drawn, close button working). Root cause: the app
+  cleared the "minimized" state while macOS was still animating the minimize, so macOS kept the window
+  minimized in the Dock while Qt considered it hidden; a later restore put a window on screen that Qt
+  neither painted nor closed.
+
 ## [1.1.1] - 2026-11-10
 
 Bug fixes (CI failures on Windows and macOS).

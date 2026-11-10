@@ -56,6 +56,7 @@ void AppController::start(const SettingsLoadResult &loadResult)
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
+    connect(m_window.get(), &MainWindow::showRequested, this, &AppController::showMainWindow);
     connect(m_window.get(), &MainWindow::exitRequested, this, &AppController::exitApplication);
     m_window->setSessionEndingCheck([this] { return m_platform.desktop->isSessionEnding(); });
 
