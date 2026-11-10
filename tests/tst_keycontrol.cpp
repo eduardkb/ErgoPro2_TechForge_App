@@ -297,6 +297,77 @@ private slots:
         QCOMPARE(f.engine.bindings().size(), 1);
     }
 
+    // ---------------------------------------------------------------- one hotkey per action (1.4.1)
+    void sameActionCannotBeAssignedTwice()
+    {
+        EngineFixture f;
+        QVERIFY(f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick).ok);
+        const OpResult r = f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::LeftClick);
+        QVERIFY(!r.ok);
+        QVERIFY(r.message.contains(QStringLiteral("already assigned")));
+        QCOMPARE(f.engine.bindings().size(), 1);
+        QVERIFY(!f.registrar.registered.contains(combo(Qt::Key_F10)));
+    }
+
+    void availableActionsExcludeAssignedOnes()
+    {
+        EngineFixture f;
+        QCOMPARE(f.engine.availableActionIds().size(), 4); // all visible actions
+        QString id;
+        f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &id);
+        QStringList free = f.engine.availableActionIds();
+        QCOMPARE(free.size(), 3);
+        QVERIFY(!free.contains(KeyActionRegistry::LeftClick));
+        // When modifying that hotkey, its own action stays selectable.
+        QVERIFY(f.engine.availableActionIds(id).contains(KeyActionRegistry::LeftClick));
+        QVERIFY(!f.engine.availableActionIds().contains(KeyActionRegistry::DragLock)); // hidden
+    }
+
+    void disabledHotkeyStillOccupiesItsAction()
+    {
+        EngineFixture f;
+        QString id;
+        f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::RightClick, &id);
+        f.engine.setEnabled(id, false);
+        QVERIFY(!f.engine.availableActionIds().contains(KeyActionRegistry::RightClick));
+        QVERIFY(!f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::RightClick).ok);
+    }
+
+    void deletingAHotkeyFreesItsAction()
+    {
+        EngineFixture f;
+        QString id;
+        f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &id);
+        f.engine.remove(id);
+        QVERIFY(f.engine.availableActionIds().contains(KeyActionRegistry::LeftClick));
+        QVERIFY(f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::LeftClick).ok);
+    }
+
+    void modifyCannotTakeAnotherHotkeysAction()
+    {
+        EngineFixture f;
+        QString a, b;
+        f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &a);
+        f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::RightClick, &b);
+        QVERIFY(!f.engine.modify(b, combo(Qt::Key_F10), KeyActionRegistry::LeftClick).ok);
+        QCOMPARE(f.engine.binding(b)->actionId, KeyActionRegistry::RightClick);
+        // Changing only the key while keeping the own action is fine.
+        QVERIFY(f.engine.modify(a, combo(Qt::Key_F11), KeyActionRegistry::LeftClick).ok);
+    }
+
+    void storedDuplicateActionsAreErrors()
+    {
+        KeyActionRegistry actions;
+        const QJsonArray stored{
+            QJsonObject{{"id", "a"}, {"keyCombo", "F9"}, {"action", "left-click"}},
+            QJsonObject{{"id", "b"}, {"keyCombo", "F10"}, {"action", "left-click"}},
+        };
+        const QList<KeyBinding> list = KeyBindingStore::fromJson(stored, actions, OsStyle::MacOS);
+        QVERIFY(list[0].isValid());
+        QVERIFY(!list[1].isValid());
+        QVERIFY(list[1].loadError.contains(QStringLiteral("already assigned")));
+    }
+
     void registrationFailureIsReportedAndNotKept()
     {
         EngineFixture f;
@@ -373,7 +444,7 @@ private slots:
         EngineFixture f;
         QString a, b;
         f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &a);
-        f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::LeftClick, &b);
+        f.engine.add(combo(Qt::Key_F10), KeyActionRegistry::RightClick, &b);
         f.engine.setEnabled(b, false);
         f.engine.setPaused(true); // Add/Modify dialog open (K-14)
         QVERIFY(f.registrar.registered.isEmpty());

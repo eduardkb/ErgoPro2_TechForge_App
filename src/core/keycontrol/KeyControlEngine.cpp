@@ -127,13 +127,36 @@ ComboCheck KeyControlEngine::check(const KeyCombo &combo, const QString &exceptI
     return c;
 }
 
+OpResult KeyControlEngine::checkAction(const QString &actionId, const QString &exceptId) const
+{
+    const IKeyAction *action = m_actions.find(actionId);
+    if (!action)
+        return OpResult::failure(tr("Unknown action."));
+    for (const KeyBinding &b : m_bindings) {
+        if (b.id != exceptId && b.isValid() && b.actionId == actionId)
+            return OpResult::failure(tr("\"%1\" is already assigned to %2. Each action can have only one hotkey.")
+                                         .arg(action->displayName(), comboToDisplayText(b.combo, m_os)));
+    }
+    return OpResult::success();
+}
+
+QStringList KeyControlEngine::availableActionIds(const QString &exceptId) const
+{
+    QStringList ids;
+    for (const IKeyAction *a : m_actions.visibleActions()) {
+        if (checkAction(a->id(), exceptId).ok)
+            ids << a->id();
+    }
+    return ids;
+}
+
 OpResult KeyControlEngine::add(const KeyCombo &combo, const QString &actionId, QString *newId)
 {
     const ComboCheck c = check(combo);
     if (!c.accepted())
         return OpResult::failure(c.message);
-    if (!m_actions.find(actionId))
-        return OpResult::failure(tr("Unknown action."));
+    if (const OpResult a = checkAction(actionId, {}); !a.ok)
+        return a;
     KeyBinding b;
     b.id = KeyBindingStore::newId();
     b.combo = combo;
@@ -163,8 +186,8 @@ OpResult KeyControlEngine::modify(const QString &id, const KeyCombo &combo, cons
     const ComboCheck c = check(combo, id);
     if (!c.accepted())
         return OpResult::failure(c.message);
-    if (!m_actions.find(actionId))
-        return OpResult::failure(tr("Unknown action."));
+    if (const OpResult a = checkAction(actionId, id); !a.ok)
+        return a;
 
     const KeyBinding previous = *b;
     release(*b);

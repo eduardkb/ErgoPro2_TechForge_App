@@ -166,7 +166,8 @@ QWidget *HotkeyDialog::buildActionPage()
     actionName->setObjectName(QStringLiteral("valueLabel"));
     actionName->setMinimumWidth(90);
     m_action = new QComboBox(page);
-    for (IKeyAction *a : m_controller.selectableActions())
+    // Only actions without a hotkey (plus this hotkey's own action when modifying).
+    for (IKeyAction *a : m_controller.selectableActions(m_bindingId))
         m_action->addItem(a->displayName(), a->id());
     actionRow->addWidget(actionName);
     actionRow->addWidget(m_action, 1);
@@ -263,6 +264,11 @@ void HotkeyDialog::onCaptured(const KeyCombo &combo)
 void HotkeyDialog::save()
 {
     const QString actionId = m_action->currentData().toString();
+    if (actionId.isEmpty()) {
+        m_saveError->setText(tr("Every action already has a hotkey. Delete a hotkey to free its action."));
+        m_saveError->show();
+        return;
+    }
     // The dialog paused all hotkeys; registration happens with them resumed so
     // the new key is registered like the others.
     m_controller.setPaused(false);

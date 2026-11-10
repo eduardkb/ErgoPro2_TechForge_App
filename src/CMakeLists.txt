@@ -122,6 +122,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/PermissionActions.cpp ui/PermissionActions.h
     ui/PermissionsDialog.cpp ui/PermissionsDialog.h
     ui/SingleInstance.cpp ui/SingleInstance.h
+    ui/TabIcons.cpp ui/TabIcons.h
     ui/Theme.cpp ui/Theme.h
     ui/TrayController.cpp ui/TrayController.h
     ui/tabs/AutoClickTab.cpp ui/tabs/AutoClickTab.h

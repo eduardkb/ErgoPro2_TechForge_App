@@ -361,3 +361,23 @@ is a new app for macOS: reset and grant **Accessibility** and **Input Monitoring
 | 28 | **Long run:** leave ErgoPro2 running for 2+ hours with normal use (include a sleep/wake), then repeat steps 11 and 15. | Still exclusive and working. |
 | 29 | Exit ErgoPro2, then press the hotkeys in TextEdit. | They behave like normal keys again (released on exit). |
 | 30 | Windows / Debian X11 (when available): steps 3–25. | Same behavior; combinations shown as Ctrl+Shift+F9 / Win / Super; Windows rejects Win+… and Ctrl+Alt+Del; on X11 a key already grabbed by another program shows "already used by another application (X11 grab refused)". |
+
+---
+
+## Bug fix – v1.4.1
+
+Owner-requested changes. Build, Reinstall, re-grant the permissions if needed (BUILD.md 1.6.6), start the
+installed copy.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 12 test programs pass (`tst_keycontrol`: 38 cases). |
+| 2 | **Key Control:** with hotkeys for some actions (e.g. F7 → Left click), click **Add Hotkey**, press a free key, Confirm. | The *Action* list does **not** contain actions that already have a hotkey (e.g. no "Left mouse click"). |
+| 3 | **Modify…** the F7 hotkey. | Its own action "Left mouse click" is in the list (and selected); actions of other hotkeys are not. |
+| 4 | **Disable** a hotkey, then Add Hotkey. | Its action is still not offered (disabled hotkeys keep their action). |
+| 5 | **Delete…** a hotkey → Yes, then Add Hotkey. | Its action is offered again. |
+| 6 | Assign all four actions (Left, Right, Double left click, Auto Click on/off). | **Add Hotkey** is disabled; the text "Every action already has a hotkey…" is shown. Deleting one enables it again. |
+| 7 | Exit, edit `settings.json` so two entries have the same `"action"`, start. | The second entry shows **ERROR** "… is already assigned to …"; the first works. |
+| 8 | Look at the tab bar in light and dark mode; click through all tabs. | Every tab (General, Break Timer, Auto Click, Key Control, Statistics) has an icon at the size of the tab text. Unselected icons are teal; the selected tab's icon is **black**. |
+| 9 | **Auto Click:** switch on **Show countdown cross**, activate Auto Click, move > distance and stop. | An orange X appears at the pointer tip, grows outward and is about cursor-sized when the click happens, then disappears. It does not block the click (the item under the pointer is clicked) and never takes focus. |
+| 10 | Move again before the click. | The X follows the pointer and starts small again. |

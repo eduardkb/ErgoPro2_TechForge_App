@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.4.1] - 2026-11-10
+
+Owner-requested changes (specification updated in `implementation_stages.md` Part B).
+
+### Changed
+- **Key Control – one hotkey per action:** an action can be assigned to only one hotkey. The Add/Modify
+  dialog offers only actions without a hotkey (plus the hotkey's own action when modifying); an action
+  becomes available again when its hotkey is deleted. Disabled hotkeys keep their action. When every action
+  has a hotkey, *Add Hotkey* is disabled with an explanation. Stored duplicates are shown with an Error status.
+- **Tab icons:** every tab shows an icon next to its name (new icon for General); icons use the accent color
+  and turn black on the selected tab.
+- **Auto Click countdown:** the countdown ring is replaced by an orange X that grows outward from the pointer
+  tip to about the size of the mouse cursor when the click happens (option *Show countdown cross*).
+
 ## [1.4.0] - 2026-11-10
 
 Stage 4 – Function 2: Key Control (hotkeys; Drag Lock follows in stage 6).

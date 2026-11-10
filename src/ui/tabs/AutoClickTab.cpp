@@ -82,7 +82,7 @@ AutoClickTab::AutoClickTab(AutoClickController &controller, SettingsStore &setti
         params->contentLayout()->addWidget(r);
 
     auto *feedbackRow = new QHBoxLayout;
-    auto *feedbackName = new QLabel(tr("Show countdown ring"), params);
+    auto *feedbackName = new QLabel(tr("Show countdown cross"), params);
     feedbackName->setObjectName(QStringLiteral("valueLabel"));
     feedbackName->setMinimumWidth(170);
     m_feedback = new ToggleSwitch(params);
@@ -160,7 +160,7 @@ void AutoClickTab::refresh()
         m_feedback->setChecked(m_settings.boolValue(AC::ShowVisualFeedback));
     }
     m_feedbackHint->setText(m_controller.visualFeedbackSupported()
-                                ? tr("A small ring next to the pointer fills up until the click happens.")
+                                ? tr("An orange X grows from the pointer tip until the click happens.")
                                 : m_controller.visualFeedbackUnsupportedReason());
     if (!active)
         m_lastError->hide();

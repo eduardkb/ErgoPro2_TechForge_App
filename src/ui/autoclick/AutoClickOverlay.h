@@ -5,14 +5,15 @@
 
 namespace ergo {
 
-// Optional AutoClick visual feedback (S-12, B.4): a small translucent ring
-// next to the pointer that fills during the countdown. Frameless, always on
-// top, click-through (transparent for input) and never takes focus.
+// Optional AutoClick visual feedback (S-12, B.4, changed in 1.4.1): an orange
+// X centered on the pointer tip that grows outward during the countdown, up to
+// about the size of the mouse cursor when the click happens. Frameless, always
+// on top, click-through (transparent for input) and never takes focus.
 class AutoClickOverlay : public QWidget {
     Q_OBJECT
 public:
-    static constexpr int kSize = 34;
-    static constexpr int kOffset = 14; // from the pointer, down-right
+    static constexpr int kSize = 32;       // window, centered on the pointer
+    static constexpr double kMaxArm = 10;  // final half-size of the X (=> 20 x 20 px)
 
     AutoClickOverlay();
 

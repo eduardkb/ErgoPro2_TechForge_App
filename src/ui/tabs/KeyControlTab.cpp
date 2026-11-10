@@ -70,6 +70,14 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
     m_empty->setAlignment(Qt::AlignCenter);
     card->contentLayout()->addWidget(m_empty);
 
+    m_allAssigned = new QLabel(tr("Every action already has a hotkey. Delete a hotkey to assign its action to "
+                                  "another key."),
+                               card);
+    m_allAssigned->setObjectName(QStringLiteral("hint"));
+    m_allAssigned->setWordWrap(true);
+    m_allAssigned->hide();
+    card->contentLayout()->addWidget(m_allAssigned);
+
     m_lastError = new QLabel(card);
     m_lastError->setObjectName(QStringLiteral("warningText"));
     m_lastError->setWordWrap(true);
@@ -103,7 +111,13 @@ KeyControlTab::KeyControlTab(KeyControlController &controller, InputService &inp
 void KeyControlTab::rebuild()
 {
     const bool available = m_controller.isAvailable();
-    m_add->setEnabled(available); // controls of an unavailable feature are disabled (B.1.4)
+    // Controls of an unavailable feature are disabled (B.1.4); one hotkey per
+    // action, so Add is also disabled when every action has a hotkey.
+    const bool actionsLeft = !m_controller.selectableActions().isEmpty();
+    m_add->setEnabled(available && actionsLeft);
+    m_add->setToolTip(actionsLeft ? QString()
+                                  : tr("Every action already has a hotkey. Delete a hotkey to free its action."));
+    m_allAssigned->setVisible(!actionsLeft);
 
     const QList<KeyBinding> &bindings = m_controller.bindings();
     m_table->setRowCount(int(bindings.size()));

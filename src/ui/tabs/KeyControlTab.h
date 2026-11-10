@@ -30,6 +30,7 @@ private:
     QPushButton *m_add = nullptr;
     QTableWidget *m_table = nullptr;
     QLabel *m_empty = nullptr;
+    QLabel *m_allAssigned = nullptr;
     QLabel *m_lastError = nullptr;
 };
 

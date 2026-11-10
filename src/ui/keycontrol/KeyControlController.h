@@ -32,7 +32,9 @@ public:
     QString displayText(const KeyCombo &combo) const { return comboToDisplayText(combo, m_os); }
     QString modifiersText(Modifiers modifiers) const { return modifiersToDisplayText(modifiers, m_os); }
     QString actionName(const QString &actionId) const;
-    QList<IKeyAction *> selectableActions() const { return m_actions.visibleActions(); }
+    // Actions without a hotkey yet (one hotkey per action); the hotkey being
+    // modified (exceptId) keeps its own action.
+    QList<IKeyAction *> selectableActions(const QString &exceptId = {}) const;
     bool isAvailable() const;
 
     const QList<KeyBinding> &bindings() const { return m_engine->bindings(); }

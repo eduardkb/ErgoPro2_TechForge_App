@@ -4,6 +4,7 @@
 #include "core/keycontrol/KeyComboValidation.h"
 
 #include <QCoreApplication>
+#include <QHash>
 #include <QJsonValue>
 #include <QUuid>
 
@@ -28,6 +29,7 @@ QList<KeyBinding> fromJson(const QJsonArray &array, const KeyActionRegistry &act
 {
     QList<KeyBinding> result;
     QSet<KeyCombo> seen;
+    QHash<QString, KeyCombo> actionOwner; // one hotkey per action (1.4.1)
     for (int i = 0; i < array.size(); ++i) {
         KeyBinding b;
         const QJsonValue value = array.at(i);
@@ -57,8 +59,14 @@ QList<KeyBinding> fromJson(const QJsonArray &array, const KeyActionRegistry &act
                 else if (seen.contains(b.combo))
                     b.loadError = tr("%1 is assigned twice; only the first entry is used.")
                                       .arg(comboToDisplayText(b.combo, os));
-                else
+                else if (actionOwner.contains(b.actionId))
+                    b.loadError = tr("\"%1\" is already assigned to %2; only the first entry is used.")
+                                      .arg(actions.find(b.actionId)->displayName(),
+                                           comboToDisplayText(actionOwner.value(b.actionId), os));
+                else {
                     seen.insert(b.combo);
+                    actionOwner.insert(b.actionId, b.combo);
+                }
             }
         }
         if (!b.isValid() && problems)

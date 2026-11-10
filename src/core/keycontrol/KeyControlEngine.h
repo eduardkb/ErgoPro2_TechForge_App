@@ -48,6 +48,11 @@ public:
     // Validation incl. duplicates (another binding than exceptId uses the combo).
     ComboCheck check(const KeyCombo &combo, const QString &exceptId = {}) const;
 
+    // One hotkey per action (1.4.1): visible actions not yet used by another
+    // listed hotkey (disabled ones included). exceptId: the hotkey being
+    // modified keeps its own action selectable.
+    QStringList availableActionIds(const QString &exceptId = {}) const;
+
     OpResult add(const KeyCombo &combo, const QString &actionId, QString *newId = nullptr);
     OpResult modify(const QString &id, const KeyCombo &combo, const QString &actionId);
     OpResult setEnabled(const QString &id, bool enabled);
@@ -75,6 +80,7 @@ public:
 
 private:
     KeyBinding *findBinding(const QString &id);
+    OpResult checkAction(const QString &actionId, const QString &exceptId) const;
     void apply(KeyBinding &binding);
     void release(KeyBinding &binding);
 

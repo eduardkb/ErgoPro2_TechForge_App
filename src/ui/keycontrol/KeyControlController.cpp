@@ -120,6 +120,14 @@ void KeyControlController::shutdown()
     qCInfo(lcApp) << "Key Control stopped; all hotkeys released";
 }
 
+QList<IKeyAction *> KeyControlController::selectableActions(const QString &exceptId) const
+{
+    QList<IKeyAction *> list;
+    for (const QString &id : m_engine->availableActionIds(exceptId))
+        list << m_actions.find(id);
+    return list;
+}
+
 QString KeyControlController::actionName(const QString &actionId) const
 {
     const IKeyAction *action = m_actions.find(actionId);

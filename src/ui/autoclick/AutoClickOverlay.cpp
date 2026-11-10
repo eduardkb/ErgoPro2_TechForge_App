@@ -1,8 +1,8 @@
 #include "ui/autoclick/AutoClickOverlay.h"
 
 #include "core/Clock.h"
-#include "ui/Theme.h"
 
+#include <QLineF>
 #include <QPainter>
 
 #include <algorithm>
@@ -24,7 +24,7 @@ AutoClickOverlay::AutoClickOverlay()
         update();
         if (progress() >= 1.0) {
             m_animation.stop();
-            QTimer::singleShot(120, this, &QWidget::hide); // the click happens now
+            hide(); // the click happens now
         }
     });
 }
@@ -39,7 +39,8 @@ void AutoClickOverlay::setCountdown(bool active, const QPointF &position, bool p
     }
     m_deadlineMs = deadlineMs;
     m_totalMs = std::max(1, totalMs);
-    move(int(position.x()) + kOffset, int(position.y()) + kOffset);
+    // Centered on the pointer tip (where the click will happen).
+    move(int(position.x()) - kSize / 2, int(position.y()) - kSize / 2);
     if (!isVisible())
         show();
     m_animation.start();
@@ -54,22 +55,25 @@ double AutoClickOverlay::progress() const
 
 void AutoClickOverlay::paintEvent(QPaintEvent *)
 {
-    const ThemeColors &c = Theme::instance().colors();
+    // Orange X growing from the center outward; a thin white outline keeps it
+    // visible on orange or dark backgrounds.
+    const double arm = 1.5 + progress() * (kMaxArm - 1.5);
+    const QPointF c(kSize / 2.0, kSize / 2.0);
+    const QLineF a(c.x() - arm, c.y() - arm, c.x() + arm, c.y() + arm);
+    const QLineF b(c.x() - arm, c.y() + arm, c.x() + arm, c.y() - arm);
+
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
-    const QRectF ring = QRectF(rect()).adjusted(4, 4, -4, -4);
-
-    QColor track = c.accent;
-    track.setAlphaF(0.25);
-    p.setPen(QPen(track, 4));
-    p.setBrush(Qt::NoBrush);
-    p.drawEllipse(ring);
-
-    QPen arc(c.accent, 4);
-    arc.setCapStyle(Qt::RoundCap);
-    p.setPen(arc);
-    const int span = int(-progress() * 360 * 16); // clockwise from 12 o'clock
-    p.drawArc(ring, 90 * 16, span);
+    QPen outline(QColor(255, 255, 255, 220), 5.0);
+    outline.setCapStyle(Qt::RoundCap);
+    p.setPen(outline);
+    p.drawLine(a);
+    p.drawLine(b);
+    QPen cross(QColor(0xF9, 0x73, 0x16), 3.0); // orange
+    cross.setCapStyle(Qt::RoundCap);
+    p.setPen(cross);
+    p.drawLine(a);
+    p.drawLine(b);
 }
 
 } // namespace ergo

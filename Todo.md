@@ -1,0 +1,5 @@
+# Problems
+
+1. When assigning Key Control hotkeys the application allows assigning the same action to multiple keys. This should not be allowed. When one actions is already assigned to a key, that action should not be available on the action list anymore. and return to be available whenever it is deleted from the hotkeys list.
+2. there were nice icons as "placeholder" on each tab. Now, only statistics and break timer show them. I want each tab, on the tab itself to have this same icon on a size that matches the tab size. Create a icon for general tab. as well. I saw that the color of the icon is the same as the color of the highlighted tab. so, if tab is highlighted (selected), make the icon change its color to black.
+3. show countdown ring on auto click tab - improve it to be a orange colored x growing from where the pointer is pointing outward. The x pattern should not grow too much. not much bigger than the mouse cursor itself. 

@@ -41,6 +41,8 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private:
+    void updateTabIcons();
+
     QTabWidget *m_tabs = nullptr;
     GeneralTab *m_general = nullptr;
     bool m_hideToTray = true;

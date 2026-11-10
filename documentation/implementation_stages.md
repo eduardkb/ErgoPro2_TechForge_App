@@ -113,6 +113,7 @@ ergoPro2/
 ### B.1.1 Window and look & feel
 - Main window with top tabs, in this order: **General**, **Break Timer**, **Auto Click**, **Key Control**, **Statistics**.
 - Modern look: Qt Fusion style + application stylesheet (`resources/style.qss`), card-like grouped sections with rounded corners, consistent spacing, one accent color, modern toggle-switch style for on/off states, clear "Active / Inactive" status badges. Must look good in **both light and dark OS mode** (follow the OS color scheme).
+- Every tab shows a small icon next to its name (accent color; black on the selected tab, in both themes – 1.4.1).
 - App and tray icons: create simple, clean SVG icons (a stylized hand/wrist or mouse). Tray icon variants: normal, **AutoClick active**, **Drag Lock active** (if easy to implement on the OS; not mandatory for AutoClick per A-09).
 - Statistics tab: placeholder "Coming soon".
 - Numeric parameters: **slider + spin box** side by side with units, applied immediately.
@@ -209,7 +210,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   7. While **Drag Lock** is active: no auto-click. After drag-lock release, the reference point = release position (B.5.3).
 - Works **everywhere**, including the ErgoPro2 window and the break window (A-06, REVIEW 1.6). No app exclusion list.
 - Synthetic clicks are **tagged** (B.6) so they are never treated as manual clicks or as user activity.
-- Optional visual feedback (S-12, A-08, off by default): a small translucent ring near the cursor that fills during the countdown. Click-through, never takes focus.
+- Optional visual feedback (S-12, A-08, off by default): an orange X centered on the pointer tip that grows outward during the countdown, up to about the size of the mouse cursor when the click happens (changed in 1.4.1; was a ring). Click-through, never takes focus.
 - Tray icon shows the active state if easily possible.
 - No sound, ever.
 
@@ -223,7 +224,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   - macOS: Fn/Globe, `Cmd+Tab`, `Cmd+Space` (if used by Spotlight), `Cmd+Option+Esc`, `Ctrl+Cmd+Q`, power/media keys.
   - Linux: `Ctrl+Alt+Del`, `Ctrl+Alt+F1…F12` (VT switching), `Ctrl+Alt+Backspace`.
   - Also reject keys reserved by the OS that registration reports as failing.
-- One key combination ↔ at most one action (K-08).
+- One key combination ↔ at most one action (K-08), and one action ↔ at most one hotkey (owner request, 1.4.1): the Add/Modify dialog offers only actions that have no hotkey yet (plus the hotkey's own action when modifying). Disabled hotkeys keep their action; deleting the hotkey frees it. When every action has a hotkey, Add Hotkey is disabled with an explanation. Stored duplicates are shown with an Error status.
 - Bindings are **exclusive**: while an enabled action is bound, the OS and other apps do **not** receive that key combination (swallowed by the low-level hook).
 - Fire **once per key press**, on key-down, no auto-repeat (K-10).
 - Hotkeys also work while the break window is shown (K-13) and on the ErgoPro2 window.

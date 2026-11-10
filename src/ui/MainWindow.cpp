@@ -2,6 +2,8 @@
 
 #include "core/LogCategories.h"
 #include "ui/AppContext.h"
+#include "ui/TabIcons.h"
+#include "ui/Theme.h"
 #include "ui/tabs/AutoClickTab.h"
 #include "ui/tabs/GeneralTab.h"
 #include "ui/tabs/KeyControlTab.h"
@@ -50,7 +52,22 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
 
     setCentralWidget(m_tabs);
 
+    // Icons on the tabs: accent color, black on the selected tab (1.4.1).
+    m_tabs->setIconSize(QSize(18, 18));
+    updateTabIcons();
+    connect(&Theme::instance(), &Theme::changed, this, &MainWindow::updateTabIcons);
+
     connect(m_general, &GeneralTab::exitRequested, this, &MainWindow::exitRequested);
+}
+
+void MainWindow::updateTabIcons()
+{
+    // Same order as the tabs (B.1.1).
+    static const char *const kIcons[] = {":/icons/ui/general.svg", ":/icons/ui/break.svg", ":/icons/ui/autoclick.svg",
+                                         ":/icons/ui/keyboard.svg", ":/icons/ui/statistics.svg"};
+    const QColor normal = Theme::instance().colors().accent;
+    for (int i = 0; i < m_tabs->count() && i < int(std::size(kIcons)); ++i)
+        m_tabs->setTabIcon(i, makeTabIcon(QString::fromLatin1(kIcons[i]), normal, Qt::black));
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
