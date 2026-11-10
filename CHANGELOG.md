@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.1.3] - 2026-11-10
+
+Bug fix (macOS Accessibility permission).
+
+### Fixed
+- **macOS:** the Accessibility permission was never recognized as granted, even when it was switched on
+  in System Settings and after restarting (Input Monitoring worked). Root cause: the build left
+  `ErgoPro2.app` with only the linker's partial signature (identifier `ErgoPro2`, resources not sealed),
+  which macOS treats as invalid, so the Accessibility grant could not be matched to the app. The build
+  now signs the whole bundle with its bundle identifier after every build (ad-hoc by default, or the
+  identity in the new CMake option `ERGOPRO2_CODESIGN_IDENTITY`).
+- When Accessibility is missing and the app's own signature is invalid or has the wrong identifier,
+  ErgoPro2 now logs a warning and the Accessibility hint explains how to fix it.
+
 ## [1.1.2] - 2026-11-10
 
 Bug fix (macOS minimize).

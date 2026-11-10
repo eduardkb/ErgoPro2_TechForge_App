@@ -148,8 +148,17 @@ links these permissions to the app's **code signature**:
 - An **unsigned** or **ad-hoc signed** app gets a new identity on every rebuild, so macOS may
   "forget" the permissions after each build (the switch stays on in System Settings but has no effect).
 - An app signed with the **same certificate** every time keeps its permissions across rebuilds.
+- An app with an **invalid** signature is never matched: the switch is on, but ErgoPro2 still shows
+  *MISSING* (this affects Accessibility in particular). The linker alone produces such a signature.
 
-#### 1.6.1 Ad-hoc signing (minimum, no certificate needed)
+**The build signs `ErgoPro2.app` automatically** (since v1.1.3) after every build, by default ad-hoc
+(`-`). The build output shows `Signing ErgoPro2.app (identity: -)`. To sign with your own certificate
+instead (recommended, 1.6.3), configure with:
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" -DERGOPRO2_CODESIGN_IDENTITY="ErgoPro2 Local Signing"
+```
+
+#### 1.6.1 Ad-hoc signing by hand (e.g. after `macdeployqt`, or an older copy)
 ```bash
 codesign --force --deep --sign - build/bin/ErgoPro2.app
 ```
@@ -179,7 +188,8 @@ Do this once; afterwards every build can be signed with the same identity, and p
    security find-identity -p codesigning
    ```
    `ErgoPro2 Local Signing` must appear in the list.
-7. Sign every build with it (instead of `-`):
+7. Let the build sign with it: configure once with
+   `-DERGOPRO2_CODESIGN_IDENTITY="ErgoPro2 Local Signing"` (see 1.6), or sign by hand:
    ```bash
    codesign --force --deep --sign "ErgoPro2 Local Signing" build/bin/ErgoPro2.app
    ```
@@ -195,6 +205,19 @@ tccutil reset ListenEvent com.techforge.ergopro2      # "Input Monitoring"
 ```
 Then restart ErgoPro2 and grant the permissions when asked (System Settings → Privacy & Security →
 *Accessibility* and *Input Monitoring*).
+
+`tccutil` only removes entries recorded under the bundle id. Entries of an app that was signed with
+another identifier (for example `ErgoPro2` from the linker-only signature of builds before v1.1.3) must be
+removed by hand: in each list select every **ErgoPro2** entry and click **−**.
+
+To see which identity macOS sees for a copy of the app:
+```bash
+codesign -dv ~/Applications/ErgoPro2.app 2>&1 | grep -E "Identifier|flags"
+codesign --verify --strict ~/Applications/ErgoPro2.app && echo "signature valid"
+```
+`Identifier` must be `com.techforge.ergopro2` and the verification must print `signature valid`.
+When the signature is the problem, ErgoPro2's log contains
+`Accessibility cannot be matched to this copy of ErgoPro2: …` and the Accessibility hint says why.
 
 #### 1.6.5 Gatekeeper / quarantine (personal use)
 
@@ -536,7 +559,7 @@ programs running **as Administrator**, unless ErgoPro2 also runs as Administrato
 | "ErgoPro2 is already running but does not respond" | End the other ErgoPro2 process (see above) and start again. |
 | No tray icon on Debian GNOME | Install and enable the AppIndicator extension (3.1). |
 | macOS: "ErgoPro2 is damaged and can't be opened" | Remove the quarantine flag (1.6.5). |
-| macOS: permission is on in System Settings but the app says it is missing | Sign consistently (1.6.3) and reset the permission (1.6.4). |
+| macOS: permission is on in System Settings but the app says it is missing | Check the signature and remove/reset the entries (1.6.4), sign consistently (1.6.3), reinstall and grant again. |
 | macOS: `macdeployqt` prints `Cannot resolve rpath ... QtVirtualKeyboard` | Homebrew Qt quirk; remove `Contents/PlugIns/platforminputcontexts` (1.5 step 2). |
 | macOS: the status of a permission never changes | Start ErgoPro2 from Finder or with `open`, not from Terminal (1.4). Then see 6.1 step 5. |
 | Install: "not running from an application bundle (.app)" | Start the `.app` bundle (Finder / `open`), not a copied executable. |

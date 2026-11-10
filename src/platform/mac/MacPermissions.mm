@@ -1,10 +1,12 @@
 #include "platform/mac/MacPermissions.h"
 
 #include "core/LogCategories.h"
+#include "ergopro2/Version.h"
 
 #import <AppKit/AppKit.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <IOKit/hidsystem/IOHIDLib.h> // IOHIDCheckAccess / IOHIDRequestAccess
+#include <Security/Security.h>
 
 #include <QCoreApplication>
 
@@ -23,6 +25,41 @@ QString tr(const char *text)
 bool accessibilityGranted()
 {
     return AXIsProcessTrusted();
+}
+
+// macOS stores permission grants against the app's code signature. If the
+// running bundle's signature is invalid (e.g. only the linker's partial
+// signature) or uses another identifier than the bundle id, the Accessibility
+// switch in System Settings never matches this process and AXIsProcessTrusted()
+// stays false. Returns a description of such a problem, or an empty string.
+QString signatureProblem()
+{
+    SecCodeRef code = nullptr;
+    if (SecCodeCopySelf(kSecCSDefaultFlags, &code) != errSecSuccess || !code)
+        return tr("its code signature cannot be read");
+    SecStaticCodeRef staticCode = nullptr;
+    OSStatus status = SecCodeCopyStaticCode(code, kSecCSDefaultFlags, &staticCode);
+    CFRelease(code);
+    if (status != errSecSuccess || !staticCode)
+        return tr("its code signature cannot be read (error %1)").arg(status);
+
+    QString problem;
+    status = SecStaticCodeCheckValidity(staticCode, kSecCSCheckAllArchitectures, nullptr);
+    if (status != errSecSuccess) {
+        problem = tr("its code signature is invalid (error %1)").arg(status);
+    } else {
+        CFDictionaryRef info = nullptr;
+        if (SecCodeCopySigningInformation(staticCode, kSecCSSigningInformation, &info) == errSecSuccess && info) {
+            const auto identifier = static_cast<CFStringRef>(CFDictionaryGetValue(info, kSecCodeInfoIdentifier));
+            const QString id = identifier ? QString::fromCFString(identifier) : QString();
+            if (id != QLatin1String(ERGOPRO2_BUNDLE_ID))
+                problem = tr("it is signed with the identifier '%1' instead of '%2'")
+                              .arg(id, QLatin1String(ERGOPRO2_BUNDLE_ID));
+            CFRelease(info);
+        }
+    }
+    CFRelease(staticCode);
+    return problem;
 }
 
 bool inputMonitoringGranted()
@@ -47,6 +84,30 @@ QList<PermissionState> MacPermissions::check() const
     accessibility.explanation = tr("Lets ErgoPro2 click the mouse for you (Auto Click, Key Control) and keep "
                                    "the keys you assign to Key Control for itself.");
     accessibility.howToGrant = tr("Turn on ErgoPro2 in System Settings › Privacy & Security › Accessibility.");
+    if (!accessibility.granted) {
+        // Explain the most common reason why a switched-on permission is not
+        // recognized; logged once per distinct problem (check() runs every 3 s).
+        static bool logged = false;
+        static QString lastLogged;
+        const QString problem = signatureProblem();
+        if (!logged || problem != lastLogged) {
+            logged = true;
+            lastLogged = problem;
+            if (problem.isEmpty())
+                qCInfo(lcPlatform) << "Accessibility not granted; the code signature is valid";
+            else
+                qCWarning(lcPlatform).noquote() << "Accessibility cannot be matched to this copy of ErgoPro2:"
+                                                << problem;
+        }
+        if (!problem.isEmpty()) {
+            accessibility.howToGrant +=
+                QLatin1Char(' ')
+                + tr("If it is already on: macOS cannot match it to this copy of ErgoPro2 because %1. Sign the "
+                     "app (documentation/BUILD.md 1.6), remove ErgoPro2 from the Accessibility list with “−”, "
+                     "then add it again.")
+                      .arg(problem);
+        }
+    }
     accessibility.fixKind = FixKind::OpenSettings;
     accessibility.fixLabel = tr("Open System Settings");
     accessibility.requiredFor = {Feature::AutoClick, Feature::KeyControl};

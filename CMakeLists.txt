@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 #   - MAJOR stays 1.
 # ---------------------------------------------------------------------------
 project(ErgoPro2
-    VERSION 1.1.2
+    VERSION 1.1.3
     DESCRIPTION "Ergonomic helper: auto click, key control and break reminders"
     HOMEPAGE_URL "https://techforge.com/ergopro2"
     LANGUAGES CXX)
@@ -31,6 +31,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(ERGOPRO2_BUILD_TESTS "Build the unit tests" ON)
 option(ERGOPRO2_BUILD_TOOLS "Build developer tools (icon generator)" OFF)
+# macOS: identity used to sign ErgoPro2.app after every build. "-" = ad-hoc;
+# set it to a certificate name (e.g. "ErgoPro2 Local Signing", BUILD.md 1.6.3)
+# so macOS keeps the Accessibility / Input Monitoring permissions across rebuilds.
+# Empty = do not sign (the linker's partial signature is then invalid for the bundle).
+set(ERGOPRO2_CODESIGN_IDENTITY "-" CACHE STRING "macOS code signing identity for ErgoPro2.app (\"-\" = ad-hoc)")
 
 set(ERGOPRO2_ORGANIZATION "techforge")
 set(ERGOPRO2_BUNDLE_ID "com.techforge.ergopro2")

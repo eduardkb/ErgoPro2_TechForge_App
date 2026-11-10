@@ -39,7 +39,8 @@ if(APPLE)
         platform/mac/MacInstaller.cpp platform/mac/MacInstaller.h
         platform/mac/MacPermissions.mm platform/mac/MacPermissions.h)
     target_link_libraries(ergopro2_platform PRIVATE
-        "-framework AppKit" "-framework CoreServices" "-framework ApplicationServices" "-framework IOKit")
+        "-framework AppKit" "-framework CoreServices" "-framework ApplicationServices" "-framework IOKit"
+        "-framework Security")
 elseif(WIN32)
     target_sources(ergopro2_platform PRIVATE platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
 elseif(UNIX)
@@ -98,6 +99,22 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_ICON_FILE ErgoPro2.icns)
+
+    # The linker only signs the executable (identifier "ErgoPro2", no sealed
+    # resources), which macOS treats as an invalid bundle signature: the
+    # Accessibility permission is then never recognized (fixed in 1.1.2+).
+    # Sign the whole bundle with its bundle identifier after every build.
+    if(ERGOPRO2_CODESIGN_IDENTITY)
+        find_program(ERGOPRO2_CODESIGN codesign REQUIRED)
+        add_custom_command(TARGET ErgoPro2 POST_BUILD
+            COMMAND ${ERGOPRO2_CODESIGN} --force --sign "${ERGOPRO2_CODESIGN_IDENTITY}" --timestamp=none
+                    "$<TARGET_BUNDLE_DIR:ErgoPro2>"
+            COMMENT "Signing ErgoPro2.app (identity: ${ERGOPRO2_CODESIGN_IDENTITY})"
+            VERBATIM)
+    else()
+        message(WARNING "ERGOPRO2_CODESIGN_IDENTITY is empty: ErgoPro2.app is not signed; macOS will not "
+                        "recognize the Accessibility permission (see documentation/BUILD.md 1.6)")
+    endif()
 elseif(WIN32)
     set(ERGOPRO2_ICO_PATH ${ERGOPRO2_RESOURCES_DIR}/icons/app/ErgoPro2.ico)
     configure_file(${ERGOPRO2_RESOURCES_DIR}/windows/ErgoPro2.rc.in

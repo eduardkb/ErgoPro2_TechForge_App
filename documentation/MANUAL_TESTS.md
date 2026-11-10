@@ -155,3 +155,20 @@ is set to *Hide in tray*, use tray → *Show window*).
 | 5 | Minimize with **Cmd+M**, then menu bar → Show window. | Same as steps 1–2. |
 | 6 | Repeat steps 1–4 three times in a row. | Same result every time; never a blank window. |
 | 7 | Windows / Linux (when available): minimize, then restore from the tray. Also try restoring via the taskbar if a button remains. | The window hides to the tray on minimize and comes back drawn and closable. |
+
+---
+
+## Bug fix – v1.1.3
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | Build (BUILD.md 1.2). | The build output contains `Signing ErgoPro2.app (identity: -)` (or your certificate name). |
+| 2 | `codesign -dv build/bin/ErgoPro2.app 2>&1 \| grep Identifier` and `codesign --verify --strict build/bin/ErgoPro2.app && echo valid` | `Identifier=com.techforge.ergopro2` and `valid`. |
+| 3 | Exit ErgoPro2. In System Settings → Privacy & Security → **Accessibility** and → **Input Monitoring**, remove every **ErgoPro2** entry (select → **−**). Then run `tccutil reset Accessibility com.techforge.ergopro2` and `tccutil reset ListenEvent com.techforge.ergopro2`. | No ErgoPro2 entry is left in either list. |
+| 4 | Start the new build with `open build/bin/ErgoPro2.app`, click **Install**, answer **Yes** to restart from the installed copy. | `codesign -dv ~/Applications/ErgoPro2.app` also shows `Identifier=com.techforge.ergopro2`. |
+| 5 | In the permissions window click **Open System Settings** for Accessibility, switch ErgoPro2 on. Repeat for Input Monitoring. | Both become **GRANTED** within ~3 s (or after *Restart ErgoPro2*). The banners disappear. |
+| 6 | Exit and start again with `open ~/Applications/ErgoPro2.app`. | No permissions window; diagnostics show both **GRANTED**. |
+| 7 | Negative check: remove the signature of a *copy* (`ditto build/bin/ErgoPro2.app /tmp/E.app && codesign --remove-signature /tmp/E.app`) and start it with `open /tmp/E.app` (Accessibility not granted). | The Accessibility hint ends with "macOS cannot match it to this copy of ErgoPro2 because …", and the log contains `Accessibility cannot be matched to this copy of ErgoPro2`. Delete `/tmp/E.app` afterwards. |
+
+> With ad-hoc signing, every rebuild + reinstall changes the app's identity: repeat steps 3–5 after
+> each new install, or use the self-signed certificate (BUILD.md 1.6.3) to keep the permissions.
