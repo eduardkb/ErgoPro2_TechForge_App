@@ -607,3 +607,19 @@ Build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permiss
 | 5 | Same as 2–4 for General › *Keep log files for* with an old log file (`ergopro2-2026-10-01.log`). | Not deleted when the slider moves; deleted at the next start (or the next day) when it is outside the retention. |
 | 6 | Break Timer: work 1 min, then leave mouse and keyboard alone. | After 20 s *State* changes from **Working** to **Paused** (active work time and next break stand still); the next mouse move shows **Working** again. After *Reset after a pause of* it shows **Idle**. |
 | 7 | Postpone a break and do nothing for 30 s. | *State* stays **Postponed**. |
+
+---
+
+## Bug fix – v1.7.2
+
+Packages from the CI: push, wait until the CI run on GitHub is green, open the run (Actions tab) and
+download the three files under **Artifacts**.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | macOS: download `ErgoPro2-1.7.2-macos.dmg`, double-click it. | It opens (no "unsupported format"); the window shows **ErgoPro2**. If macOS refuses to open the app: BUILD.md 1.6.5. |
+| 2 | Double-click ErgoPro2 in that window. | The app starts; the General tab warns that it runs from a disk image and offers **Install**. Version 1.7.2. |
+| 3 | Click **Install**, restart from `~/Applications/ErgoPro2.app`, grant the permissions (BUILD.md 6.1). | Everything works as before (Auto Click, hotkeys, Break Timer, Statistics). |
+| 4 | Windows 11: download `ErgoPro2-1.7.2-windows-x64.zip`, right-click › *Extract All*, open the `ErgoPro2` folder. | About 10–15 files: `ErgoPro2.exe`, `Qt6*.dll`, `msvcp140*.dll` / `vcruntime140*.dll`, folders `platforms`, `imageformats`, `iconengines` – no `translations`, no `opengl32sw.dll`, no `D3Dcompiler_47.dll`. |
+| 5 | Double-click `ErgoPro2.exe` (SmartScreen: *More info › Run anyway*), also on a PC without Visual Studio or the VC++ Redistributable. | The app starts, icons are visible (tabs, tray). |
+| 6 | Debian 13: `sudo apt install ./ergopro2_1.7.2_amd64.deb`, start ErgoPro2 from the menu. | Installs with its dependencies; the app starts with icons. `sudo apt remove ergopro2` removes it. |

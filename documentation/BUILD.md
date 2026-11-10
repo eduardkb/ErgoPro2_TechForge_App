@@ -122,32 +122,28 @@ Useful command-line options: `--help`, `--version`, `--autostart` (simulates a s
 
 ### 1.5 Create a self-contained app and a .dmg
 
-The bundle in `build/bin` uses the Qt libraries installed on your Mac. To copy the app to another
-folder or Mac, bundle Qt inside it with `macdeployqt`:
+The bundle in `build/bin` uses the Qt libraries installed on your Mac. The production package is a disk
+image with a self-contained app (Qt inside, only the parts ErgoPro2 uses, signed again):
 
 ```bash
-# 1. Release build (see 1.2), then bundle the Qt frameworks and plugins into the app
-"$(brew --prefix qt)/bin/macdeployqt" build-release/bin/ErgoPro2.app
-#    (official Qt: ~/Qt/6.8.3/macos/bin/macdeployqt)
-
-# 2. Homebrew Qt only: macdeployqt prints "ERROR: Cannot resolve rpath ... QtVirtualKeyboard".
-#    ErgoPro2 does not use the virtual keyboard; remove that plugin folder:
-rm -rf build-release/bin/ErgoPro2.app/Contents/PlugIns/platforminputcontexts
-
-# 3. Sign the bundle again (ALWAYS after macdeployqt): macdeployqt adds the Qt frameworks and
-#    plugins to the bundle, which breaks the signature made by the build (see 1.6).
-#    Use the same identity as for your builds: "-" (ad-hoc) or your certificate name.
-codesign --force --deep --sign - build-release/bin/ErgoPro2.app
-#    with your certificate (1.6.3) instead:
-#    codesign --force --deep --sign "ErgoPro2 Local Signing" build-release/bin/ErgoPro2.app
-
-# 4. Create the disk image
-mkdir -p dist
-hdiutil create -volname ErgoPro2 -srcfolder build-release/bin/ErgoPro2.app -ov -format UDZO dist/ErgoPro2-1.0.0.dmg
+# Release build (see 1.2), then:
+scripts/package-macos.sh build-release dist
+# -> dist/ErgoPro2-<version>-macos.dmg
 ```
 
-To install from the `.dmg`: open it and drag **ErgoPro2** to your *Applications* folder (or to
-`~/Applications`). The app's own **Install** button (General tab) can do this for you – see section 5.
+The script copies the app (the build folder stays unchanged), runs `macdeployqt`, keeps only the Qt
+plugins ErgoPro2 uses (cocoa, SVG icons) and the frameworks/libraries they load, signs the app again
+(ad-hoc by default; `CODESIGN_IDENTITY="ErgoPro2 Local Signing" scripts/package-macos.sh …` for your
+certificate, 1.6.3) and creates a compressed, verified `.dmg`. Options: `MACDEPLOYQT=/path/to/macdeployqt`.
+A Homebrew Qt prints "ERROR: Cannot resolve rpath … QtPdf / QtVirtualKeyboard" – harmless, those
+plugins are removed.
+
+The CI builds the same `.dmg` as a **universal** app (Apple silicon + Intel) on every push
+(GitHub › Actions › the run › *Artifacts* › `ErgoPro2-<version>-macos.dmg`).
+
+To install from the `.dmg`: double-click it, double-click **ErgoPro2** in the window that opens, then
+click **Install** on the General tab (it copies the app to `~/Applications`, see section 5) and eject the
+disk image. A downloaded `.dmg` is quarantined: see 1.6.5 if macOS refuses to open it.
 
 ### 1.6 Code signing (important for permissions)
 
@@ -337,17 +333,29 @@ build\bin\ErgoPro2.exe
 Double-clicking `ErgoPro2.exe` in Explorer only works after deployment (2.5), because Explorer does not
 know where the Qt DLLs are.
 
-### 2.5 Create a self-contained folder / zip
+### 2.5 Create the production zip
+
+In a **x64 Native Tools Command Prompt for VS 2022** (so `dumpbin` and the Visual C++ runtime are found),
+with Qt's `bin` folder on `PATH` (`windeployqt`):
 ```bat
-mkdir dist\ErgoPro2
-copy build-release\bin\ErgoPro2.exe dist\ErgoPro2\
-C:\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --release --no-translations dist\ErgoPro2\ErgoPro2.exe
-powershell Compress-Archive -Path dist\ErgoPro2 -DestinationPath dist\ErgoPro2-1.0.0-windows.zip -Force
+powershell -ExecutionPolicy Bypass -File scripts\package-windows.ps1 -BuildDir build-release -OutDir dist
 ```
-`dist\ErgoPro2` now contains everything needed. Copy the folder anywhere (e.g.
-`%LOCALAPPDATA%\Programs\ErgoPro2`) and double-click `ErgoPro2.exe`. The app's own **Install** button
-(General tab) copies it to `%LOCALAPPDATA%\Programs\ErgoPro2` for you – see section 5. Install only
-works from a folder prepared with `windeployqt` (it must contain the Qt DLLs).
+Result: `dist\ErgoPro2-<version>-windows-x64.zip` with one folder `ErgoPro2` that contains **only** what
+ErgoPro2 needs on Windows 11:
+
+| File(s) | Why |
+|---|---|
+| `ErgoPro2.exe` | the program |
+| `Qt6Core.dll`, `Qt6Gui.dll`, `Qt6Widgets.dll`, `Qt6Network.dll`, `Qt6Svg.dll` | Qt libraries the program loads (the script follows the import tables with `dumpbin`; Network = single-instance check) |
+| `platforms\qwindows.dll` | Qt's Windows integration (required) |
+| `imageformats\qsvg.dll`, `iconengines\qsvgicon.dll` | the SVG icons |
+| `msvcp140*.dll`, `vcruntime140*.dll` (only those imported) | Microsoft C++ runtime, so the Visual C++ Redistributable need not be installed |
+
+Translations, software OpenGL, the D3D shader compiler, styles (ErgoPro2 uses Fusion), TLS, network
+information and other image formats are left out. The script fails if any needed DLL is missing.
+
+Unzip it anywhere and double-click `ErgoPro2.exe`; the app's own **Install** button (General tab) copies
+it to `%LOCALAPPDATA%\Programs\ErgoPro2` – see section 5. The CI builds the same zip on every push.
 
 > Windows SmartScreen may warn about an unknown publisher the first time: click **More info → Run anyway**.
 
@@ -404,19 +412,24 @@ ctest --test-dir build --output-on-failure
 ./build/bin/ErgoPro2
 ```
 
-### 3.5 Install for the current user / create a .deb
+### 3.5 Create and install the .deb
 
-Until the `.deb` package is added (stage 7), install into your home folder:
+```bash
+sudo apt install dpkg-dev file          # once (dpkg-shlibdeps for the dependencies)
+scripts/package-linux.sh build-release dist
+sudo apt install ./dist/ergopro2_<version>_amd64.deb
+ErgoPro2                                 # or from the application menu
+```
+The package installs `/usr/bin/ErgoPro2`, the menu entry and the icon, and depends on the Qt 6, X11/XTest
+and libevdev packages (computed automatically) plus `qt6-svg-plugins` (icons); `qt6-wayland` is
+recommended. Remove it with `sudo apt remove ergopro2`. The CI builds the same `.deb` on every push and
+checks that it installs and starts.
+
+Without a package, install into your home folder instead:
 ```bash
 cmake --install build-release --prefix ~/.local
 ~/.local/bin/ErgoPro2
 ```
-This also installs the menu entry (`~/.local/share/applications/ergopro2.desktop`) and the icon.
-ErgoPro2 then appears in the application menu. Alternatively, the app's own **Install** button
-(General tab) copies the executable to `~/.local/opt/ErgoPro2` and creates the menu entry – see section 5.
-
-> **Coming in stage 7:** `cpack -G DEB` will produce `ErgoPro2-<version>.deb`, installable with
-> `sudo apt install ./ErgoPro2-<version>.deb`.
 
 ---
 

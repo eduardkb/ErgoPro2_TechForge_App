@@ -1,7 +1,12 @@
 name: CI
 
-# Builds ErgoPro2 and runs the unit tests on macOS, Windows and Debian 13.
-# Windows and Linux are only verified here (the owner tests manually on macOS).
+# Builds ErgoPro2 (Release) on macOS, Windows and Debian 13, runs the unit
+# tests and uploads one ready-to-use package per operating system:
+#   macOS    ErgoPro2-<version>-macos.dmg        universal (Apple silicon + Intel), ad-hoc signed
+#   Windows  ErgoPro2-<version>-windows-x64.zip  folder with ErgoPro2.exe and only the needed DLLs
+#   Debian   ergopro2_<version>_amd64.deb        installs with: sudo apt install ./ergopro2_*.deb
+# Each package is uploaded as it is ("archive: false"): the download is exactly
+# that file, not a zip that wraps it.
 
 on:
   push:
@@ -27,8 +32,8 @@ jobs:
       - name: Install Ninja
         run: python3 -m pip install --break-system-packages ninja || brew install ninja
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Configure (universal binary)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
 
       - name: Build
         run: cmake --build build
@@ -36,16 +41,27 @@ jobs:
       - name: Unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Deploy, ad-hoc sign and zip the app bundle
-        run: |
-          macdeployqt build/bin/ErgoPro2.app
-          codesign --force --deep --sign - build/bin/ErgoPro2.app
-          ditto -c -k --keepParent build/bin/ErgoPro2.app ErgoPro2-macos.zip
+      - name: Package (.dmg)
+        run: scripts/package-macos.sh build dist
 
-      - uses: actions/upload-artifact@v4
+      - name: Check the package
+        timeout-minutes: 3
+        run: |
+          DMG=$(ls dist/*.dmg)
+          MNT=$(mktemp -d)
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MNT"
+          APP="$MNT/ErgoPro2.app"
+          test -x "$APP/Contents/MacOS/ErgoPro2"
+          codesign --verify --deep --strict "$APP"
+          lipo -archs "$APP/Contents/MacOS/ErgoPro2"
+          "$APP/Contents/MacOS/ErgoPro2" --version   # starts the bundled app (Qt + cocoa plugin)
+          hdiutil detach "$MNT"
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v7
         with:
-          name: ErgoPro2-macos
-          path: ErgoPro2-macos.zip
+          path: ${{ env.DMG }}
+          archive: false
 
   windows:
     name: Windows
@@ -75,17 +91,17 @@ jobs:
       - name: Unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Deploy (windeployqt)
+      - name: Package (.zip with only the needed files)
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist/ErgoPro2 | Out-Null
-          Copy-Item build/bin/ErgoPro2.exe dist/ErgoPro2/
-          windeployqt --release --no-translations dist/ErgoPro2/ErgoPro2.exe
+          ./scripts/package-windows.ps1 -BuildDir build -OutDir dist
+          $zip = (Get-ChildItem dist/*.zip | Select-Object -First 1).FullName
+          "ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: ErgoPro2-windows
-          path: dist/ErgoPro2
+          path: ${{ env.ZIP }}
+          archive: false
 
   linux:
     name: Debian 13
@@ -96,7 +112,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build git ca-certificates \
+            build-essential cmake ninja-build git ca-certificates dpkg-dev file \
             qt6-base-dev qt6-base-dev-tools qt6-svg-dev libgl-dev \
             pkg-config libx11-dev libxtst-dev libevdev-dev
 
@@ -111,7 +127,19 @@ jobs:
       - name: Unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - uses: actions/upload-artifact@v4
+      - name: Package (.deb)
+        run: scripts/package-linux.sh build dist
+
+      - name: Check the package (install it and start it)
+        run: |
+          DEB=$(ls dist/*.deb)
+          DEBIAN_FRONTEND=noninteractive apt-get install -y "./$DEB"
+          test -x /usr/bin/ErgoPro2
+          test -f /usr/share/applications/ergopro2.desktop
+          QT_QPA_PLATFORM=offscreen ErgoPro2 --version
+          echo "DEB=$DEB" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v7
         with:
-          name: ErgoPro2-debian13
-          path: build/bin/ErgoPro2
+          path: ${{ env.DEB }}
+          archive: false

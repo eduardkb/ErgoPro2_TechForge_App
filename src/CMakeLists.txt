@@ -204,7 +204,7 @@ elseif(WIN32)
 endif()
 
 # ---------------------------------------------------------------------------
-# Install rules (used by packaging; full packaging arrives in stage 7)
+# Install rules (Debian package: cpack -G DEB, see the root CMakeLists.txt)
 # ---------------------------------------------------------------------------
 install(TARGETS ErgoPro2
     BUNDLE DESTINATION .

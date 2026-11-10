@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.2] - 2026-11-10
+
+Build and packaging fixes (CI artifacts).
+
+### Fixed
+- **macOS download could not be opened** ("Unable to expand … unsupported format"). The CI now uploads a
+  **`.dmg`** directly. Cause (most likely – it could not be reproduced here): the CI put its own `.zip`
+  into GitHub's artifact zip (a zip inside a zip), which macOS's Archive Utility does not open reliably;
+  GitHub's zip also drops file permissions, which an app bundle needs.
+
+### Changed
+- **One ready-to-use package per operating system**, each uploaded as the file itself (no extra zip):
+  - macOS: `ErgoPro2-<version>-macos.dmg` – universal (Apple silicon + Intel), Qt bundled, only the Qt
+    plugins/frameworks ErgoPro2 uses, ad-hoc signed, verified.
+  - Windows: `ErgoPro2-<version>-windows-x64.zip` – one `ErgoPro2` folder with only the needed files:
+    `ErgoPro2.exe`, only the Qt DLLs it loads, 3 Qt plugins and the Microsoft C++ runtime DLLs (no
+    Redistributable install needed). Translations, software OpenGL, D3D compiler, styles, TLS and unused
+    image formats are gone. The build fails if a needed DLL is missing.
+  - Debian 13: `ergopro2_<version>_amd64.deb` – installs with `sudo apt install ./…deb` (dependencies
+    computed automatically); the CI installs and starts it as a check.
+- Packaging scripts `scripts/package-macos.sh`, `scripts/package-windows.ps1`, `scripts/package-linux.sh`
+  (also for local builds; documentation/BUILD.md 1.5, 2.5, 3.5). No change to the application itself.
+
 ## [1.7.1] - 2026-11-10
 
 Owner-requested changes (specification Part B updated: B.3, B.7, B.8.4).

@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 #   - MAJOR stays 1.
 # ---------------------------------------------------------------------------
 project(ErgoPro2
-    VERSION 1.7.1
+    VERSION 1.7.2
     DESCRIPTION "Ergonomic helper: auto click, key control and break reminders"
     HOMEPAGE_URL "https://techforge.com/ergopro2"
     LANGUAGES CXX)
@@ -93,4 +93,28 @@ endif()
 
 if(ERGOPRO2_BUILD_TOOLS)
     add_subdirectory(tools/icongen)
+endif()
+
+# ---------------------------------------------------------------------------
+# Packaging. macOS (.dmg) and Windows (.zip) are made by scripts/package-*.
+# Debian: `cpack -G DEB` (scripts/package-linux.sh) builds ergopro2_<ver>_<arch>.deb
+# from the install rules in src/CMakeLists.txt; dependencies via dpkg-shlibdeps.
+# ---------------------------------------------------------------------------
+if(UNIX AND NOT APPLE)
+    set(CPACK_GENERATOR DEB)
+    set(CPACK_PACKAGE_NAME ergopro2)
+    set(CPACK_PACKAGE_VENDOR TechForge)
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+        "Ergonomic helper: auto click, hotkey clicks, drag lock, break reminders and usage statistics")
+    set(CPACK_PACKAGING_INSTALL_PREFIX /usr)
+    set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT) # ergopro2_<version>_<arch>.deb
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "TechForge ErgoPro2")
+    set(CPACK_DEBIAN_PACKAGE_SECTION utils)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    # Loaded at run time (not visible to dpkg-shlibdeps): SVG icons.
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-svg-plugins")
+    # Native Wayland windows (without it Qt uses XWayland).
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "qt6-wayland")
+    include(CPack)
 endif()
