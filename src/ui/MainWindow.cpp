@@ -2,6 +2,7 @@
 
 #include "core/LogCategories.h"
 #include "ui/AppContext.h"
+#include "ui/tabs/AutoClickTab.h"
 #include "ui/tabs/GeneralTab.h"
 #include "ui/widgets/FeaturePage.h"
 #include "ui/widgets/PlaceholderPage.h"
@@ -37,10 +38,7 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
                                                            .arg(later))),
                    tr("Break Timer"));
     m_tabs->addTab(new FeaturePage(Feature::AutoClick, context.availability,
-                                   new PlaceholderPage(QStringLiteral(":/icons/ui/autoclick.svg"), tr("Auto Click"),
-                                                       tr("Clicks automatically when the mouse pointer stops "
-                                                          "moving.\n%1")
-                                                           .arg(later))),
+                                   new AutoClickTab(context.autoclick, context.settings, context.availability)),
                    tr("Auto Click"));
     m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
                                    new PlaceholderPage(QStringLiteral(":/icons/ui/keyboard.svg"), tr("Key Control"),

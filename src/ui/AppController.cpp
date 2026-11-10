@@ -8,14 +8,17 @@
 #include "platform/PlatformFactory.h"
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/InputService.h"
+#include "ui/autoclick/AutoClickController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
 #include "ui/PermissionsDialog.h"
 #include "ui/SingleInstance.h"
 #include "ui/TrayController.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QMessageBox>
+#include <QSignalBlocker>
 
 namespace ergo {
 
@@ -36,6 +39,8 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 
 AppController::~AppController()
 {
+    if (m_autoclick)
+        m_autoclick->shutdown();
     if (m_input)
         m_input->stop();
 }
@@ -58,8 +63,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(m_install.get(), &InstallController::relaunchRequested, this, &AppController::relaunch);
     connect(m_install.get(), &InstallController::exitRequested, this, &AppController::exitApplication);
     m_input = std::make_unique<InputService>(m_platform, *m_availability);
+    m_autoclick = std::make_unique<AutoClickController>(m_settings, *m_availability, *m_input, m_platform);
     m_context = std::make_unique<AppContext>(
-        AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install, *m_input});
+        AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install, *m_input, *m_autoclick});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -98,6 +104,9 @@ void AppController::start(const SettingsLoadResult &loadResult)
 
     // Global input layer (stage 2); waits for missing permissions by itself.
     m_input->start();
+    // Function 1 – AutoClick (stage 3).
+    m_autoclick->start();
+    setupAutoClickTrayEntry();
     reportSettingsLoad(loadResult);
 }
 
@@ -151,6 +160,8 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
+    if (m_autoclick)
+        m_autoclick->shutdown();
     if (m_input)
         m_input->stop(); // release hooks and key grabs before quitting
     if (!m_settings.saveNow())
@@ -160,6 +171,28 @@ void AppController::exitApplication()
         m_window->close();
     }
     QApplication::quit();
+}
+
+void AppController::setupAutoClickTrayEntry()
+{
+    if (!m_tray)
+        return;
+    auto *action = new QAction(tr("AutoClick on/off"), m_tray.get());
+    action->setCheckable(true);
+    action->setChecked(m_autoclick->isEnabled());
+    connect(action, &QAction::toggled, this, [this](bool on) { m_autoclick->setEnabled(on); });
+    connect(m_autoclick.get(), &AutoClickController::enabledChanged, action, [action](bool on) {
+        const QSignalBlocker block(action);
+        action->setChecked(on);
+    });
+    m_tray->addFeatureAction(action);
+
+    // Tray icon variant while AutoClick is active (A-09).
+    const auto updateIcon = [this](bool active) {
+        m_tray->setIconState(active ? TrayController::IconState::AutoClickActive : TrayController::IconState::Normal);
+    };
+    connect(m_autoclick.get(), &AutoClickController::activeChanged, this, updateIcon);
+    updateIcon(m_autoclick->isActive());
 }
 
 void AppController::showPermissionsWindowIfNeeded()

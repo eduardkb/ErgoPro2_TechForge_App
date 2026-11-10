@@ -6,6 +6,7 @@ set(ERGOPRO2_RESOURCES_DIR ${PROJECT_SOURCE_DIR}/resources)
 add_library(ergopro2_core STATIC
     core/Clock.h
     core/CrashHandler.cpp core/CrashHandler.h
+    core/autoclick/AutoClickEngine.cpp core/autoclick/AutoClickEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
     core/input/InputDispatcher.cpp core/input/InputDispatcher.h
@@ -16,6 +17,7 @@ add_library(ergopro2_core STATIC
     core/LogCategories.cpp core/LogCategories.h
     core/LogLevel.cpp core/LogLevel.h
     core/Logger.cpp core/Logger.h
+    core/settings/AutoClickSettings.cpp core/settings/AutoClickSettings.h
     core/settings/GeneralSettings.cpp core/settings/GeneralSettings.h
     core/settings/SettingsRegistry.cpp core/settings/SettingsRegistry.h
     core/settings/SettingsSchema.cpp core/settings/SettingsSchema.h
@@ -104,6 +106,9 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/ErgoApplication.cpp ui/ErgoApplication.h
     ui/FeatureAvailabilityService.cpp ui/FeatureAvailabilityService.h
     ui/InputService.cpp ui/InputService.h
+    ui/autoclick/AutoClickController.cpp ui/autoclick/AutoClickController.h
+    ui/autoclick/AutoClickOverlay.cpp ui/autoclick/AutoClickOverlay.h
+    ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
     ui/InstallController.cpp ui/InstallController.h
     ui/MainWindow.cpp ui/MainWindow.h
     ui/PermissionActions.cpp ui/PermissionActions.h
@@ -111,6 +116,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/SingleInstance.cpp ui/SingleInstance.h
     ui/Theme.cpp ui/Theme.h
     ui/TrayController.cpp ui/TrayController.h
+    ui/tabs/AutoClickTab.cpp ui/tabs/AutoClickTab.h
     ui/tabs/DiagnosticsCard.cpp ui/tabs/DiagnosticsCard.h
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h

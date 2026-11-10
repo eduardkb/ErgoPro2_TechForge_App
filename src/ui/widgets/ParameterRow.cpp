@@ -26,7 +26,7 @@ ParameterRow::ParameterRow(const QString &label, int minimum, int maximum, const
 
     m_spin = new QSpinBox(this);
     m_spin->setRange(minimum, maximum);
-    m_spin->setMinimumWidth(80);
+    m_spin->setFixedWidth(96); // same width in every row, so the sliders line up
     m_spin->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     auto *unitLabel = new QLabel(unit, this);

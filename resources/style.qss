@@ -155,6 +155,12 @@ QLabel[badgeState] {
     font-size: 12px;
 }
 
+QLabel[badgeSize="large"] {
+    font-size: 16px;
+    padding: 8px 16px;
+    border-radius: 14px;
+}
+
 QLabel[badgeState="active"] {
     color: @accentText@;
     background: @accent@;
@@ -219,6 +225,12 @@ QPushButton[variant="danger"]:hover {
     background: @dangerHover@;
 }
 
+QPushButton[variant="primary"]:disabled, QPushButton[variant="danger"]:disabled {
+    background: @surfaceAlt@;
+    color: @textMuted@;
+    border: 1px solid @border@;
+}
+
 /* ---------- Inputs ---------- */
 
 QComboBox, QSpinBox, QLineEdit {
@@ -278,4 +290,17 @@ QSlider::handle:horizontal {
 
 QSlider::handle:horizontal:hover {
     background: @accent@;
+}
+
+QSlider::sub-page:horizontal:disabled {
+    background: @border@;
+}
+
+QSlider::handle:horizontal:disabled {
+    border-color: @border@;
+    background: @surfaceAlt@;
+}
+
+QComboBox:disabled, QSpinBox:disabled, QLineEdit:disabled {
+    color: @textMuted@;
 }

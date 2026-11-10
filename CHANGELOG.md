@@ -5,6 +5,40 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.3.0] - 2026-11-10
+
+Stage 3 – Function 1: Auto Click.
+
+### Added
+- **Auto Click** (dwell click): when the pointer has moved at least `AUTOCLICK_TRIGGER_DISTANCE` from the last
+  click and then rests for `AUTOCLICK_TRIGGER_TIMER`, one left click happens at the pointer. Resting the mouse
+  never produces repeated clicks.
+  - Movements up to the tremor tolerance (1–10 px, default 3) do not restart the countdown.
+  - A manual click (any button) cancels a pending auto-click and becomes the new reference point (on press
+    and release, so a manual drag never leaves Auto Click armed at the drop position).
+  - No auto-click while a mouse button is held or within 0.5 s after a key press (modifier keys alone do
+    not count); a pending click is delayed, not cancelled.
+  - Ready for later stages: Key Control clicks count as manual clicks, Drag Lock suppression and reference
+    point reset.
+  - Works on every window, including ErgoPro2's own window.
+- AutoClick engine as a pure state machine in `src/core` (Disabled, Waiting for movement, Armed, Countdown,
+  Suppressed) with 22 unit tests driven by the fake clock.
+- AutoClick worker running in its own thread, fed by the input dispatcher, injecting the click and
+  recognizing its own click when the hook reports it back as synthetic.
+- **Auto Click tab**: availability banner, large "AutoClick is ACTIVE / INACTIVE" badge with
+  Activate/Deactivate, live state line, trigger time (100–3000 ms, default 200), distance (5–200 px, default
+  15), tremor tolerance (1–10 px, default 3) and the optional countdown ring. Controls are disabled while the
+  feature is unavailable.
+- Optional visual feedback: a click-through ring next to the pointer that fills during the countdown (off by
+  default; not available on Wayland, with an explanation).
+- Tray menu entry **AutoClick on/off** and a tray icon variant while Auto Click is active.
+- Settings `autoclick.enabled`, `autoclick.AUTOCLICK_TRIGGER_TIMER`, `autoclick.AUTOCLICK_TRIGGER_DISTANCE`,
+  `autoclick.jitterTolerancePx`, `autoclick.showVisualFeedback`; changes apply immediately and persist.
+
+### Changed
+- Disabled buttons, sliders and inputs now look disabled in both themes.
+- Number boxes of slider rows have a fixed width, so the sliders line up.
+
 ## [1.2.0] - 2026-11-10
 
 Stage 2 – shared global input layer.

@@ -222,7 +222,7 @@ Do this once; afterwards every build can be signed with the same identity, and p
 #### 1.6.4 Reset stuck permissions
 
 If ErgoPro2 shows a permission as missing although it is switched on in System Settings, reset it and
-grant it again:
+grant it again (for a complete reset before a test, use 1.6.6):
 ```bash
 tccutil reset Accessibility com.techforge.ergopro2
 tccutil reset ListenEvent com.techforge.ergopro2      # "Input Monitoring"
@@ -255,6 +255,45 @@ Alternatively, right-click the app → **Open** → **Open**, or allow it in Sys
 Security → *Open Anyway*. Builds made on your own Mac are not quarantined.
 
 ---
+
+#### 1.6.6 Remove all permissions (start a permission test from scratch)
+
+Removing ErgoPro2 from the two lists in System Settings is usually enough, but macOS can keep entries that
+are not shown there (e.g. a "Don't Allow" answer to a permission prompt). For a clean start do all steps:
+
+1. **Exit ErgoPro2** (General tab → Exit, or menu bar icon → Exit) and check that it is not running:
+   ```bash
+   pgrep -fl ErgoPro2 || echo "not running"
+   ```
+2. **Remove the visible entries:** System Settings → Privacy & Security → **Accessibility** → select every
+   **ErgoPro2** entry → **−**. Do the same under **Input Monitoring**.
+3. **Reset what is left** under the bundle id (harmless if nothing is left – it still prints "Successfully
+   reset"):
+   ```bash
+   tccutil reset Accessibility com.techforge.ergopro2
+   ```
+   ```bash
+   tccutil reset ListenEvent com.techforge.ergopro2
+   ```
+   ```bash
+   tccutil reset PostEvent com.techforge.ergopro2
+   ```
+   (`ListenEvent` = Input Monitoring; `PostEvent` = permission to send synthetic clicks, which macOS may
+   record separately.)
+4. **Check:** open both lists again – no ErgoPro2 entry may be left. macOS offers no supported command to
+   list granted permissions (its permission database is protected), so the final check is ErgoPro2
+   itself: start it with `open ~/Applications/ErgoPro2.app` (or the build copy) – the window "ErgoPro2
+   needs your permission" must show **Accessibility** and **Input Monitoring** as **MISSING**, and the log
+   contains `Permission Accessibility : MISSING` and `Permission Input Monitoring : MISSING`.
+
+Optional – also start the installation from scratch: General tab → **Uninstall**, or with ErgoPro2 closed:
+```bash
+rm -rf ~/Applications/ErgoPro2.app
+```
+```bash
+rm -f ~/Library/LaunchAgents/com.techforge.ergopro2.plist
+```
+Settings and logs are not affected by any of these steps.
 
 ## 2. Windows 11
 

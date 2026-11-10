@@ -198,8 +198,8 @@ watchdog) and its diagnostics view. No end-user feature yet.
 
 **Preparation (macOS):** build (`cmake --build build`), exit ErgoPro2, then **Reinstall** from the build
 copy and restart from the installed copy (BUILD.md 5.0). Grant **Accessibility** and **Input
-Monitoring** to the installed copy (BUILD.md 6.1). With ad-hoc signing, remove the old ErgoPro2 entries
-first (BUILD.md 1.6.4). Start ErgoPro2 with `open ~/Applications/ErgoPro2.app`.
+Monitoring** to the installed copy (BUILD.md 6.1). With ad-hoc signing, remove the old ErgoPro2 permissions
+completely first (BUILD.md 1.6.6). Start ErgoPro2 with `open ~/Applications/ErgoPro2.app`.
 
 ### A. Hook status and live events
 
@@ -243,3 +243,58 @@ first (BUILD.md 1.6.4). Start ErgoPro2 with `open ~/Applications/ErgoPro2.app`.
 | 21 | Debian X11: steps 3–11. | Backend "X11 XRecord + XGrabKey". F9 blocked in other apps. Start another program that grabs F9 first (e.g. a desktop shortcut on F9): the block test reports "F9 is already used by another application". |
 | 22 | Debian Wayland with the `input` group granted (BUILD.md 6.3): steps 3–11. | Backend "evdev (Wayland)"; pointer position shown as *relative*; synthetic click recognized; F9 blocked. Unplug/replug a USB keyboard: it keeps working (hotplug). |
 | 23 | Debian Wayland, build without `libevdev-dev`. | Diagnostics/banners explain that this build has no Wayland input support; no crash. |
+
+---
+
+## Stage 3 – v1.3.0
+
+Goal: Function 1 – Auto Click (dwell click).
+
+**Preparation (macOS):** build, **Reinstall** from the build copy and restart from the installed copy
+(BUILD.md 5.0). If permissions were granted to an older build, reset them first (BUILD.md 1.6.6) and grant
+**Accessibility** and **Input Monitoring** again (BUILD.md 6.1). Start with
+`open ~/Applications/ErgoPro2.app`. Use TextEdit and Finder as test targets.
+
+> Tip: start with a longer trigger time (e.g. 800 ms) to see what happens, then return to 200 ms.
+
+### A. Tab, settings and persistence
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 11 test programs pass (adds `tst_autoclick`, 22 cases). |
+| 2 | Open the **Auto Click** tab. | No banner (permissions granted). Card with "AutoClick is INACTIVE" and **Activate**; Settings card with *Wait before clicking* **200** ms, *Minimum movement* **15** px, *Ignore tremor below* **3** px, *Show countdown ring* off. |
+| 3 | Change the three values (slider and number box). | Values stay in sync, limits are 100–3000 ms, 5–200 px, 1–10 px. `settings.json` → `autoclick` section shows the new values shortly after. |
+| 4 | Exit and start again. | The values and the on/off state are restored. |
+| 5 | Remove Accessibility (BUILD.md 1.6.6, only that one) and start. | Banner "Auto Click is unavailable…"; Activate, sliders and the ring switch are **disabled** (grey). Grant it again: within ~3 s the banner disappears and the controls are enabled. |
+
+### B. Clicking behavior (Auto Click active)
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 6 | Click **Activate**. | Badge **AutoClick is ACTIVE** (green), button **Deactivate**; the menu bar icon changes to the Auto Click variant; state line "Waiting: move the pointer…". |
+| 7 | Move the pointer more than 15 px (e.g. onto a Finder file) and stop. | After 200 ms **one** left click (the file is selected). State line: "Armed…" while moving, "Clicking when the pointer rests…", then "Waiting…". Log: `AutoClick: left click at x , y`. |
+| 8 | Keep the mouse completely still for 10 s. | **No further clicks.** |
+| 9 | Move only a few pixels (less than 15 px from the last click) and stop. | No click. |
+| 10 | Rest your hand on the mouse with tiny tremor (1–3 px) after arming. | The click still happens once 200 ms after the last *real* movement; tremor does not delay it forever. |
+| 11 | Move > 15 px and click **manually** before the 200 ms pass (left or right button). | Only your manual click happens; no extra auto-click. The next auto-click needs a new 15 px movement from the manual click position. |
+| 12 | Drag a file in Finder manually (hold the button, move, release). | No auto-click during the drag and none at the drop position after releasing. |
+| 13 | Move > 15 px onto a TextEdit window, stop, and start typing immediately. | The click is delayed while you type and happens 0.5 s after the last key; keys keep working. Pressing only Shift/Cmd does not delay it. |
+| 14 | Hover over buttons of the ErgoPro2 window itself (e.g. the tabs) and rest. | Auto Click clicks them too (A-06). |
+| 15 | Tray menu → **AutoClick on/off**. | Toggles Auto Click; the tab badge, the button and the tray icon follow. Toggling in the tab updates the tray entry's check mark. |
+| 16 | General → Input diagnostics → Show, then let Auto Click click. | *Last synthetic event* shows `MouseDown Left … [synthetic]`; *Last mouse button* is not changed by it, and Auto Click does not treat its own click as a manual click (it still clicks normally next time). |
+
+### C. Visual feedback
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 17 | Switch on **Show countdown ring**, move > 15 px and stop. | A small ring appears next to the pointer (down-right) and fills up; the click happens when it is full; the ring disappears. It never takes focus (typing in TextEdit continues) and clicks go "through" it. |
+| 18 | Move again before the ring is full. | The ring follows the pointer and restarts. |
+| 19 | Switch the ring off. | No ring is shown any more. |
+
+### D. Robustness
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 20 | With Auto Click active, put the Mac to sleep and wake it. | After unlocking, Auto Click keeps working (hook reinstalled, see the log). |
+| 21 | Exit ErgoPro2 while armed (move, then quickly use tray → Exit). | No click happens after exit. |
+| 22 | Windows / Debian (when available): steps 6–19. | Same behavior. On Wayland the ring option is disabled with an explanation and positions are relative. |

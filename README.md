@@ -22,8 +22,8 @@ ErgoPro2 is a desktop application that helps people with wrist pain reduce mouse
 
 It runs on **macOS (Tahoe 26)**, **Windows 11** and **Debian 13**, and is written in C++20 with Qt 6 Widgets.
 
-> Current status: **v1.2.0 – Stage 2** (application shell, settings, logging, tray, install / start at
-> login, permission checks, global input layer with diagnostics). The features above are
+> Current status: **v1.3.0 – Stage 3** (application shell, settings, logging, tray, install / start at
+> login, permission checks, global input layer with diagnostics, **Auto Click**). The features above are
 > implemented stage by stage; see [`documentation/implementation_stages.md`](documentation/implementation_stages.md).
 
 ## Quick start (macOS with Homebrew)

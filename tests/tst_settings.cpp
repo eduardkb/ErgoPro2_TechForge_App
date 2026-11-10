@@ -1,3 +1,4 @@
+#include "core/settings/AutoClickSettings.h"
 #include "core/settings/GeneralSettings.h"
 #include "core/settings/SettingsRegistry.h"
 #include "core/settings/SettingsSchema.h"
@@ -45,6 +46,28 @@ private slots:
         QVERIFY(m_schema.find(GeneralSettings::LogLevel));
         QVERIFY(m_schema.find(GeneralSettings::LogRetentionDays));
         QVERIFY(m_schema.find(GeneralSettings::TrayHintShown));
+    }
+
+    void autoClickSettings()
+    {
+        const SettingDefinition *timer = m_schema.find(AutoClickSettings::TriggerTimerMs);
+        const SettingDefinition *distance = m_schema.find(AutoClickSettings::TriggerDistancePx);
+        const SettingDefinition *jitter = m_schema.find(AutoClickSettings::JitterTolerancePx);
+        QVERIFY(timer && distance && jitter);
+        QVERIFY(m_schema.find(AutoClickSettings::Enabled));
+        QVERIFY(m_schema.find(AutoClickSettings::ShowVisualFeedback));
+        QCOMPARE(timer->defaultValue.toInt(), 200);
+        QCOMPARE(distance->defaultValue.toInt(), 15);
+        QCOMPARE(jitter->defaultValue.toInt(), 3);
+        QVERIFY(SettingsSchema::validate(*timer, 100));
+        QVERIFY(SettingsSchema::validate(*timer, 3000));
+        QVERIFY(!SettingsSchema::validate(*timer, 99));
+        QVERIFY(!SettingsSchema::validate(*timer, 3001));
+        QVERIFY(!SettingsSchema::validate(*distance, 4));
+        QVERIFY(!SettingsSchema::validate(*distance, 201));
+        QVERIFY(!SettingsSchema::validate(*jitter, 0));
+        QVERIFY(!SettingsSchema::validate(*jitter, 11));
+        QCOMPARE(m_schema.find(AutoClickSettings::Enabled)->defaultValue.toBool(), false);
     }
 
     void startupModeSettings()
