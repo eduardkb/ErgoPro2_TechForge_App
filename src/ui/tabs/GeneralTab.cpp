@@ -247,7 +247,7 @@ void GeneralTab::resetSettings()
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes)
         return;
-    // Stage 4 adds: clear the hotkey list and release its OS bindings.
+    // Also clears the hotkey list; Key Control releases the keys (B.1.3).
     m_context.settings.resetToDefaults();
     qCInfo(lcUi) << "All settings were reset to defaults by the user";
 }

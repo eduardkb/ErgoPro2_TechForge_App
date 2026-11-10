@@ -5,6 +5,7 @@
 namespace ergo {
 
 class AutoClickController;
+class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
 class InstallController;
@@ -21,6 +22,7 @@ struct AppContext {
     InstallController &install;
     InputService &input;
     AutoClickController &autoclick;
+    KeyControlController &keycontrol;
 };
 
 } // namespace ergo

@@ -58,6 +58,7 @@ public:
     // Exclusive key registration (Key Control, stage 4; F9 test in diagnostics).
     PlatformResult registerKey(const KeyCombo &combo);
     PlatformResult unregisterKey(const KeyCombo &combo);
+    bool isKeyRegistered(const KeyCombo &combo) const { return m_suppression.contains(combo); }
 
     PlatformResult injectLeftClick();
 

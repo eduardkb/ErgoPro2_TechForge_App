@@ -9,6 +9,7 @@
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/InputService.h"
 #include "ui/autoclick/AutoClickController.h"
+#include "ui/keycontrol/KeyControlController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
 #include "ui/PermissionsDialog.h"
@@ -39,6 +40,8 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 
 AppController::~AppController()
 {
+    if (m_keycontrol)
+        m_keycontrol->shutdown();
     if (m_autoclick)
         m_autoclick->shutdown();
     if (m_input)
@@ -64,8 +67,10 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(m_install.get(), &InstallController::exitRequested, this, &AppController::exitApplication);
     m_input = std::make_unique<InputService>(m_platform, *m_availability);
     m_autoclick = std::make_unique<AutoClickController>(m_settings, *m_availability, *m_input, m_platform);
-    m_context = std::make_unique<AppContext>(
-        AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install, *m_input, *m_autoclick});
+    m_keycontrol =
+        std::make_unique<KeyControlController>(m_settings, *m_availability, *m_input, *m_autoclick, m_platform);
+    m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability,
+                                                        *m_install, *m_input, *m_autoclick, *m_keycontrol});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -107,6 +112,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Function 1 – AutoClick (stage 3).
     m_autoclick->start();
     setupAutoClickTrayEntry();
+    // Function 2 – Key Control (stage 4).
+    m_keycontrol->start();
     reportSettingsLoad(loadResult);
 }
 
@@ -160,6 +167,8 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
+    if (m_keycontrol)
+        m_keycontrol->shutdown(); // release all hotkeys
     if (m_autoclick)
         m_autoclick->shutdown();
     if (m_input)

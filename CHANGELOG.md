@@ -5,6 +5,40 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.4.0] - 2026-11-10
+
+Stage 4 – Function 2: Key Control (hotkeys; Drag Lock follows in stage 6).
+
+### Added
+- **Key Control tab**: *Add Hotkey* and a list of hotkeys with key, action and status (Active / Disabled /
+  Paused / Unavailable / Error + reason) and the buttons **Enable/Disable**, **Modify…**, **Reset binding**
+  and **Delete…** (with confirmation). Controls are disabled while Key Control is unavailable.
+- **Add / Modify Hotkey dialog** (K-15): "Press the key or key combination…" → the captured combination with
+  *Confirm* / *Retry* (or *Use anyway* for a plain typing key, or the reason why it cannot be used) → choose
+  the action → *Save*; if the key cannot be registered the reason is shown and another key can be chosen.
+  Keys are captured from the global input hook, so they match exactly what the hook sees at runtime. All
+  hotkeys are paused while the dialog is open (K-14).
+- Actions (pluggable registry): **Left mouse click**, **Right mouse click**, **Double left click** (OS
+  double-click time), **Turn Auto Click on/off**. Drag lock is registered but hidden until stage 6.
+- Hotkeys are exclusive: while enabled, other applications do not receive the key (also its auto-repeat and
+  release). Each press fires once on key-down; clicks happen at the pointer and count as manual clicks for
+  Auto Click. Hotkeys also work on the ErgoPro2 window.
+- Key combination rules: F1–F24, keypad keys and any key with a modifier are allowed; a plain typing key
+  needs confirmation; modifier-only keys, unknown keys (Fn/Globe, media keys) and combinations reserved by
+  the OS (e.g. ⌘Tab, ⌘Space, ⌥⌘Esc on macOS; Ctrl+Alt+Del, Alt+Tab, Win+… on Windows; Ctrl+Alt+F1…F12 on
+  Linux) are rejected with an explanation; a combination can be assigned only once.
+- Display of combinations per OS (⌃⌥⇧⌘F9 on macOS, Ctrl+Alt+Shift+Win+F9 on Windows, …+Super+… on Linux).
+- Setting `keycontrol.actions` (list of `{id, keyCombo, action, enabled}`); invalid stored entries are
+  logged, kept unchanged and shown with an Error status. *Reset all settings* clears the list and releases
+  the keys.
+- Robustness: hotkeys are re-registered after hook reinstalls (watchdog, resume, unlock); statuses update
+  live; all keys are released on exit.
+- Unit tests for combination text, validation and reserved combinations, the stored list, the action
+  registry and the Key Control engine with a fake input layer (32 cases).
+
+### Changed
+- The settings schema supports list values (validated by the feature that owns them).
+
 ## [1.3.0] - 2026-11-10
 
 Stage 3 – Function 1: Auto Click.

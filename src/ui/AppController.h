@@ -12,6 +12,7 @@
 namespace ergo {
 
 class AutoClickController;
+class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
 class InstallController;
@@ -62,6 +63,7 @@ private:
     std::unique_ptr<InstallController> m_install;
     std::unique_ptr<InputService> m_input;
     std::unique_ptr<AutoClickController> m_autoclick;
+    std::unique_ptr<KeyControlController> m_keycontrol;
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;
     std::unique_ptr<TrayController> m_tray;

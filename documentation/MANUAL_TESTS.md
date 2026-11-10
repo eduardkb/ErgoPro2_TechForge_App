@@ -298,3 +298,66 @@ Goal: Function 1 – Auto Click (dwell click).
 | 20 | With Auto Click active, put the Mac to sleep and wake it. | After unlocking, Auto Click keeps working (hook reinstalled, see the log). |
 | 21 | Exit ErgoPro2 while armed (move, then quickly use tray → Exit). | No click happens after exit. |
 | 22 | Windows / Debian (when available): steps 6–19. | Same behavior. On Wayland the ring option is disabled with an explanation and positions are relative. |
+
+---
+
+## Stage 4 – v1.4.0
+
+Goal: Function 2 – Key Control (exclusive hotkeys that click the mouse). Drag Lock follows in stage 6.
+
+**Preparation (macOS):** build, **Reinstall** and restart from the installed copy (BUILD.md 5.0). This build
+is a new app for macOS: reset and grant **Accessibility** and **Input Monitoring** again (BUILD.md 1.6.6,
+6.1). Start with `open ~/Applications/ErgoPro2.app`. Use TextEdit and Finder as test targets.
+
+> On Mac keyboards the top row are media keys: press **fn** + F-key, or turn on *Use F1, F2, etc. keys as
+> standard function keys* (System Settings → Keyboard → Keyboard Shortcuts → Function Keys).
+
+### A. Adding hotkeys and the dialog
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 12 test programs pass (adds `tst_keycontrol`, 32 cases). |
+| 2 | Open **Key Control**. | No banner; "No hotkeys yet…"; **Add Hotkey** enabled; a Tips card. |
+| 3 | **Add Hotkey**, press **F9**. | Page "You pressed: F9" with **Confirm** / **Retry**. |
+| 4 | **Retry**, then hold ⌃⇧ and press **F9**. | While holding, the held modifiers are shown (⌃⇧). Then "You pressed: ⌃⇧F9". |
+| 5 | **Confirm** → choose *Left mouse click* → **Save**. | The list shows `⌃⇧F9 · Left mouse click · ACTIVE`. Log: `Hotkey added: ⌃⇧F9 -> Left mouse click`. |
+| 6 | Add Hotkey and press **⌘Tab** (or ⌘Space). | "This combination is reserved by the operating system: …", Confirm disabled. (macOS may switch apps for ⌘Tab: that is the reason it is not allowed.) |
+| 7 | Add Hotkey and press the plain letter **A**. | Warning "This key will no longer type…", button **Use anyway**. Cancel. |
+| 8 | Add Hotkey and press **⌃⇧F9** again. | "⌃⇧F9 is already assigned to "Left mouse click"", Confirm disabled. Cancel. |
+| 9 | Add **F10** → *Turn Auto Click on/off*, **⌃⌥F8** → *Right mouse click*, **Num 7** (keypad, if available) → *Double left click*. | All shown as ACTIVE. |
+| 10 | Open the Add dialog and, while it is open, press ⌃⇧F9 in it. | Nothing is clicked: all hotkeys are paused while the dialog is open (status PAUSED in the list behind it). After Cancel they are ACTIVE again. |
+
+### B. Hotkeys in use
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 11 | Point at a Finder file, press **⌃⇧F9**. | The file is selected (left click at the pointer). Holding the keys clicks **once** only. |
+| 12 | Press **⌃⌥F8** over the desktop. | A right click: the context menu opens. |
+| 13 | Press **Num 7** over a Finder folder. | Double click: the folder opens. |
+| 14 | Press **F10** twice, watching the Auto Click tab or the menu bar icon. | Auto Click turns on, then off. |
+| 15 | Open TextEdit with some text; press ⌃⇧F9, F10 and ⌃⌥F8 there. | No text is typed and TextEdit does not react to those keys (they are exclusive). Other keys type normally. |
+| 16 | With Auto Click active: move > 15 px, then press ⌃⇧F9 before the trigger time. | Only the hotkey click happens; Auto Click does not add a second click (a Key Control click counts as a manual click). |
+| 17 | Press a hotkey while the ErgoPro2 window is in front. | Works there too. |
+
+### C. List operations and persistence
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 18 | **Disable** ⌃⌥F8, then press it in TextEdit. | Status DISABLED; the key reaches TextEdit again (works as it normally would); no right click. **Enable** → ACTIVE and exclusive again. |
+| 19 | **Modify…** F10: keep the key, change the action to *Left mouse click* → Save. | The list shows F10 · Left mouse click; F10 now clicks. |
+| 20 | **Modify…** F10 → **Change key…** → press **F11** → Confirm → Save. | The row shows F11; F10 works normally again in other apps, F11 clicks. |
+| 21 | **Reset binding** on any row. | Stays ACTIVE (log: `Hotkey binding reset: … OK`). |
+| 22 | **Delete…** a row → **No**, then **Delete…** → **Yes**. | First nothing happens; then the row disappears and the key works normally again. |
+| 23 | Exit and start ErgoPro2. | All hotkeys are restored with their keys, actions and enabled state. `settings.json` → `keycontrol.actions` lists them (`"keyCombo": "Ctrl+Shift+F9"`, …). |
+| 24 | Exit, edit `settings.json`: change one `"keyCombo"` to `"Hyper+X"` and one `"action"` to `"teleport"`; start. | Both rows show **ERROR** with the reason ("Unknown key combination…", "Unknown action…"); the other hotkeys work; the log lists both entries. Delete them or fix the file. |
+| 25 | General → **Reset all settings to defaults…** → Yes. | The hotkey list is empty and every key works normally again. |
+
+### D. Permissions and robustness
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 26 | Remove **Accessibility** (BUILD.md 1.6.6, only that one) and start. | Banner on Key Control; rows show UNAVAILABLE; Add Hotkey and the row buttons are disabled; the keys reach other apps normally. Grant it again and restart: rows ACTIVE. |
+| 27 | Put the Mac to sleep, wake and unlock; also lock/unlock the screen. | Hotkeys keep working right away (log: hook reinstall; `Key Control: re-registered …` if a key had been lost). |
+| 28 | **Long run:** leave ErgoPro2 running for 2+ hours with normal use (include a sleep/wake), then repeat steps 11 and 15. | Still exclusive and working. |
+| 29 | Exit ErgoPro2, then press the hotkeys in TextEdit. | They behave like normal keys again (released on exit). |
+| 30 | Windows / Debian X11 (when available): steps 3–25. | Same behavior; combinations shown as Ctrl+Shift+F9 / Win / Super; Windows rejects Win+… and Ctrl+Alt+Del; on X11 a key already grabbed by another program shows "already used by another application (X11 grab refused)". |

@@ -2,6 +2,8 @@
 
 #include "core/LogCategories.h"
 
+#include <QJsonArray>
+
 #include <cmath>
 
 namespace ergo {
@@ -44,6 +46,15 @@ SettingDefinition SettingDefinition::enumeration(const QString &key, const QStri
     d.type = SettingType::Enum;
     d.defaultValue = defaultValue;
     d.allowedValues = allowed;
+    return d;
+}
+
+SettingDefinition SettingDefinition::list(const QString &key)
+{
+    SettingDefinition d;
+    d.key = key;
+    d.type = SettingType::List;
+    d.defaultValue = QVariant::fromValue(QJsonArray());
     return d;
 }
 
@@ -101,6 +112,10 @@ std::optional<QVariant> SettingsSchema::validate(const SettingDefinition &defini
             return std::nullopt;
         return QVariant(s);
     }
+    case SettingType::List:
+        if (value.typeId() != QMetaType::QJsonArray)
+            return std::nullopt;
+        return value;
     }
     return std::nullopt;
 }
@@ -126,6 +141,10 @@ std::optional<QVariant> SettingsSchema::fromJson(const SettingDefinition &defini
         if (!value.isString())
             return std::nullopt;
         return validate(definition, QVariant(value.toString()));
+    case SettingType::List:
+        if (!value.isArray())
+            return std::nullopt;
+        return QVariant::fromValue(value.toArray());
     }
     return std::nullopt;
 }
@@ -139,6 +158,8 @@ QJsonValue SettingsSchema::toJson(const SettingDefinition &definition, const QVa
         return QJsonValue(value.toInt());
     case SettingType::Enum:
         return QJsonValue(value.toString());
+    case SettingType::List:
+        return QJsonValue(value.value<QJsonArray>());
     }
     return QJsonValue();
 }

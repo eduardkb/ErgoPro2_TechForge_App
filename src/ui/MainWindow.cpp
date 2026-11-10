@@ -4,6 +4,7 @@
 #include "ui/AppContext.h"
 #include "ui/tabs/AutoClickTab.h"
 #include "ui/tabs/GeneralTab.h"
+#include "ui/tabs/KeyControlTab.h"
 #include "ui/widgets/FeaturePage.h"
 #include "ui/widgets/PlaceholderPage.h"
 
@@ -41,9 +42,7 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
                                    new AutoClickTab(context.autoclick, context.settings, context.availability)),
                    tr("Auto Click"));
     m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
-                                   new PlaceholderPage(QStringLiteral(":/icons/ui/keyboard.svg"), tr("Key Control"),
-                                                       tr("Assign keyboard shortcuts to mouse actions.\n%1")
-                                                           .arg(later))),
+                                   new KeyControlTab(context.keycontrol, context.input)),
                    tr("Key Control"));
     m_tabs->addTab(new PlaceholderPage(QStringLiteral(":/icons/ui/statistics.svg"), tr("Statistics"),
                                        tr("Coming soon."), m_tabs),

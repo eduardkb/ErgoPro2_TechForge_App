@@ -9,6 +9,11 @@ add_library(ergopro2_core STATIC
     core/autoclick/AutoClickEngine.cpp core/autoclick/AutoClickEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
+    core/keycontrol/KeyAction.cpp core/keycontrol/KeyAction.h
+    core/keycontrol/KeyBinding.cpp core/keycontrol/KeyBinding.h
+    core/keycontrol/KeyComboText.cpp core/keycontrol/KeyComboText.h
+    core/keycontrol/KeyComboValidation.cpp core/keycontrol/KeyComboValidation.h
+    core/keycontrol/KeyControlEngine.cpp core/keycontrol/KeyControlEngine.h
     core/input/InputDispatcher.cpp core/input/InputDispatcher.h
     core/input/InputEvent.cpp core/input/InputEvent.h
     core/input/KeyCombo.cpp core/input/KeyCombo.h
@@ -19,6 +24,7 @@ add_library(ergopro2_core STATIC
     core/Logger.cpp core/Logger.h
     core/settings/AutoClickSettings.cpp core/settings/AutoClickSettings.h
     core/settings/GeneralSettings.cpp core/settings/GeneralSettings.h
+    core/settings/KeyControlSettings.cpp core/settings/KeyControlSettings.h
     core/settings/SettingsRegistry.cpp core/settings/SettingsRegistry.h
     core/settings/SettingsSchema.cpp core/settings/SettingsSchema.h
     core/settings/SettingsStore.cpp core/settings/SettingsStore.h
@@ -109,6 +115,8 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/autoclick/AutoClickController.cpp ui/autoclick/AutoClickController.h
     ui/autoclick/AutoClickOverlay.cpp ui/autoclick/AutoClickOverlay.h
     ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
+    ui/keycontrol/HotkeyDialog.cpp ui/keycontrol/HotkeyDialog.h
+    ui/keycontrol/KeyControlController.cpp ui/keycontrol/KeyControlController.h
     ui/InstallController.cpp ui/InstallController.h
     ui/MainWindow.cpp ui/MainWindow.h
     ui/PermissionActions.cpp ui/PermissionActions.h
@@ -121,6 +129,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h
     ui/tabs/InstallCard.cpp ui/tabs/InstallCard.h
+    ui/tabs/KeyControlTab.cpp ui/tabs/KeyControlTab.h
     ui/widgets/CardWidget.cpp ui/widgets/CardWidget.h
     ui/widgets/FeatureBanner.cpp ui/widgets/FeatureBanner.h
     ui/widgets/FeaturePage.cpp ui/widgets/FeaturePage.h

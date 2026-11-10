@@ -10,7 +10,9 @@
 
 namespace ergo {
 
-enum class SettingType { Bool, Int, Enum };
+// List = a JSON array whose entries are validated by the feature that owns it
+// (e.g. Key Control bindings); the schema only checks that it is an array.
+enum class SettingType { Bool, Int, Enum, List };
 
 // Definition of one setting: key, type, default and allowed range.
 // Keys are "<section>.<name>" (e.g. "general.logRetentionDays"); the section
@@ -29,6 +31,7 @@ struct SettingDefinition {
     static SettingDefinition boolean(const QString &key, bool defaultValue);
     static SettingDefinition integer(const QString &key, int defaultValue, int minimum, int maximum);
     static SettingDefinition enumeration(const QString &key, const QString &defaultValue, const QStringList &allowed);
+    static SettingDefinition list(const QString &key); // default: empty array
 };
 
 // Registry of all known settings. Each stage registers its own keys in one
