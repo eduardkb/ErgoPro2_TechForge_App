@@ -172,3 +172,19 @@ is set to *Hide in tray*, use tray → *Show window*).
 
 > With ad-hoc signing, every rebuild + reinstall changes the app's identity: repeat steps 3–5 after
 > each new install, or use the self-signed certificate (BUILD.md 1.6.3) to keep the permissions.
+
+---
+
+## Bug fix – v1.1.4
+
+Preparation: exit ErgoPro2 and remove both permissions (System Settings → Privacy & Security →
+Accessibility / Input Monitoring → select every ErgoPro2 entry → **−**), then start it with
+`open ~/Applications/ErgoPro2.app` (or the build copy).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | The window "ErgoPro2 needs your permission" opens. | Both cards fully readable: title, explanation, **MISSING** badge, hint text and **Open System Settings** button. |
+| 2 | Grant **Accessibility** only (Open System Settings → switch on) and come back. | Within ~3 s Accessibility shows **GRANTED** and its card becomes smaller. The **Input Monitoring** card keeps its full height: all text, the **MISSING** badge and the button are completely readable. The window gets shorter but nothing is cut off. |
+| 3 | Grant **Input Monitoring**. | Both cards show **GRANTED**, all text readable; "All permissions are granted" appears and the window closes after ~1.5 s. |
+| 4 | Repeat with the opposite order (Input Monitoring first, then Accessibility). | Same: the remaining card is never squeezed. |
+| 5 | While the window is open with one permission missing, try to drag the bottom edge of the window upwards. | The window cannot be made smaller than its content. |

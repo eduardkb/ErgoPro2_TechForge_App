@@ -24,6 +24,7 @@ signals:
 
 private:
     void rebuild();
+    void fitHeightToContent();
 
     FeatureAvailabilityService &m_service;
     QVBoxLayout *m_rows = nullptr;

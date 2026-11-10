@@ -129,8 +129,12 @@ folder or Mac, bundle Qt inside it with `macdeployqt`:
 #    ErgoPro2 does not use the virtual keyboard; remove that plugin folder:
 rm -rf build-release/bin/ErgoPro2.app/Contents/PlugIns/platforminputcontexts
 
-# 3. Sign the bundle (ALWAYS sign after macdeployqt - see 1.6)
+# 3. Sign the bundle again (ALWAYS after macdeployqt): macdeployqt adds the Qt frameworks and
+#    plugins to the bundle, which breaks the signature made by the build (see 1.6).
+#    Use the same identity as for your builds: "-" (ad-hoc) or your certificate name.
 codesign --force --deep --sign - build-release/bin/ErgoPro2.app
+#    with your certificate (1.6.3) instead:
+#    codesign --force --deep --sign "ErgoPro2 Local Signing" build-release/bin/ErgoPro2.app
 
 # 4. Create the disk image
 mkdir -p dist
@@ -142,8 +146,8 @@ To install from the `.dmg`: open it and drag **ErgoPro2** to your *Applications*
 
 ### 1.6 Code signing (important for permissions)
 
-From stage 2 on, ErgoPro2 needs the **Accessibility** and **Input Monitoring** permissions. macOS
-links these permissions to the app's **code signature**:
+ErgoPro2 needs the **Accessibility** and **Input Monitoring** permissions. macOS links these
+permissions to the app's **code signature**:
 
 - An **unsigned** or **ad-hoc signed** app gets a new identity on every rebuild, so macOS may
   "forget" the permissions after each build (the switch stays on in System Settings but has no effect).
@@ -157,6 +161,21 @@ instead (recommended, 1.6.3), configure with:
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" -DERGOPRO2_CODESIGN_IDENTITY="ErgoPro2 Local Signing"
 ```
+The setting is remembered in the build folder; later builds use it automatically.
+
+Signing happens only when the build actually re-links the app; a build that reports `no work to do`
+keeps the existing (still valid) signature.
+
+**What this means for the permissions:**
+
+| Signing | After a rebuild + reinstall |
+|---------|-----------------------------|
+| Ad-hoc (`-`, default) | The signature is valid, but macOS sees each new build as a **different app**. Remove the old ErgoPro2 entries and grant both permissions again (1.6.4, then section 6.1). |
+| Your certificate (1.6.3) | The identity stays the same: the permissions are **kept**, nothing to do. |
+
+**Anything that changes the bundle after the build breaks its signature** – in particular
+`macdeployqt` (section 1.5). Sign again afterwards with the same identity (1.6.1). A normal build, run
+and Install do not need this; Install copies the signed bundle unchanged.
 
 #### 1.6.1 Ad-hoc signing by hand (e.g. after `macdeployqt`, or an older copy)
 ```bash

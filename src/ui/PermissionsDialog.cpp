@@ -128,8 +128,27 @@ void PermissionsDialog::rebuild()
                                : tr("Without these permissions the affected features stay unavailable. You can "
                                     "grant them later from the General tab or the banner on each tab."));
     }
+    // New child widgets of an already visible window are shown by Qt only in the
+    // next event-loop pass; until then the layout ignores them. Measuring right
+    // away (as before 1.1.4) produced a far too small height after a permission
+    // changed, which squeezed the remaining cards. Measure once they are shown.
+    if (!isVisible())
+        fitHeightToContent();
+    QTimer::singleShot(0, this, &PermissionsDialog::fitHeightToContent);
+}
+
+void PermissionsDialog::fitHeightToContent()
+{
     layout()->activate();
-    resize(width(), layout()->totalHeightForWidth(width()));
+    const int height = layout()->totalHeightForWidth(width());
+    if (height <= 0) {
+        qCWarning(lcUi) << "Permissions window: could not compute the content height";
+        return;
+    }
+    // Also the minimum height, so the window can never squeeze the cards.
+    setMinimumHeight(height);
+    resize(width(), height);
+    qCDebug(lcUi) << "Permissions window resized to" << width() << "x" << height;
 }
 
 } // namespace ergo

@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.1.4] - 2026-11-10
+
+Bug fix (permissions window layout).
+
+### Fixed
+- **Permissions window:** as soon as one permission was detected as granted, the remaining permission's
+  card (e.g. *Input Monitoring*) was squeezed vertically – text, the MISSING badge and the *Open System
+  Settings* button were cut off and unreadable. Root cause: after a change the window measured its new
+  height before Qt had shown the newly created cards, so they were left out and the window shrank too
+  much; the height is now measured once the cards are shown and kept as the window's minimum height.
+
 ## [1.1.3] - 2026-11-10
 
 Bug fix (macOS Accessibility permission).
