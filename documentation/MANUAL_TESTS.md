@@ -127,3 +127,14 @@ detection, the macOS permissions window and the "unavailable" banners.
 | 34 | Debian X11: Install. | `~/.local/opt/ErgoPro2/ErgoPro2` + `ergopro2.svg`, menu entry in the application menu, `~/.config/autostart/ergopro2.desktop` with `--autostart`. Diagnostics: Desktop session **X11**, "X11 session" **GRANTED**, no banners. |
 | 35 | Debian Wayland: start ErgoPro2 as a user that is not in the `input` group. | Diagnostics: session **Wayland**; "Read access to input devices" and "Write access to /dev/uinput" **MISSING** with **Grant access…**; banners on the three tabs. |
 | 36 | Click **Grant access…**. | A confirmation explains the changes (input group + udev rule); after **Yes** the system password dialog appears; on success a message asks to log out and in. After re-login both requirements are **GRANTED** and the banners are gone. Cancelling the password dialog shows "authorization was cancelled". |
+
+---
+
+## Bug fix – v1.1.1
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | Push the commit and open the GitHub Actions run. | All three jobs (macOS, Windows, Debian 13) are green. In the Windows job, `tst_locationclassifier` passes. In the macOS job, the *Configure* step prints `macOS SDK without AGL.framework (…): Qt's AGL link replaced by OpenGL.framework` and the *Build* step links `ErgoPro2` without `framework 'AGL' not found`. |
+| 2 | macOS: `rm -rf build`, configure and build as in BUILD.md 1.2, run `ctest`. | Build succeeds, all tests pass (`tst_locationclassifier`: 16 passed). With Homebrew Qt 6.9+ the AGL message may appear but has no effect. |
+| 3 | macOS: start the app from `build/bin` and look at General → Installation. | No location warning (the build folder is a normal folder). |
+| 4 | Windows (when available): start a `windeployqt` folder from e.g. `C:\Tools\ErgoPro2` and look at General → Installation. | No "temporary folder" / "Downloads" warning. Copy the folder to `%USERPROFILE%\Downloads` and start it from there: the Downloads warning appears. |

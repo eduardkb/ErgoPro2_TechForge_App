@@ -65,6 +65,28 @@ private slots:
                  LocationCheck::Kind::Permanent);
     }
 
+    void fileSystemRootIsIgnored()
+    {
+        // Regression (v1.1.1): on Windows the root is a drive ("C:/"), which was
+        // trimmed to "C:" (= current folder of drive C) and then matched every path.
+        // QDir::rootPath() is "/" on macOS/Linux and the system drive on Windows.
+        LocationRoots r;
+        r.temporary = {QDir::rootPath()};
+        r.downloads = {QDir::rootPath()};
+        r.removable = {QDir::rootPath()};
+        r.caseSensitivity = Qt::CaseInsensitive;
+        const QString app = QDir(QDir::rootPath()).filePath(QStringLiteral("SomeFolder/ErgoPro2/ErgoPro2"));
+        QCOMPARE(classifyLocation(app, r).kind, LocationCheck::Kind::Permanent);
+    }
+
+    void trailingSlashOnRootsIsIgnored()
+    {
+        LocationRoots r;
+        r.downloads = {QStringLiteral("/Users/me/Downloads/")};
+        QCOMPARE(classifyLocation(QStringLiteral("/Users/me/Downloads/ErgoPro2.app"), r).kind,
+                 LocationCheck::Kind::Downloads);
+    }
+
     void realTemporaryFolderIsDetected()
     {
         // Uses the real OS roots (symlinks such as /var -> /private/var are resolved).

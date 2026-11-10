@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 #   - MAJOR stays 1.
 # ---------------------------------------------------------------------------
 project(ErgoPro2
-    VERSION 1.1.0
+    VERSION 1.1.1
     DESCRIPTION "Ergonomic helper: auto click, key control and break reminders"
     HOMEPAGE_URL "https://techforge.com/ergopro2"
     LANGUAGES CXX)
@@ -34,6 +34,27 @@ option(ERGOPRO2_BUILD_TOOLS "Build developer tools (icon generator)" OFF)
 
 set(ERGOPRO2_ORGANIZATION "techforge")
 set(ERGOPRO2_BUNDLE_ID "com.techforge.ergopro2")
+
+# macOS 26 SDK (Xcode 26) no longer contains AGL.framework, but Qt 6.8.x
+# (FindWrapOpenGL.cmake) still links "-framework AGL": its find_library() finds
+# AGL in the running system (/System/Library/Frameworks), not in the SDK the
+# linker uses, so linking fails with "framework 'AGL' not found". When the SDK
+# has no AGL, point Qt's cache variable at OpenGL.framework instead (AGL was a
+# deprecated OpenGL helper; linking OpenGL twice is harmless). No effect on SDKs
+# that still ship AGL or on Qt versions that no longer use it.
+if(APPLE AND NOT DEFINED CACHE{WrapOpenGL_AGL})
+    set(_ergopro2_sdk "${CMAKE_OSX_SYSROOT}")
+    if(NOT IS_DIRECTORY "${_ergopro2_sdk}")
+        execute_process(COMMAND xcrun --show-sdk-path
+                        OUTPUT_VARIABLE _ergopro2_sdk OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    endif()
+    if(IS_DIRECTORY "${_ergopro2_sdk}/System/Library/Frameworks/OpenGL.framework"
+       AND NOT IS_DIRECTORY "${_ergopro2_sdk}/System/Library/Frameworks/AGL.framework")
+        set(WrapOpenGL_AGL "${_ergopro2_sdk}/System/Library/Frameworks/OpenGL.framework"
+            CACHE FILEPATH "Replacement for AGL.framework, which this macOS SDK no longer contains")
+        message(STATUS "macOS SDK without AGL.framework (${_ergopro2_sdk}): Qt's AGL link replaced by OpenGL.framework")
+    endif()
+endif()
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
 if(ERGOPRO2_BUILD_TESTS)

@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.1.1] - 2026-11-10
+
+Bug fixes (CI failures on Windows and macOS).
+
+### Fixed
+- **Windows:** the "running from a temporary / Downloads folder" check could treat a whole drive (e.g.
+  `C:/`) as such a folder and then warn for every location; the `tst_locationclassifier` unit test failed
+  on Windows. Root cause: drive roots were not recognized as file-system roots – trimming the trailing
+  `/` turned `C:/` into `C:` (the current folder of drive C).
+- **macOS:** building with Qt 6.8 against the macOS 26 SDK (Xcode 26) failed with
+  `ld: framework 'AGL' not found`. Root cause: Qt 6.8 links the AGL framework, which Apple removed from
+  the macOS 26 SDK; the build now substitutes OpenGL.framework when the SDK has no AGL.
+
 ## [1.1.0] - 2026-11-09
 
 Stage 1 – General tab, install / start at login, permissions.

@@ -1,5 +1,7 @@
 #include "core/LocationClassifier.h"
 
+#include "core/LogCategories.h"
+
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
@@ -10,24 +12,28 @@ namespace {
 
 // Normalizes a path: absolute, symlinks resolved through the deepest existing
 // ancestor (so "/tmp/x" and the root "/tmp" both become "/private/tmp/..." on
-// macOS even if "x" does not exist), '/' separators, no trailing '/'.
+// macOS even if "x" does not exist), '/' separators, no trailing '/' except for
+// a file-system root ("/" or a Windows drive such as "C:/").
+//
+// Parents are taken with QFileInfo::path() and roots detected with
+// QDir::isRoot(): cutting at the last '/' would turn "C:/Users" into "C:",
+// which on Windows means "the current folder of drive C" (bug fixed in 1.1.1).
 QString normalize(const QString &path)
 {
-    QString existing = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
-    QString remainder;
-    while (!QFileInfo::exists(existing)) {
-        const int slash = existing.lastIndexOf(QLatin1Char('/'));
-        if (slash <= 0) {
-            existing.clear();
+    QString existing = QDir::cleanPath(QDir::fromNativeSeparators(QFileInfo(path).absoluteFilePath()));
+    QStringList missing; // trailing components that do not exist (yet)
+    while (!QFileInfo::exists(existing) && !QDir(existing).isRoot()) {
+        const QFileInfo info(existing);
+        const QString parent = info.path();
+        if (parent == existing || parent.isEmpty())
             break;
-        }
-        remainder = existing.mid(slash) + remainder;
-        existing.truncate(slash);
+        missing.prepend(info.fileName());
+        existing = parent;
     }
-    QString result = existing.isEmpty() ? QDir::cleanPath(QFileInfo(path).absoluteFilePath())
-                                        : QFileInfo(existing).canonicalFilePath() + remainder;
+    const QString base = QFileInfo::exists(existing) ? QFileInfo(existing).canonicalFilePath() : existing;
+    QString result = missing.isEmpty() ? base : QDir(base).filePath(missing.join(QLatin1Char('/')));
     result = QDir::fromNativeSeparators(QDir::cleanPath(result));
-    while (result.size() > 1 && result.endsWith(QLatin1Char('/')))
+    while (result.endsWith(QLatin1Char('/')) && !QDir(result).isRoot())
         result.chop(1);
     return result;
 }
@@ -37,8 +43,8 @@ bool isUnder(const QString &path, const QString &root, Qt::CaseSensitivity cs)
     if (root.isEmpty())
         return false;
     const QString r = normalize(root);
-    if (r == QLatin1String("/"))
-        return false; // never treat the whole file system as a root
+    if (QDir(r).isRoot())
+        return false; // never treat a whole file system / drive as a root
     return path.compare(r, cs) == 0 || path.startsWith(r + QLatin1Char('/'), cs);
 }
 
@@ -67,6 +73,7 @@ LocationCheck classifyLocation(const QString &path, const LocationRoots &roots)
         check.kind = LocationCheck::Kind::Temporary;
     else if (isUnderAny(p, roots.removable, roots.caseSensitivity))
         check.kind = LocationCheck::Kind::DiskImageOrRemovable;
+    qCDebug(lcApp).noquote() << "Location check:" << p << "-> kind" << static_cast<int>(check.kind);
     return check;
 }
 
