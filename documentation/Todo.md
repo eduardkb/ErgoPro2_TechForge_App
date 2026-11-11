@@ -1,6 +1,7 @@
 # Todo Items
 
 ## Open:
+- removing the accessibility permissions on MacOS while the app was running blocked the whole operationg system (no mouse or keyboard actions were being done at all anywhere). it was only resoted after I locked and un-locked the laptop.
 - when installing on windows. try with the app running and without. (strange exit message right before it starts installing)
 
 
