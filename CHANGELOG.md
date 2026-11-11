@@ -5,6 +5,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.7] - 2026-11-11
+
+Owner-requested change (specification B.2 updated).
+
+### Changed
+- **Break Timer ranges:**
+
+  | Setting | New range | Default | Before |
+  |---|---|---|---|
+  | *Break after working* | 20–120 min | 50 | 5–180 |
+  | *Reset after a pause of* | 2–15 min | 5 | 1–30 |
+  | *Postpone by* | 3–20 min | 10 | 1–60 |
+
+  A value stored in `settings.json` outside the new range is replaced by the default when ErgoPro2 starts
+  (logged as WARNING).
+
 ## [1.7.6] - 2026-11-11
 
 Owner-requested changes (specification updated: B.2, B.7, B.8.2).

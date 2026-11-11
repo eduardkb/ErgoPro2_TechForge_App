@@ -11,7 +11,8 @@
 ====
 - Modify the maximum, minumum and default as below:
 break timer tab - break after working: min: 20, max 120, default 50
-break timer tab - reset after a pause of: 
+break timer tab - reset after a pause of: min: 2, max: 15, default: 5
+break timer tab - postpone by: min: 3, max: 20, default: 10
 
 ====
 - when installing on windows. try with the app running and without. (strange exit message right before it starts installing)

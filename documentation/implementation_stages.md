@@ -180,10 +180,10 @@ ergoPro2/
 | `keycontrol.actions` | list (see B.5) | empty | 4 |
 | `DRAGLOCK_TIMEOUT` (s) | 1–60 | 10 | 6 (system-only since 1.6.1: settings.json, not on the tab) |
 | `breaktimer.enabled` | bool | true | 5 |
-| `BREAKTIMER_IDLE_RESET` (min) | 1–30 | 5 | 5 |
-| `BREAKTIMER_MAX_WORK_TIME` (min) | 5–180 | 50 | 5 |
+| `BREAKTIMER_IDLE_RESET` (min) | **2–15** (1–30 until 1.7.6) | 5 | 5 |
+| `BREAKTIMER_MAX_WORK_TIME` (min) | **20–120** (5–180 until 1.7.6) | 50 | 5 |
 | `BREAKTIMER_BREAK_TIME` (min) | **3–15** (1–30 until 1.7.5) | **4** (was 5 until 1.6.1) | 5 |
-| `BREAKTIMER_POSTPONE_TIME` (min) | 1–60 | 10 | 5 |
+| `BREAKTIMER_POSTPONE_TIME` (min) | **3–20** (1–60 until 1.7.6) | 10 | 5 |
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
 | `BREAKTIMER_ACTIVITY_PAUSE` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
 | `statistics.retentionDays` | 1–360 | 90 | 7 |

@@ -20,10 +20,10 @@ inline const QString SuppressWhenFullscreen = QStringLiteral("breaktimer.suppres
 // many seconds after the last mouse/keyboard input and resumes with the next one.
 inline const QString ActivityPauseS = QStringLiteral("breaktimer.BREAKTIMER_ACTIVITY_PAUSE");
 
-inline constexpr int kIdleResetMin = 1, kIdleResetMax = 30, kIdleResetDefault = 5;
-inline constexpr int kMaxWorkMin = 5, kMaxWorkMax = 180, kMaxWorkDefault = 50;
+inline constexpr int kIdleResetMin = 2, kIdleResetMax = 15, kIdleResetDefault = 5;  // 2-15 since 1.7.7
+inline constexpr int kMaxWorkMin = 20, kMaxWorkMax = 120, kMaxWorkDefault = 50; // 20-120 since 1.7.7
 inline constexpr int kBreakMin = 3, kBreakMax = 15, kBreakDefault = 4; // 4 since 1.6.1, 3-15 since 1.7.6
-inline constexpr int kPostponeMin = 1, kPostponeMax = 60, kPostponeDefault = 10;
+inline constexpr int kPostponeMin = 3, kPostponeMax = 20, kPostponeDefault = 10; // 3-20 since 1.7.7
 inline constexpr int kActivityPauseMin = 5, kActivityPauseMax = 60, kActivityPauseDefault = 20; // seconds
 
 void registerSettings(SettingsSchema &schema);

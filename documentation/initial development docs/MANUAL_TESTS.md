@@ -690,3 +690,17 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 5 | Work until a break, click **Dismiss** while the usage is above 100 % (or keep working past 100 %). | Log `usage above 100 % - break after …`; *Next break in* shows **half** of *Break after working* (e.g. 05:00 for 10 min); the break comes after half the time. After a completed break (usage 0 %) the full time applies again. |
 | 6 | Break Timer tab › *Break length* slider. | Range 3–15 min. In `settings.json` set `BREAKTIMER_BREAK_TIME` to 1 (app closed), start: the value is 4 (log names the invalid value). |
 | 7 | Break Timer and Auto Click tabs: hints under the sliders. | Only descriptions, no `BREAKTIMER_…` / `AUTOCLICK_…` names. |
+
+---
+
+## Bug fix – v1.7.7
+
+> The short test values used in earlier sections (5 / 1 / 1 min) are no longer possible. Shortest values now:
+> *Break after working* **20** min, *Reset after a pause of* **2** min, *Break length* **3** min, *Postpone by* **3** min.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass. |
+| 2 | Break Timer tab: drag each slider to both ends, type values outside the range into the boxes. | *Break after working* 20–120, *Reset after a pause of* 2–15, *Postpone by* 3–20 (values outside cannot be entered). |
+| 3 | General › *Reset all settings*, then Break Timer. | 50 / 5 / 4 (break length) / 10 min. |
+| 4 | With ErgoPro2 closed, set in `settings.json` › `breaktimer`: `BREAKTIMER_MAX_WORK_TIME` 10, `BREAKTIMER_IDLE_RESET` 30, `BREAKTIMER_POSTPONE_TIME` 1; start ErgoPro2. | The tab shows 50 / 5 / 10; the log has a WARNING "Invalid value for …" for each of the three. |
