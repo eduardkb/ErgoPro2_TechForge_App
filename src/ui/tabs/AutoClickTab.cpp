@@ -72,9 +72,9 @@ AutoClickTab::AutoClickTab(AutoClickController &controller, SettingsStore &setti
     auto *params = new CardWidget(tr("Settings"), tr("Changes apply immediately."), content);
     m_timer = new ParameterRow(tr("Wait before clicking"), AC::kTriggerTimerMin, AC::kTriggerTimerMax,
                                tr("ms"), params);
-    m_timer->setHint(tr("AUTOCLICK_TRIGGER_TIMER – how long the pointer must rest before the click."));
+    m_timer->setHint(tr("How long the pointer must rest before the click."));
     m_distance = new ParameterRow(tr("Minimum movement"), AC::kDistanceMin, AC::kDistanceMax, tr("px"), params);
-    m_distance->setHint(tr("AUTOCLICK_TRIGGER_DISTANCE – how far the pointer must move away from the last click "
+    m_distance->setHint(tr("How far the pointer must move away from the last click "
                            "before the next auto-click. Resting the mouse never produces repeated clicks."));
     m_jitter = new ParameterRow(tr("Ignore tremor below"), AC::kJitterMin, AC::kJitterMax, tr("px"), params);
     m_jitter->setHint(tr("Small hand tremor up to this distance does not restart the countdown."));

@@ -182,7 +182,7 @@ ergoPro2/
 | `breaktimer.enabled` | bool | true | 5 |
 | `BREAKTIMER_IDLE_RESET` (min) | 1–30 | 5 | 5 |
 | `BREAKTIMER_MAX_WORK_TIME` (min) | 5–180 | 50 | 5 |
-| `BREAKTIMER_BREAK_TIME` (min) | 1–30 | **4** (was 5 until 1.6.1) | 5 |
+| `BREAKTIMER_BREAK_TIME` (min) | **3–15** (1–30 until 1.7.5) | **4** (was 5 until 1.6.1) | 5 |
 | `BREAKTIMER_POSTPONE_TIME` (min) | 1–60 | 10 | 5 |
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
 | `BREAKTIMER_ACTIVITY_PAUSE` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
@@ -285,7 +285,8 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - **INTERACTION_TIMER = active work time** of the current work cycle (changed in 1.6.1 at the owner's request; was wall-clock time, B-01 a). The cycle starts at the first real user activity after a reset. Time counts while input continues; when there is no mouse/keyboard input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (default 20) the timer stops – those seconds still count – and it resumes with the next input. The break starts when this active time reaches `BREAKTIMER_MAX_WORK_TIME`. The idle reset (`BREAKTIMER_IDLE_RESET`) still uses the time since the last input. While the break window is shown nothing counts; after Postpone the time continues (the Postpone click counts as input).
 - Activity = real mouse movement, clicks, wheel, key presses. Synthetic events excluded (B-02).
 - **Idle reset**: if there is no activity for ≥ `BREAKTIMER_IDLE_RESET` minutes, the timer resets (counts as a break taken) (B-03). Sleep and screen lock count as idle (B-16).
-- When INTERACTION_TIMER ≥ `BREAKTIMER_MAX_WORK_TIME` → show the **break window**.
+- When INTERACTION_TIMER ≥ `BREAKTIMER_MAX_WORK_TIME` → show the **break window**. While the Statistics **computer usage percent is above 100 %** (B.8.2, e.g. after Dismiss), the break comes after **half** of `BREAKTIMER_MAX_WORK_TIME` instead (1.7.6, owner request); back to the full time once the usage is reset to 0. If the usage goes above 100 % while the work time is already past half, the break starts at once. The postpone time is not affected.
+- The tabs show only descriptive texts for the parameters, no variable names in capital letters (1.7.6).
 - **Break window** (B-05, B-10):
   - Full-screen semi-transparent overlay on **all monitors**, always on top, not closable with Esc/Alt+F4/Cmd+W. The OS task switcher is not blocked.
   - Shows: message (e.g. "Time to rest your wrists"), **countdown mm:ss** of `BREAKTIMER_BREAK_TIME`, **fixed stretching tips with images** (create 4–6 simple SVG illustrations in `resources/`, e.g. wrist flexor stretch, wrist extensor stretch, fist-open-fan, shoulder rolls, look away 20 s), and buttons **Dismiss** and **Postpone (N min)**.
@@ -322,9 +323,10 @@ Owner description (stage 7 request) with the owner's answers to the clarificatio
 
 ### B.8.2 Computer usage percent
 - `usage % = used seconds since the last usage reset ÷ (BREAKTIMER_MAX_WORK_TIME × 60) × 100`, where "used seconds" = active seconds (B.8.1). Only time with actual input counts (reading without touching anything does not).
-- **Reset to 0 %** only when there was **no input for `BREAKTIMER_BREAK_TIME` minutes** (owner's rule; this is intentionally the break length, not `BREAKTIMER_IDLE_RESET`). Sleep / lock / app not running count as no input. Resting through the whole break therefore resets it.
-- The break window buttons do **not** reset it: after Dismiss or Postpone, or when the break countdown ends while the user keeps working, the value keeps growing beyond 100 % on the same scale. Postponing any number of times changes nothing.
-- Calculated the same way when the Break Timer is disabled (with its current settings). A change of `BREAKTIMER_MAX_WORK_TIME` / `BREAKTIMER_BREAK_TIME` applies from that moment on; already recorded minutes are not recalculated.
+- **Reset to 0 %** when there was **no input for `BREAKTIMER_BREAK_TIME` minutes** (owner's rule; this is intentionally the break length, not `BREAKTIMER_IDLE_RESET`; sleep / lock / app not running count as no input) **and when the break window closes by itself** (countdown over), even if there was input while it was shown (1.7.6, owner request).
+- Dismiss and Postpone do **not** reset it: the value keeps growing beyond 100 % on the same scale. Postponing any number of times changes nothing.
+- Calculated the same way when the Break Timer is disabled (with its current settings).
+- **Scale per usage cycle** (1.7.6, owner request): the `BREAKTIMER_MAX_WORK_TIME` used as 100 % is taken when the usage (re)starts at 0. Changing the setting later never makes the shown percent jump (neither up nor down); the new value becomes the 100 % reference at the next reset to 0 (immediately only while the usage is 0). The Break Timer itself applies the new value at once (B.7), so a break can come before 100 % is reached. `BREAKTIMER_BREAK_TIME` (reset pause) applies at once. Recorded minutes are never recalculated.
 - Recorded **per minute**: the value at the end of each minute (minutes without data are empty, not 0).
 
 ### B.8.3 Statistics tab

@@ -91,6 +91,34 @@ private slots:
         QVERIFY(!f.engine.cycleStartTime().isValid());
     }
 
+    void halfWorkTimeWhileUsageIsOverHundredPercent()
+    {
+        Fixture f; // max work 50 min
+        f.engine.setUsageOverLimit(true); // Statistics: usage > 100 % (1.7.6)
+        f.work(25 * kMin - 1000);
+        QCOMPARE(f.engine.state(), S::Working);
+        QCOMPARE(f.engine.timeUntilBreakMs(), qint64(1000));
+        f.work(1000);
+        QCOMPARE(f.engine.state(), S::BreakShown); // after half of 50 min
+        f.engine.dismiss();
+        f.work(25 * kMin);
+        QCOMPARE(f.engine.state(), S::BreakShown); // again half while still over 100 %
+        f.engine.dismiss();
+        f.engine.setUsageOverLimit(false); // usage reset to 0
+        f.work(30 * kMin);
+        QCOMPARE(f.engine.state(), S::Working); // full 50 min again
+        QCOMPARE(f.engine.timeUntilBreakMs(), 20 * kMin);
+    }
+
+    void goingOverHundredPercentPastHalfTimeShowsTheBreakAtOnce()
+    {
+        Fixture f;
+        f.work(30 * kMin);
+        QCOMPARE(f.engine.state(), S::Working);
+        f.engine.setUsageOverLimit(true);
+        QCOMPARE(f.engine.state(), S::BreakShown);
+    }
+
     void workTimeIsReportedAsPausedWithoutInput()
     {
         Fixture f;

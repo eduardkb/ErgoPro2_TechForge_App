@@ -88,6 +88,14 @@ void BreakTimerEngine::onScreenUnlocked()
     update();
 }
 
+void BreakTimerEngine::setUsageOverLimit(bool over)
+{
+    if (over == m_usageOverLimit)
+        return;
+    m_usageOverLimit = over;
+    update(); // past half the time already: the break starts now
+}
+
 bool BreakTimerEngine::isBreakDelayedByFullscreen() const
 {
     return m_config.suppressWhenFullscreen && m_fullscreenActive;
@@ -103,7 +111,7 @@ void BreakTimerEngine::update()
     case State::Working:
         if (t - m_lastActivityMs >= m_config.idleResetMs)
             resetCycle(); // natural break taken (B-03)
-        else if (workedAt(t) >= m_config.maxWorkMs && !isBreakDelayedByFullscreen() && !m_locked)
+        else if (workedAt(t) >= effectiveMaxWorkMs() && !isBreakDelayedByFullscreen() && !m_locked)
             showBreak(); // never behind the lock screen; decided again after unlock
         return;
     case State::Postponed:
@@ -161,7 +169,7 @@ qint64 BreakTimerEngine::timeUntilBreakMs() const
 {
     switch (m_state) {
     case State::Working:
-        return std::max<qint64>(0, m_config.maxWorkMs - workedAt(now()));
+        return std::max<qint64>(0, effectiveMaxWorkMs() - workedAt(now()));
     case State::Postponed:
         return std::max<qint64>(0, m_postponeUntilMs - now());
     case State::BreakShown:

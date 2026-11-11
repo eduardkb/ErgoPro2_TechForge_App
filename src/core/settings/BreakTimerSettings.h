@@ -22,7 +22,7 @@ inline const QString ActivityPauseS = QStringLiteral("breaktimer.BREAKTIMER_ACTI
 
 inline constexpr int kIdleResetMin = 1, kIdleResetMax = 30, kIdleResetDefault = 5;
 inline constexpr int kMaxWorkMin = 5, kMaxWorkMax = 180, kMaxWorkDefault = 50;
-inline constexpr int kBreakMin = 1, kBreakMax = 30, kBreakDefault = 4; // 4 since 1.6.1 (owner request)
+inline constexpr int kBreakMin = 3, kBreakMax = 15, kBreakDefault = 4; // 4 since 1.6.1, 3-15 since 1.7.6
 inline constexpr int kPostponeMin = 1, kPostponeMax = 60, kPostponeDefault = 10;
 inline constexpr int kActivityPauseMin = 5, kActivityPauseMax = 60, kActivityPauseDefault = 20; // seconds
 

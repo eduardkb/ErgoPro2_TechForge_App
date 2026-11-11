@@ -21,10 +21,12 @@ namespace ergo {
 // only minutes with data are reported.
 //
 // Usage percent = active seconds since the last reset / (maxWorkMs / 1000) x 100.
-// Reset to 0 only after resetAfterMs without input (sleep, lock and the app
-// not running count as no input because the wall clock keeps running). Break
-// window buttons do not reset it, so it can grow beyond 100 %. Midnight does
-// not reset it.
+// Reset to 0 after resetAfterMs without input (sleep, lock and the app not
+// running count as no input because the wall clock keeps running) and when a
+// break completes by itself (1.7.6). Dismiss/Postpone do not reset it, so it can
+// grow beyond 100 %. Midnight does not reset it. The maxWorkMs of the 100 %
+// scale is taken when the usage (re)starts at 0; a later change of the setting
+// applies only from the next reset, so the percent never jumps (1.7.6).
 class StatisticsCollector {
 public:
     struct Config {
@@ -39,7 +41,8 @@ public:
 
     explicit StatisticsCollector(const IClock &clock);
 
-    // Applies from now on; recorded minutes are not recalculated.
+    // resetAfterMs applies at once; maxWorkMs from the next usage reset (or at
+    // once while the usage is 0). Recorded minutes are not recalculated.
     void setConfig(const Config &config);
     const Config &config() const { return m_config; }
 
@@ -71,6 +74,8 @@ public:
     const DayStats &today() const { return m_today; }
     QDate currentDate() const { return m_today.date; }
     double usagePercent() const { return percentAt(now()); }
+    // maxWorkMs the current percent is measured against.
+    qint64 scaleMaxWorkMs() const { return m_scaleMaxWorkMs; }
 
 private:
     qint64 now() const { return m_clock.now().toMSecsSinceEpoch(); }
@@ -79,6 +84,7 @@ private:
     void finishMinute();
     void openMinuteAt(qint64 t);
     double percentAt(qint64 t) const;
+    void resetUsage();
 
     const IClock &m_clock;
     Config m_config;
@@ -101,6 +107,7 @@ private:
 
     // Usage percent.
     qint64 m_usedSeconds = 0;
+    qint64 m_scaleMaxWorkMs = 50 * 60000;
     qint64 m_lastInputMs = 0;
 
     QPointF m_lastPosition;

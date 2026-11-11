@@ -5,6 +5,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.6] - 2026-11-11
+
+Owner-requested changes (specification updated: B.2, B.7, B.8.2).
+
+### Changed
+- **Computer usage % no longer jumps when "Break after working" is changed.** Before, changing 50 → 35 min
+  at 75 % made it jump to 120 %, and 35 → 45 made it drop to 91 %. Now the percent continues on the old scale;
+  the new minutes become the 100 % reference when the usage restarts at 0. The Break Timer still applies the
+  new value at once, so a break can come before 100 % (and immediately if the active work time is already
+  past the new value). Cause: the percent was always calculated against the current setting.
+- **A completed break resets the computer usage to 0 %**, also when the mouse or keyboard was used while the
+  break window was shown. Before, only a pause without any input reset it.
+- **Breaks come after half the work time while the usage is above 100 %** (e.g. after Dismiss): with *Break
+  after working* = 50 min the next break comes after 25 min of active work, until the usage is reset to 0.
+- **Break length:** 3–15 min (was 1–30), default 4. A stored value outside the new range is replaced by 4.
+- **Tabs:** the parameter descriptions no longer start with the variable names (`BREAKTIMER_…`,
+  `AUTOCLICK_…`).
+- 4 new / 2 adapted Statistics tests, 2 new Break Timer tests.
+
 ## [1.7.5] - 2026-11-11
 
 Owner-requested changes (specification updated: B.1.1, B.7).

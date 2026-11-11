@@ -215,10 +215,10 @@ private slots:
         f.collector.onBreakEvent(BreakEvent::Dismissed);
         f.use(kMin);
         QCOMPARE(f.lastPercent(), 120.0);
+        f.collector.onBreakEvent(BreakEvent::Shown);
         f.collector.onBreakEvent(BreakEvent::Postponed);
-        f.collector.onBreakEvent(BreakEvent::Completed);
         f.use(kMin);
-        QCOMPARE(f.lastPercent(), 140.0);
+        QCOMPARE(f.lastPercent(), 140.0); // (a completed break resets it since 1.7.6)
     }
 
     void resetsOnlyAfterTheBreakTimeWithoutInput()
@@ -286,15 +286,54 @@ private slots:
         QCOMPARE(f.collector.today().minutes.size(), 2);
     }
 
-    void settingsChangeAppliesFromNowOn()
+    void maxWorkChangeKeepsThePercentUntilTheUsageRestarts()
+    {
+        Fixture f; // max work 5 min, reset after 1 min
+        f.use(kMin);
+        QCOMPARE(f.lastPercent(), 20.0);
+        f.collector.setConfig({10 * kMin, kMin}); // "Break after working" changed to 10 min
+        QCOMPARE(f.collector.usagePercent(), 20.0); // no jump (1.7.6)
+        f.use(kMin);
+        QCOMPARE(f.finished[0].record.usagePercent, 20.0);
+        QCOMPARE(f.lastPercent(), 40.0); // still the old 5-minute scale
+        f.collector.setConfig({kMin, kMin}); // lowered: no jump either
+        QCOMPARE(f.collector.usagePercent(), 40.0);
+        // Usage restarts at 0 (pause of the break length): the new scale applies.
+        f.idle(kMin);
+        f.use(6 * kSec);
+        f.idle(kMin);
+        QCOMPARE(f.lastPercent(), 10.0); // 6 s of 60 s
+    }
+
+    void maxWorkChangeAppliesAtOnceWhileTheUsageIsZero()
+    {
+        Fixture f;
+        f.collector.setConfig({10 * kMin, kMin});
+        f.use(kMin);
+        QCOMPARE(f.lastPercent(), 10.0);
+    }
+
+    void completedBreakResetsTheUsageEvenWithInputDuringTheBreak()
+    {
+        Fixture f;
+        f.use(4 * kMin);
+        f.collector.onBreakEvent(BreakEvent::Shown);
+        f.use(kMin); // input while the break window is shown
+        QCOMPARE(f.lastPercent(), 100.0);
+        f.collector.onBreakEvent(BreakEvent::Completed); // the break window closed by itself
+        QCOMPARE(f.collector.usagePercent(), 0.0);
+        f.use(3 * kSec);
+        f.idle(kMin);
+        QCOMPARE(f.lastPercent(), 1.0); // counting starts again from 0 (3 s of 300 s)
+    }
+
+    void dismissAndPostponeDoNotReset()
     {
         Fixture f;
         f.use(kMin);
-        QCOMPARE(f.lastPercent(), 20.0);
-        f.collector.setConfig({10 * kMin, kMin}); // max work 10 min
-        f.use(kMin);
-        QCOMPARE(f.finished[0].record.usagePercent, 20.0); // recorded minute unchanged
-        QCOMPARE(f.lastPercent(), 20.0);                   // 120 s of 600 s
+        f.collector.onBreakEvent(BreakEvent::Dismissed);
+        f.collector.onBreakEvent(BreakEvent::Postponed);
+        QCOMPARE(f.collector.usagePercent(), 20.0);
     }
 
     void restoreContinuesTheDayAndThePercent()

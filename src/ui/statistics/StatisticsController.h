@@ -40,6 +40,7 @@ public:
 
     QString directory() const { return m_store.directory(); }
     bool isAvailable() const; // recording possible (input hook running)
+    bool isUsageOverLimit() const { return m_usageOverLimit; }
 
     QDate today() const { return m_collector.currentDate(); }
     // Today: the live data (finished minutes); other days: read from the file.
@@ -52,6 +53,9 @@ signals:
     void todayChanged();     // a minute of today was finished (once per minute)
     void daysChanged();      // files were added or deleted (startup, new day)
     void availabilityChanged();
+    // The usage percent went above / back to at most 100 % (1.7.6: the Break
+    // Timer then uses half of "Break after working").
+    void usageOverLimitChanged(bool over);
 
 private:
     void applyConfig();
@@ -59,6 +63,7 @@ private:
     void writeFinished();
     void cleanup(const char *reason);
     void restore();
+    void checkUsageLimit();
 
     SettingsStore &m_settings;
     FeatureAvailabilityService &m_availability;
@@ -74,6 +79,7 @@ private:
     bool m_started = false;
     bool m_writeFailing = false;
     bool m_lastAvailable = false;
+    bool m_usageOverLimit = false;
 };
 
 } // namespace ergo

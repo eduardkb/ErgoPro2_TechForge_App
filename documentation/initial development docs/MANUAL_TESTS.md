@@ -674,3 +674,19 @@ Release and Windows setup program. Push to `main`; wait for the green CI run.
 | 7 | Drag a slider, click on the slider track, type a value into the box, click its arrows. | The value changes as before and is saved. |
 | 7a | General tab: scroll with the mouse wheel / trackpad over *Started at login*, *Started manually* and *Log level*; Key Control › Add Hotkey › action list (closed). | The selection does **not** change; the page scrolls. Clicking a box opens the list and a value can be chosen as before (scrolling inside the open list works). |
 | 8 | General › Input diagnostics › Show. | Only the live information (hook, pointer, last key/button, synthetic, events per second, watchdog); no "Test left click" or "Test: block F9" buttons. |
+
+---
+
+## Bug fix – v1.7.6
+
+macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break length* 3 min.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass. |
+| 2 | Work until the Statistics usage shows about 50 %, then change *Break after working* (e.g. 10 → 7 min, then 10 → 15 min). | The usage % on the Statistics tab does **not** jump (the next minutes continue at the old rate). Log: `usage 100 % = 10 min of use (setting: 7 min, applies when the usage restarts at 0)`. |
+| 3 | Set *Break after working* below the current *Active work time* (Break Timer tab). | The break window appears immediately. |
+| 4 | Let the break window close by itself (countdown), even while moving the mouse during the break. | Usage goes back to **0 %** (log `break completed - usage reset to 0 %`); the next minutes use the new *Break after working* as 100 %. |
+| 5 | Work until a break, click **Dismiss** while the usage is above 100 % (or keep working past 100 %). | Log `usage above 100 % - break after …`; *Next break in* shows **half** of *Break after working* (e.g. 05:00 for 10 min); the break comes after half the time. After a completed break (usage 0 %) the full time applies again. |
+| 6 | Break Timer tab › *Break length* slider. | Range 3–15 min. In `settings.json` set `BREAKTIMER_BREAK_TIME` to 1 (app closed), start: the value is 4 (log names the invalid value). |
+| 7 | Break Timer and Auto Click tabs: hints under the sliders. | Only descriptions, no `BREAKTIMER_…` / `AUTOCLICK_…` names. |

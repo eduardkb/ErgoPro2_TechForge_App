@@ -144,7 +144,10 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Drag Lock (stage 6): an active drag lock is released when the break window appears (D-06).
     connect(m_breaktimer.get(), &BreakTimerController::breakWindowShown, this,
             [this] { m_keycontrol->dragLock().release(DragLockController::Reason::BreakWindow); });
-    // Function 4 – Statistics (stage 7).
+    // Function 4 – Statistics (stage 7). Usage above 100 %: the Break Timer uses
+    // half of "Break after working" (1.7.6). Queued: never inside a Break Timer update.
+    connect(m_statistics.get(), &StatisticsController::usageOverLimitChanged, m_breaktimer.get(),
+            &BreakTimerController::setUsageOverLimit, Qt::QueuedConnection);
     m_statistics->start();
     reportSettingsLoad(loadResult);
 }

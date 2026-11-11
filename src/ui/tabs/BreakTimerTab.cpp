@@ -83,12 +83,12 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
     auto *params = new CardWidget(tr("Settings"), tr("Changes apply immediately, also to the running work period."),
                                   content);
     m_work = new ParameterRow(tr("Break after working"), BT::kMaxWorkMin, BT::kMaxWorkMax, tr("min"), params);
-    m_work->setHint(tr("BREAKTIMER_MAX_WORK_TIME – active work time until the break reminder appears."));
+    m_work->setHint(tr("Active work time until the break reminder appears (half of it while the computer usage is above 100 %)."));
     m_idle = new ParameterRow(tr("Reset after a pause of"), BT::kIdleResetMin, BT::kIdleResetMax, tr("min"), params);
-    m_idle->setHint(tr("BREAKTIMER_IDLE_RESET – no mouse or keyboard use for this long (also sleep or a locked "
+    m_idle->setHint(tr("No mouse or keyboard use for this long (also sleep or a locked "
                        "screen) counts as a break and resets the work time."));
     m_break = new ParameterRow(tr("Break length"), BT::kBreakMin, BT::kBreakMax, tr("min"), params);
-    m_break->setHint(tr("BREAKTIMER_BREAK_TIME – how long the break window stays before it closes by itself."));
+    m_break->setHint(tr("How long the break window stays before it closes by itself."));
     m_postpone = new ParameterRow(tr("Postpone by"), BT::kPostponeMin, BT::kPostponeMax, tr("min"), params);
     m_postpone->setHint(tr("When you click Postpone, the break window returns after this time."));
     for (ParameterRow *r : {m_work, m_idle, m_break, m_postpone})

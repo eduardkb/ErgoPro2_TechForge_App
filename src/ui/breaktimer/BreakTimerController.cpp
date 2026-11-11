@@ -194,6 +194,17 @@ void BreakTimerController::postpone()
     sync();
 }
 
+void BreakTimerController::setUsageOverLimit(bool over)
+{
+    if (over == m_engine.isUsageOverLimit())
+        return;
+    qCInfo(lcApp) << "Break Timer: usage" << (over ? "above 100 % - break after" : "back to <= 100 % - break after")
+                  << m_engine.effectiveMaxWorkMs() / 60000 << "->"
+                  << (over ? m_engine.config().maxWorkMs / 2 : m_engine.config().maxWorkMs) / 60000 << "min of work";
+    m_engine.setUsageOverLimit(over);
+    sync();
+}
+
 void BreakTimerController::startBreakNow()
 {
     qCInfo(lcApp) << "Break started from the tray menu";

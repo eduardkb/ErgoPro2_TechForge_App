@@ -20,6 +20,14 @@ void StatisticsCollector::setConfig(const Config &config)
     m_config = config;
     if (m_config.maxWorkMs <= 0)
         m_config.maxWorkMs = 60000;
+    if (m_usedSeconds == 0)
+        m_scaleMaxWorkMs = m_config.maxWorkMs; // nothing counted yet: the new scale applies at once
+}
+
+void StatisticsCollector::resetUsage()
+{
+    m_usedSeconds = 0;
+    m_scaleMaxWorkMs = m_config.maxWorkMs; // a new usage cycle uses the current setting
 }
 
 void StatisticsCollector::setPixelsPerCm(double pixelsPerCm)
@@ -37,7 +45,8 @@ void StatisticsCollector::restore(const DayStats &day, qint64 lastDataEndMs, dou
     }
     if (lastDataEndMs > 0 && now() - lastDataEndMs < m_config.resetAfterMs && lastPercent > 0) {
         // Restarted within the reset time: the usage percent continues.
-        m_usedSeconds = qint64(std::llround(lastPercent / 100.0 * double(m_config.maxWorkMs) / 1000.0));
+        m_scaleMaxWorkMs = m_config.maxWorkMs;
+        m_usedSeconds = qint64(std::llround(lastPercent / 100.0 * double(m_scaleMaxWorkMs) / 1000.0));
         m_lastInputMs = lastDataEndMs;
     }
 }
@@ -58,7 +67,7 @@ double StatisticsCollector::percentAt(qint64 t) const
 {
     if (m_lastInputMs == 0 || t - m_lastInputMs >= m_config.resetAfterMs)
         return 0.0; // rested long enough (also: never used)
-    return double(m_usedSeconds) * 1000.0 * 100.0 / double(m_config.maxWorkMs);
+    return double(m_usedSeconds) * 1000.0 * 100.0 / double(m_scaleMaxWorkMs);
 }
 
 void StatisticsCollector::commitSecond()
@@ -109,7 +118,7 @@ void StatisticsCollector::onInputEvent(const InputEvent &event)
     const qint64 t = now();
     advanceTo(t);
     if (m_lastInputMs != 0 && t - m_lastInputMs >= m_config.resetAfterMs)
-        m_usedSeconds = 0; // B.8.2: a pause of BREAKTIMER_BREAK_TIME resets the usage
+        resetUsage(); // B.8.2: a pause of BREAKTIMER_BREAK_TIME resets the usage
     m_lastInputMs = t;
     if (m_second < 0)
         m_second = t / 1000;
@@ -164,6 +173,12 @@ void StatisticsCollector::onBreakEvent(BreakEvent event)
 {
     advanceTo(now());
     m_minute.events.append(breakEventToken(event));
+    if (event == BreakEvent::Completed) {
+        // The break window closed by itself: the break was taken (1.7.6), even if
+        // there was input while it was shown.
+        commitSecond();
+        resetUsage();
+    }
 }
 
 void StatisticsCollector::tick()

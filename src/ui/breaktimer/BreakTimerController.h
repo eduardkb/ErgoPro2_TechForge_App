@@ -37,6 +37,8 @@ public:
     BreakTimerEngine::State state() const { return m_engine.state(); }
     bool isWorkTimePaused() const { return m_engine.isWorkTimePaused(); }
     QDateTime cycleStartTime() const { return m_engine.cycleStartTime(); }
+    // Statistics usage above 100 %: breaks after half the work time (1.7.6).
+    void setUsageOverLimit(bool over);
     qint64 interactionMs() const { return m_engine.interactionMs(); }
     qint64 timeUntilBreakMs() const { return m_engine.timeUntilBreakMs(); }
     bool isBreakDelayedByFullscreen() const { return m_engine.isBreakDelayedByFullscreen(); }

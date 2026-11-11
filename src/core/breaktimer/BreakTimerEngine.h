@@ -62,6 +62,12 @@ public:
     void onScreenLocked();
     void onScreenUnlocked();
 
+    // Statistics: the computer usage percent is above 100 % (1.7.6). While true,
+    // the break starts after HALF of maxWorkMs of active work.
+    void setUsageOverLimit(bool over);
+    bool isUsageOverLimit() const { return m_usageOverLimit; }
+    qint64 effectiveMaxWorkMs() const { return m_usageOverLimit ? m_config.maxWorkMs / 2 : m_config.maxWorkMs; }
+
     // A full-screen application is in the foreground (best-effort detection).
     void setFullscreenActive(bool active) { m_fullscreenActive = active; }
 
@@ -106,6 +112,7 @@ private:
     qint64 m_postponeUntilMs = 0;
     bool m_locked = false;
     bool m_fullscreenActive = false;
+    bool m_usageOverLimit = false;
 };
 
 } // namespace ergo

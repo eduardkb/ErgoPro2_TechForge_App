@@ -91,8 +91,12 @@ void StatisticsController::start()
     connect(&m_autoclick, &AutoClickController::clickPerformed, this, [this] { m_collector.onClicksDoneForYou(1); });
     connect(&m_keycontrol, &KeyControlController::clicksDoneForYou, this,
             [this](int count) { m_collector.onClicksDoneForYou(count); });
-    connect(&m_breaktimer, &BreakTimerController::breakEvent, this,
-            [this](int event) { m_collector.onBreakEvent(BreakEvent(event)); });
+    connect(&m_breaktimer, &BreakTimerController::breakEvent, this, [this](int event) {
+        m_collector.onBreakEvent(BreakEvent(event));
+        if (BreakEvent(event) == BreakEvent::Completed)
+            qCInfo(lcApp) << "Statistics: break completed - usage reset to 0 %";
+        checkUsageLimit();
+    });
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
         if (key == BreakTimerSettings::MaxWorkMin || key == BreakTimerSettings::BreakMin)
             applyConfig();
@@ -118,6 +122,7 @@ void StatisticsController::start()
     // The tab was built before today's file was read.
     emit daysChanged();
     emit todayChanged();
+    checkUsageLimit(); // a restored usage can already be above 100 %
 }
 
 void StatisticsController::shutdown()
@@ -142,8 +147,10 @@ void StatisticsController::applyConfig()
     c.maxWorkMs = qint64(m_settings.intValue(BreakTimerSettings::MaxWorkMin)) * 60000;
     c.resetAfterMs = qint64(m_settings.intValue(BreakTimerSettings::BreakMin)) * 60000;
     m_collector.setConfig(c);
-    qCInfo(lcApp) << "Statistics: usage 100 % =" << c.maxWorkMs / 60000 << "min of use, reset after"
-                  << c.resetAfterMs / 60000 << "min without input";
+    qCInfo(lcApp) << "Statistics: usage 100 % =" << m_collector.scaleMaxWorkMs() / 60000
+                  << "min of use (setting:" << c.maxWorkMs / 60000
+                  << "min, applies when the usage restarts at 0), reset after" << c.resetAfterMs / 60000
+                  << "min without input or when a break completes";
 }
 
 void StatisticsController::restore()
@@ -176,6 +183,7 @@ void StatisticsController::onTick()
     m_collector.setPixelsPerCm(pixelsPerCmAt(m_input.stats().pointer));
     m_collector.tick();
     writeFinished();
+    checkUsageLimit();
     if (m_collector.currentDate() != m_lastDate) {
         qCInfo(lcApp).noquote() << "Statistics: new day" << m_collector.currentDate().toString(Qt::ISODate);
         m_lastDate = m_collector.currentDate();
@@ -183,6 +191,21 @@ void StatisticsController::onTick()
         emit daysChanged();
         emit todayChanged();
     }
+}
+
+void StatisticsController::checkUsageLimit()
+{
+    const double percent = m_collector.usagePercent();
+    const bool over = percent > 100.0;
+    if (over == m_usageOverLimit)
+        return;
+    m_usageOverLimit = over;
+    qCInfo(lcApp).noquote() << QStringLiteral("Statistics: usage %1 %% (100 %% = %2 min) - %3")
+                                   .arg(percent, 0, 'f', 1)
+                                   .arg(m_collector.scaleMaxWorkMs() / 60000)
+                                   .arg(over ? QStringLiteral("above 100 %, breaks after half the work time")
+                                             : QStringLiteral("at most 100 %"));
+    emit usageOverLimitChanged(over);
 }
 
 void StatisticsController::writeFinished()
