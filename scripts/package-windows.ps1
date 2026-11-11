@@ -2,7 +2,11 @@
 # Release build (documentation/BUILD.md 2.5). Run in a "x64 Native Tools"
 # (MSVC) prompt so dumpbin and VCToolsRedistDir are available.
 #
-#   powershell -File scripts\package-windows.ps1 [-BuildDir build-release] [-OutDir dist]
+#   powershell -File scripts\package-windows.ps1 [-BuildDir build-release] [-OutDir dist] [-Installer]
+#
+# -Installer also builds the setup program dist\ErgoPro2-<version>-windows-x64-setup.exe
+# from the same folder with Inno Setup 6 (packaging\windows\ErgoPro2.iss; ISCC.exe
+# from PATH, $env:ISCC or the default Inno Setup folders).
 #
 # The zip contains one folder "ErgoPro2" with ONLY the files ErgoPro2.exe needs
 # on Windows 11:
@@ -18,7 +22,8 @@
 # by ErgoPro2 (Fusion style, local sockets only) and is left out.
 param(
     [string]$BuildDir = 'build-release',
-    [string]$OutDir = 'dist'
+    [string]$OutDir = 'dist',
+    [switch]$Installer
 )
 $ErrorActionPreference = 'Stop'
 
@@ -110,3 +115,21 @@ $zip = Join-Path $OutDir "ErgoPro2-$version-windows-x64.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 Write-Host "Created $zip ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB)"
+
+# --- setup program (Inno Setup) -------------------------------------------------
+if ($Installer) {
+    $iscc = $env:ISCC
+    if (-not $iscc) { $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source }
+    foreach ($candidate in @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+                             "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe")) {
+        if (-not $iscc -and (Test-Path $candidate)) { $iscc = $candidate }
+    }
+    if (-not $iscc) { throw 'ISCC.exe (Inno Setup 6) not found - install it (choco install innosetup) or set $env:ISCC' }
+    $iss = Join-Path $root 'packaging\windows\ErgoPro2.iss'
+    $out = (Resolve-Path $OutDir).Path
+    & $iscc /Qp "/DAppVersion=$version" "/DSourceDir=$stage" "/DOutputDir=$out" $iss
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed ($LASTEXITCODE)" }
+    $setup = Join-Path $out "ErgoPro2-$version-windows-x64-setup.exe"
+    if (-not (Test-Path $setup)) { throw "$setup was not created" }
+    Write-Host "Created $setup ($([math]::Round((Get-Item $setup).Length / 1MB, 1)) MB)"
+}

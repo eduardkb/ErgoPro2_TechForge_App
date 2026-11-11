@@ -104,6 +104,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     }
 
     connect(&m_instance, &SingleInstance::activationRequested, this, &AppController::showMainWindow);
+    // "ErgoPro2 --quit" from the Windows setup / uninstaller (1.7.4).
+    connect(&m_instance, &SingleInstance::quitRequested, this, &AppController::exitApplication);
 
     m_maintenanceTimer.setInterval(kMaintenanceIntervalMs);
     connect(&m_maintenanceTimer, &QTimer::timeout, this, [this] {

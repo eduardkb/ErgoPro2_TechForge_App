@@ -60,6 +60,8 @@ void InstallCard::refresh()
     else
         m_status->setText(tr("Not installed – running from %1.").arg(current));
 
+    if (s.install.managedByInstaller)
+        m_status->setText(m_status->text() + QLatin1Char('\n') + tr("Installed with the ErgoPro2 setup program."));
     if (!s.install.runningFromInstalledCopy && s.install.installed)
         m_status->setText(m_status->text() + QLatin1Char('\n') + tr("This window runs from %1.").arg(current));
 

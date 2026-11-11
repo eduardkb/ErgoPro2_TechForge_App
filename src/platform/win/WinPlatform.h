@@ -9,6 +9,9 @@ namespace ergo {
 
 // Copies the deployed folder (ErgoPro2.exe + Qt DLLs from windeployqt) to
 // %LOCALAPPDATA%\Programs\ErgoPro2 and creates a Start Menu shortcut.
+// An installation made by the ErgoPro2 setup program (packaging/windows/
+// ErgoPro2.iss, 1.7.4) is recognized through its uninstall registry entry: its
+// folder counts as the installed copy and Uninstall runs the setup's uninstaller.
 class WinInstaller final : public IInstaller {
 public:
     InstallState state() const override;
@@ -18,6 +21,9 @@ public:
 
     static QString installFolder();
     static QString startMenuShortcut();
+    // Registry key the setup program writes (HKCU, per-user install). Must match
+    // AppId in packaging/windows/ErgoPro2.iss.
+    static QString setupRegistryKey();
 };
 
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Run value "ErgoPro2".

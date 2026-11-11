@@ -96,6 +96,11 @@ struct InstallState {
     QString installedExecutable;          // executable inside the installed copy
     QString currentLocation;              // location of the running copy (bundle/folder/file)
     bool runningFromInstalledCopy = false;
+    // Windows (1.7.4): installed by the ErgoPro2 setup program (Inno Setup).
+    // installLocation is then the folder chosen in the setup, and uninstall()
+    // starts uninstallCommand (the setup's own uninstaller).
+    bool managedByInstaller = false;
+    QString uninstallCommand;
 };
 
 // Copies the application to a permanent per-user folder and removes it again,

@@ -14,6 +14,7 @@ namespace ergo {
 namespace {
 
 constexpr char kActivateMessage[] = "activate\n";
+constexpr char kQuitMessage[] = "quit\n";
 
 // Per-user identifier so different users on the same machine do not collide.
 QString userScopedName(const QString &key)
@@ -63,7 +64,7 @@ SingleInstance::Result SingleInstance::acquire()
     qCInfo(lcApp) << "Another ErgoPro2 instance is running; asking it to show its window";
     // The other instance may still be starting: retry for a moment.
     for (int attempt = 0; attempt < 10; ++attempt) {
-        if (notifyPrimary())
+        if (notifyPrimary(kActivateMessage))
             return Result::OtherActivated;
         QThread::msleep(300);
     }
@@ -86,7 +87,32 @@ void SingleInstance::release()
     qCInfo(lcApp) << "Single-instance lock released";
 }
 
-bool SingleInstance::notifyPrimary()
+SingleInstance::QuitResult SingleInstance::quitRunningInstance(int timeoutMs)
+{
+    if (m_lock->tryLock(0)) {
+        m_lock->unlock();
+        qCInfo(lcApp) << "--quit: no running ErgoPro2 instance";
+        return QuitResult::NotRunning;
+    }
+    bool sent = false;
+    for (int attempt = 0; attempt < 10 && !sent; ++attempt) {
+        sent = notifyPrimary(kQuitMessage);
+        if (!sent)
+            QThread::msleep(300);
+    }
+    if (!sent)
+        qCWarning(lcApp) << "--quit: the running instance does not answer";
+    // Wait until the running instance has exited (it releases the lock last).
+    if (m_lock->tryLock(timeoutMs)) {
+        m_lock->unlock();
+        qCInfo(lcApp) << "--quit: the running instance exited";
+        return QuitResult::Exited;
+    }
+    qCWarning(lcApp) << "--quit: the running instance did not exit within" << timeoutMs << "ms";
+    return QuitResult::NoResponse;
+}
+
+bool SingleInstance::notifyPrimary(const char *message)
 {
     QLocalSocket socket;
     socket.connectToServer(m_serverName);
@@ -94,9 +120,9 @@ bool SingleInstance::notifyPrimary()
         qCDebug(lcApp) << "Cannot connect to the running instance:" << socket.errorString();
         return false;
     }
-    socket.write(kActivateMessage);
+    socket.write(message);
     if (!socket.waitForBytesWritten(1000)) {
-        qCWarning(lcApp) << "Cannot send activation to the running instance:" << socket.errorString();
+        qCWarning(lcApp) << "Cannot send a message to the running instance:" << socket.errorString();
         return false;
     }
     socket.disconnectFromServer();
@@ -124,6 +150,9 @@ void SingleInstance::startServer()
                 if (message.startsWith("activate")) {
                     qCInfo(lcApp) << "Activation requested by a second launch";
                     emit activationRequested();
+                } else if (message.startsWith("quit")) {
+                    qCInfo(lcApp) << "Exit requested by \"ErgoPro2 --quit\" (setup / uninstaller)";
+                    emit quitRequested();
                 } else {
                     qCWarning(lcApp) << "Unexpected single-instance message:" << message;
                 }

@@ -22,6 +22,9 @@ namespace {
 
 const QString kRunKey = QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run");
 const QString kValueName = QStringLiteral("ErgoPro2");
+// AppId of packaging/windows/ErgoPro2.iss (never change it: upgrades find the
+// previous installation through it).
+const QString kSetupAppId = QStringLiteral("{6B0E2F3A-8C4D-4E1B-9A57-2D3C8E9F1A42}");
 
 QString tr(const char *text)
 {
@@ -55,10 +58,24 @@ QString WinInstaller::startMenuShortcut()
         .filePath(QStringLiteral("ErgoPro2.lnk"));
 }
 
+QString WinInstaller::setupRegistryKey()
+{
+    return QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\%1_is1")
+        .arg(kSetupAppId);
+}
+
 InstallState WinInstaller::state() const
 {
     InstallState s;
     s.installLocation = installFolder();
+    // Installed by the setup program? (It may be in a folder the user chose.)
+    const QSettings setup(setupRegistryKey(), QSettings::NativeFormat);
+    const QString setupFolder = QDir::fromNativeSeparators(setup.value(QStringLiteral("InstallLocation")).toString());
+    if (!setupFolder.isEmpty() && QFileInfo::exists(QDir(setupFolder).filePath(QStringLiteral("ErgoPro2.exe")))) {
+        s.installLocation = QDir::cleanPath(setupFolder);
+        s.managedByInstaller = true;
+        s.uninstallCommand = setup.value(QStringLiteral("UninstallString")).toString();
+    }
     s.installedExecutable = QDir(s.installLocation).filePath(QStringLiteral("ErgoPro2.exe"));
     s.installed = QFileInfo::exists(s.installedExecutable);
     s.currentLocation = QCoreApplication::applicationDirPath();
@@ -69,7 +86,7 @@ InstallState WinInstaller::state() const
 PlatformResult WinInstaller::install()
 {
     const QString source = QCoreApplication::applicationDirPath();
-    const QString target = installFolder();
+    const QString target = state().installLocation; // the setup's folder if it was used
     if (!fileops::samePath(source, target)) {
         // Only a deployed folder (windeployqt) contains the Qt DLLs the copy needs.
         const QDir sourceDir(source);
@@ -103,6 +120,28 @@ PlatformResult WinInstaller::install()
 PlatformResult WinInstaller::uninstall(bool *deferred)
 {
     *deferred = false;
+    if (const InstallState s = state(); s.managedByInstaller) {
+        // The setup's uninstaller removes the files, the Start Menu entry, the
+        // start-at-login value and the "Apps" entry. It closes ErgoPro2 itself
+        // (ErgoPro2.exe --quit); settings, statistics and logs stay.
+        QString program = s.uninstallCommand.trimmed();
+        if (program.startsWith(QLatin1Char('"')))
+            program = program.mid(1, program.indexOf(QLatin1Char('"'), 1) - 1);
+        if (program.isEmpty() || !QFileInfo::exists(program)) {
+            const QString message = tr("The ErgoPro2 uninstaller was not found. Uninstall ErgoPro2 in Windows "
+                                       "Settings › Apps.");
+            qCWarning(lcPlatform).noquote() << message << s.uninstallCommand;
+            return PlatformResult::failed(message);
+        }
+        if (!QProcess::startDetached(program, {QStringLiteral("/SILENT")})) {
+            const QString message = tr("The ErgoPro2 uninstaller could not be started.");
+            qCWarning(lcPlatform).noquote() << message << program;
+            return PlatformResult::failed(message);
+        }
+        qCInfo(lcPlatform).noquote() << "Started the setup's uninstaller:" << QDir::toNativeSeparators(program);
+        *deferred = true; // ErgoPro2 exits; the uninstaller removes the files afterwards
+        return PlatformResult::success();
+    }
     if (const PlatformResult removed = fileops::removePath(startMenuShortcut()); !removed.ok())
         return removed;
     const InstallState s = state();

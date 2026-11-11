@@ -68,12 +68,16 @@ void InstallController::install(QWidget *parent)
 void InstallController::uninstall(QWidget *parent)
 {
     const Status before = status();
-    const auto answer = QMessageBox::question(
-        parent, tr("Uninstall ErgoPro2"),
-        tr("This stops ErgoPro2 from starting at login and removes the installed copy at %1.\n\nYour settings "
-           "and log files are kept.\n\nContinue?")
-            .arg(QDir::toNativeSeparators(before.install.installLocation)),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    const QString question =
+        before.install.managedByInstaller
+            ? tr("This runs the ErgoPro2 uninstaller: it removes ErgoPro2 from %1, its Start menu entry and the "
+                 "start at login. ErgoPro2 exits first.\n\nYour settings, statistics and log files are kept."
+                 "\n\nContinue?")
+            : tr("This stops ErgoPro2 from starting at login and removes the installed copy at %1.\n\nYour "
+                 "settings and log files are kept.\n\nContinue?");
+    const auto answer = QMessageBox::question(parent, tr("Uninstall ErgoPro2"),
+                                              question.arg(QDir::toNativeSeparators(before.install.installLocation)),
+                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes)
         return;
 
@@ -89,6 +93,11 @@ void InstallController::uninstall(QWidget *parent)
 
     if (!errors.isEmpty()) {
         QMessageBox::warning(parent, tr("Uninstall incomplete"), errors.join(QLatin1Char('\n')));
+        return;
+    }
+    if (deferred && before.install.managedByInstaller) {
+        qCInfo(lcApp) << "Exiting so that the uninstaller can remove ErgoPro2";
+        emit exitRequested(); // the uninstaller shows its own progress window
         return;
     }
     if (deferred) {

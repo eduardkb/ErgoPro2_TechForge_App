@@ -137,6 +137,8 @@ ergoPro2/
   - Status label: "Installed at <path>, starts at login" / "Not installed – running from <path>".
   - If not installed and running from a temporary or Downloads folder, show a warning.
   - The autostart command passes `--autostart` so the app knows how it was started.
+  - **Windows setup program** (1.7.4, owner request): `ErgoPro2-<version>-windows-x64-setup.exe` (Inno Setup, `packaging/windows/ErgoPro2.iss`) installs per user without administrator rights into `%LOCALAPPDATA%\Programs\ErgoPro2` by default; the user may choose another folder on the first installation. An update installs into the folder of the previous installation without asking. A running ErgoPro2 is closed first (`ErgoPro2.exe --quit`, which exits like the Exit button; if it is still running, the process is ended). It creates the Start Menu entry, optionally a desktop icon and (option, on by default) the start-at-login value. Settings, logs and statistics are never touched. The app recognizes such an installation through the setup's uninstall registry entry (`HKCU\…\Uninstall\{AppId}_is1`): the General tab shows it as installed (in the chosen folder), and *Uninstall* runs the setup's own uninstaller, which closes ErgoPro2, removes the files, the Start Menu entry and the start-at-login value.
+  - `--quit` command-line option (1.7.4): asks a running ErgoPro2 of the same user to exit and waits up to 15 s; exit code 0 = not running / exited, 1 = still running.
 - **Startup behavior** (W-02): two options
   - "When started automatically at login": *Hide in tray* (default) / *Show window*.
   - "When started manually": *Show window* (default) / *Hide in tray*.
@@ -294,6 +296,11 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - **Suppress when a full-screen app is in the foreground** (B-17): optional setting, off by default. When on and a full-screen app is active, the break is delayed until it is no longer full-screen (best effort per OS; if detection is unsupported on an OS, disable the option with an explanation).
 - Disabling the Break Timer closes any break window and resets the timer.
 - Changing `BREAKTIMER_MAX_WORK_TIME` takes effect immediately on the current cycle.
+
+## B.9 Releases (1.7.4, owner request)
+- The CI (`.github/workflows/ci.yml`) creates a **GitHub release** named `ErgoPro2_v<version>` (tag `v<version>`) after a push to `main` whose version in `CMakeLists.txt` has no release yet; later pushes with the same version create nothing.
+- Release text: the version's section of `CHANGELOG.md` plus a download/install table.
+- Files: macOS `.dmg` (same as the CI artifact), Windows setup `.exe` (B.1.3), Debian `.deb` (same as the CI artifact). The portable Windows `.zip` stays a CI artifact only.
 
 ## B.8 Function 4 – Statistics (Stage 7)
 Owner description (stage 7 request) with the owner's answers to the clarification questions (all suggested defaults accepted).

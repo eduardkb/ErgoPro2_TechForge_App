@@ -359,6 +359,26 @@ it to `%LOCALAPPDATA%\Programs\ErgoPro2` – see section 5. The CI builds the sa
 
 > Windows SmartScreen may warn about an unknown publisher the first time: click **More info → Run anyway**.
 
+#### Setup program (.exe installer)
+
+Install **Inno Setup 6** once (`winget install JRSoftware.InnoSetup` or `choco install innosetup`), then:
+```bat
+powershell -ExecutionPolicy Bypass -File scripts\package-windows.ps1 -BuildDir build-release -OutDir dist -Installer
+```
+This also creates `dist\ErgoPro2-<version>-windows-x64-setup.exe` from the same folder
+(`packaging\windows\ErgoPro2.iss`). The setup installs per user without administrator rights (default
+`%LOCALAPPDATA%\Programs\ErgoPro2`, folder selectable on the first installation), closes a running
+ErgoPro2 (`ErgoPro2.exe --quit`), updates an existing installation in its folder, and adds the Start Menu
+entry, an optional desktop icon and (option) start at login. Silent install: `… setup.exe /VERYSILENT`;
+uninstall: Windows Settings › Apps › ErgoPro2, or **Uninstall** on the General tab.
+
+#### Releases
+
+After a push to `main` with a **new** version number in `CMakeLists.txt`, the CI publishes the GitHub release
+`ErgoPro2_v<version>` (GitHub › *Releases*) with the CHANGELOG text and the macOS `.dmg`, the Windows setup
+`.exe` and the Debian `.deb`. Bump the version (a stage or bug-fix run does this) before pushing to `main`
+when you want a new release.
+
 ---
 
 ## 3. Debian 13 (Trixie)

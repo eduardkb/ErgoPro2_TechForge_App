@@ -29,6 +29,12 @@ public:
 
     Result acquire();
 
+    // "ErgoPro2 --quit" (used by the Windows setup/uninstaller, 1.7.4): asks a
+    // running instance to exit like the Exit button and waits until it has
+    // released the lock. Never becomes the primary instance itself.
+    enum class QuitResult { NotRunning, Exited, NoResponse };
+    QuitResult quitRunningInstance(int timeoutMs);
+
     // Releases the lock and stops listening, so that a new process (restart,
     // installed copy) can become the primary instance.
     void release();
@@ -36,9 +42,11 @@ public:
 
 signals:
     void activationRequested();
+    // A "--quit" launch asked this (primary) instance to exit.
+    void quitRequested();
 
 private:
-    bool notifyPrimary();
+    bool notifyPrimary(const char *message);
     void startServer();
 
     QString m_serverName;

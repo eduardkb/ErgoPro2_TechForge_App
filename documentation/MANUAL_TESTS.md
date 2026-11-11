@@ -638,3 +638,23 @@ macOS: install the 1.7.3 build (BUILD.md 5.0) and start it from `~/Applications`
 | 3 | Leave the Mac alone until it locks / the display sleeps by itself (as in the bug report), then unlock. | ErgoPro2 still runs; Break Timer shows **Idle** after the pause; Statistics continue. |
 | 4 | Apple menu › **Sleep**, wake after 1 min. | Log: `System is going to sleep` … `System resumed from sleep`, `Reinstalling the input hook: resume from sleep`; app keeps running, hotkeys work. |
 | 5 | Leave ErgoPro2 running overnight with the lid closed. | Next morning it is still running; no `CRITICAL` in the log. |
+
+---
+
+## Bug fix – v1.7.4
+
+Release and Windows setup program. Push to `main`; wait for the green CI run.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass. |
+| 2 | GitHub › **Releases**. | Release **ErgoPro2_v1.7.4** (tag v1.7.4) with the 1.7.4 CHANGELOG text, a download table and 3 files: `.dmg`, `-setup.exe`, `.deb`. |
+| 3 | Push another commit to `main` without changing the version. | No second release; the release job says "already exists". |
+| 4 | Windows 11: run the setup (SmartScreen: *More info › Run anyway*). | No administrator prompt. The folder page proposes `C:\Users\<you>\AppData\Local\Programs\ErgoPro2`; options *start at login* (on) and *desktop icon* (off). After *Finish* ErgoPro2 starts. |
+| 5 | General tab. | "✅ Installed at …\Programs\ErgoPro2, starts at login. Installed with the ErgoPro2 setup program." *Install* is disabled. |
+| 6 | Start Menu and Windows Settings › Apps. | Entry **ErgoPro2** in both. |
+| 7 | With ErgoPro2 running, run the setup again (or a newer one). | No folder page (same folder is used); ErgoPro2 closes by itself (log: `Exit requested by "ErgoPro2 --quit"`), is updated and starts again. Settings, hotkeys and statistics are unchanged. |
+| 8 | First installation into another folder (e.g. `D:\Tools\ErgoPro2`), then run a newer setup. | The update goes to `D:\Tools\ErgoPro2` without asking. The General tab shows that folder. |
+| 9 | Run an old portable `ErgoPro2.exe` (zip, before 1.7.4), then the setup. | The old copy is ended (it does not know `--quit`); the setup continues. |
+| 10 | General tab › **Uninstall** › Yes. | ErgoPro2 exits, the uninstaller removes the folder, Start Menu entry, desktop icon and start at login. `%APPDATA%\techforge\ErgoPro2` (settings, logs, statistics) is still there. |
+| 11 | macOS/Linux: `ErgoPro2 --quit` while ErgoPro2 runs. | ErgoPro2 exits normally (statistics saved); the command returns 0. With nothing running it also returns 0. |

@@ -5,6 +5,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.4] - 2026-11-11
+
+Owner-requested features (specification updated: B.1.3, new B.9).
+
+### Added
+- **GitHub releases:** after a push to `main` with a new version number, the CI creates the release
+  **ErgoPro2_v<version>** with this version's CHANGELOG text and the downloads for all three systems: macOS
+  `.dmg`, Windows setup `.exe`, Debian `.deb`. Pushing again with the same version creates nothing.
+- **Windows setup program** `ErgoPro2-<version>-windows-x64-setup.exe` (Inno Setup):
+  - installs for the current user without administrator rights, by default into
+    `%LOCALAPPDATA%\Programs\ErgoPro2`; another folder can be chosen on the first installation;
+  - an update goes into the folder of the existing installation without asking;
+  - a running ErgoPro2 is closed first (it exits cleanly, like the Exit button); a copy that does not react
+    is ended;
+  - Start Menu entry, optional desktop icon, option "Start ErgoPro2 automatically when I log in" (on by
+    default);
+  - settings, logs and statistics stay where they are;
+  - Windows "Apps" entry with an uninstaller.
+- The **General tab** recognizes an installation made by the setup program: "Installed at <folder> …
+  Installed with the ErgoPro2 setup program", and **Uninstall** runs the setup's uninstaller (ErgoPro2 exits
+  first; settings, statistics and logs are kept).
+- Command-line option **`--quit`**: asks the running ErgoPro2 to exit and waits for it (used by the setup and
+  the uninstaller).
+- CI checks the setup program: silent install, `--quit`, silent uninstall.
+
 ## [1.7.3] - 2026-11-10
 
 ### Fixed

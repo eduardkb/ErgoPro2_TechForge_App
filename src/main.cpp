@@ -39,6 +39,11 @@ int main(int argc, char *argv[])
     const QCommandLineOption autostartOption(
         QStringLiteral("autostart"), QStringLiteral("Set by the OS login item: the app was started automatically."));
     parser.addOption(autostartOption);
+    const QCommandLineOption quitOption(
+        QStringLiteral("quit"),
+        QStringLiteral("Ask a running ErgoPro2 to exit and wait for it (used by the Windows setup). "
+                       "Exit code 0: not running or exited, 1: still running."));
+    parser.addOption(quitOption);
     parser.process(app);
 
     LaunchOptions launch;
@@ -61,6 +66,11 @@ int main(int argc, char *argv[])
 
     // --- Single instance ------------------------------------------------------
     SingleInstance instance(QStringLiteral("ergopro2"));
+    if (parser.isSet(quitOption)) {
+        const auto result = instance.quitRunningInstance(15000);
+        Logger::installQtMessageHandler(nullptr);
+        return result == SingleInstance::QuitResult::NoResponse ? 1 : 0;
+    }
     switch (instance.acquire()) {
     case SingleInstance::Result::Primary:
         break;

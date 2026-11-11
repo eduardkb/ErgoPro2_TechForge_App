@@ -3,10 +3,16 @@ name: CI
 # Builds ErgoPro2 (Release) on macOS, Windows and Debian 13, runs the unit
 # tests and uploads one ready-to-use package per operating system:
 #   macOS    ErgoPro2-<version>-macos.dmg        universal (Apple silicon + Intel), ad-hoc signed
-#   Windows  ErgoPro2-<version>-windows-x64.zip  folder with ErgoPro2.exe and only the needed DLLs
+#   Windows  ErgoPro2-<version>-windows-x64-setup.exe  setup program (Inno Setup), per user, no admin
+#            ErgoPro2-<version>-windows-x64.zip        the same files as a portable folder
 #   Debian   ergopro2_<version>_amd64.deb        installs with: sudo apt install ./ergopro2_*.deb
 # Each package is uploaded as it is ("archive: false"): the download is exactly
 # that file, not a zip that wraps it.
+#
+# Release (1.7.4): after a push to main whose version (CMakeLists.txt) has no
+# release yet, the "release" job creates the GitHub release "ErgoPro2_v<version>"
+# (tag v<version>) with the version's CHANGELOG section and the .dmg, setup .exe
+# and .deb. Later pushes with the same version create nothing.
 
 on:
   push:
@@ -91,16 +97,43 @@ jobs:
       - name: Unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Package (.zip with only the needed files)
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Package (.zip with only the needed files + setup .exe)
         shell: pwsh
         run: |
-          ./scripts/package-windows.ps1 -BuildDir build -OutDir dist
+          ./scripts/package-windows.ps1 -BuildDir build -OutDir dist -Installer
           $zip = (Get-ChildItem dist/*.zip | Select-Object -First 1).FullName
+          $setup = (Get-ChildItem dist/*-setup.exe | Select-Object -First 1).FullName
           "ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SETUP=$setup" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Check the setup program (silent install, --quit, silent uninstall)
+        shell: pwsh
+        run: |
+          $p = Start-Process $env:SETUP -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/TASKS=""' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "setup failed: $($p.ExitCode)" }
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\ErgoPro2'
+          if (-not (Test-Path "$dir\ErgoPro2.exe")) { throw "ErgoPro2.exe not installed in $dir" }
+          $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6B0E2F3A-8C4D-4E1B-9A57-2D3C8E9F1A42}_is1'
+          $entry = Get-ItemProperty $key
+          Write-Host "InstallLocation: $($entry.InstallLocation)"
+          $q = Start-Process "$dir\ErgoPro2.exe" -ArgumentList '--quit' -Wait -PassThru
+          if ($q.ExitCode -ne 0) { throw "--quit failed: $($q.ExitCode)" }
+          $u = Start-Process "$dir\unins000.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "uninstall failed: $($u.ExitCode)" }
+          Start-Sleep -Seconds 3
+          if (Test-Path "$dir\ErgoPro2.exe") { throw 'ErgoPro2.exe still present after uninstall' }
 
       - uses: actions/upload-artifact@v7
         with:
           path: ${{ env.ZIP }}
+          archive: false
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ${{ env.SETUP }}
           archive: false
 
   linux:
@@ -143,3 +176,68 @@ jobs:
         with:
           path: ${{ env.DEB }}
           archive: false
+
+  release:
+    name: GitHub release
+    needs: [macos, windows, linux]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version and existing release
+        id: version
+        run: |
+          VERSION=$(sed -nE 's/^[[:space:]]+VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt | head -1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists - nothing to do"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@v8
+        if: steps.version.outputs.exists == 'false'
+        with:
+          path: release-files
+          merge-multiple: true
+
+      - name: Release notes from CHANGELOG.md
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # The section "## [VERSION] ..." up to the next "## [".
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "No CHANGELOG.md section for $VERSION"; exit 1; fi
+          cat >> notes.md <<EOF
+
+          ## Downloads
+          | System | File | How to install |
+          |---|---|---|
+          | Windows 11 | \`ErgoPro2-$VERSION-windows-x64-setup.exe\` | Run it (no administrator rights needed). It closes a running ErgoPro2 and updates an existing installation in place. SmartScreen: *More info › Run anyway*. |
+          | macOS (Apple silicon and Intel) | \`ErgoPro2-$VERSION-macos.dmg\` | Open it, start ErgoPro2, click **Install** on the General tab. If macOS says it cannot verify the app: System Settings › Privacy & Security › *Open Anyway*. |
+          | Debian 13 | \`ergopro2_${VERSION}_amd64.deb\` | \`sudo apt install ./ergopro2_${VERSION}_amd64.deb\` |
+
+          Settings, logs and statistics are kept when you update.
+          EOF
+          sed -i 's/^          //' notes.md
+          cat notes.md
+
+      - name: Create the release
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          ls -l release-files
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "ErgoPro2_v$VERSION" --notes-file notes.md \
+            release-files/*.dmg release-files/*-setup.exe release-files/*.deb
