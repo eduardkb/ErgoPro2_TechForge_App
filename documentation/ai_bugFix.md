@@ -29,16 +29,6 @@ FINAL REPLY:
 - Risks, side effects, or anything not verified (e.g. Windows/Linux only compile-checked by CI).
 
 BUG REPORT (filled in by the owner):
-- Current version (General tab or window title):
-- Operating system and version (and for Linux: X11 or Wayland):
-- Function / tab affected (General, Break Timer, Auto Click, Key Control, Tray, Install, Other):
-- Steps to reproduce:
-  1.
-  2.
-  3.
-- Expected behavior:
-- Actual behavior:
-- How often does it happen (always / sometimes / once):
-- Relevant settings (e.g. AUTOCLICK_TRIGGER_TIMER, hotkeys configured):
-- Log excerpt (paste the lines around the time of the problem, or the log file path):
-- Screenshots / additional notes:
+- Break timer tab - status box: between active work time and next break in insert a new field that shows the hour (24h format), minute and second when the active work timer started last. it can show "-" if it was reset and user did not start any action yet. I want it to show the time the user last started a cycle and if the work cycle was reset it shows "-".
+- change all sliders so they don't change their value with mouse scroll. mouse scroll only scrolls right throug the sliders. only mouse click or typing the value on the text box changes their value.
+- on general tab - input diagnostics box: remove both buttons ("Test left click" and "Test: Bloxk F9...") at the end of the box

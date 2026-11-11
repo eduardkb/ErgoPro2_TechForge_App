@@ -35,6 +35,7 @@ private:
     ToggleSwitch *m_fullscreen = nullptr;
     QLabel *m_fullscreenHint = nullptr;
     QLabel *m_workTime = nullptr;
+    QLabel *m_cycleStart = nullptr;
     QLabel *m_untilBreak = nullptr;
     QLabel *m_state = nullptr;
 };

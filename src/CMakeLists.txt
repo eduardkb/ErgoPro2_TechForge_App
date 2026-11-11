@@ -152,6 +152,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/widgets/FeatureBanner.cpp ui/widgets/FeatureBanner.h
     ui/widgets/FeaturePage.cpp ui/widgets/FeaturePage.h
     ui/widgets/ParameterRow.cpp ui/widgets/ParameterRow.h
+    ui/widgets/WheelBlocker.cpp ui/widgets/WheelBlocker.h
     ui/widgets/PlaceholderPage.cpp ui/widgets/PlaceholderPage.h
     ui/widgets/StatusBadge.cpp ui/widgets/StatusBadge.h
     ui/widgets/ToggleSwitch.cpp ui/widgets/ToggleSwitch.h

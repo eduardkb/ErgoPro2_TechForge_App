@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.5] - 2026-11-11
+
+Owner-requested changes (specification updated: B.1.1, B.7).
+
+### Changed
+- **Break Timer › Status:** new field **Work started at** between *Active work time* and *Next break in*:
+  the time (24 h, HH:mm:ss) when the current work period started – the first mouse/keyboard input after the
+  last reset. It shows "–" after a reset until you use the computer again (and while the timer is off).
+- **Sliders no longer react to the mouse wheel.** Scrolling over a slider or its number box scrolls the page;
+  values change only by clicking/dragging the slider or typing in (or clicking the arrows of) the number box.
+  Applies to every slider (Break Timer, Auto Click, General, Statistics).
+- **Drop-down boxes no longer react to the mouse wheel** either (General: startup options, log level; Add/
+  Modify Hotkey: action): scrolling over them scrolls the page; choose a value by clicking the box.
+- **General › Input diagnostics:** the "Test left click in 3 s" and "Test: block F9 for 30 s" buttons were
+  removed; the card shows only the live hook information.
+- 1 new Break Timer unit test (`tst_breaktimer`: 27).
+
 ## [1.7.4] - 2026-11-11
 
 Owner-requested features (specification updated: B.1.3, new B.9).

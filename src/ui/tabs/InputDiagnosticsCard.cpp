@@ -7,17 +7,10 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 namespace ergo {
-
-namespace {
-const KeyCombo kTestCombo{Qt::Key_F9, Modifier::None, false};
-constexpr int kClickTestDelaySeconds = 3;
-constexpr int kSwallowTestSeconds = 30;
-}
 
 InputDiagnosticsCard::InputDiagnosticsCard(InputService &input, QWidget *parent)
     : CardWidget(tr("Input diagnostics"),
@@ -64,27 +57,6 @@ InputDiagnosticsCard::InputDiagnosticsCard(InputService &input, QWidget *parent)
     m_watchdog = addRow(grid, 6, tr("Watchdog"));
     bodyLayout->addLayout(grid);
 
-    // --- manual tests -------------------------------------------------------
-    auto *tests = new QGridLayout;
-    tests->setHorizontalSpacing(12);
-    tests->setVerticalSpacing(8);
-    tests->setColumnStretch(1, 1);
-    m_clickButton = new QPushButton(tr("Test left click in %1 s").arg(kClickTestDelaySeconds), m_body);
-    m_clickResult = new QLabel(tr("Move the pointer over something harmless, e.g. an empty desktop area."), m_body);
-    m_swallowButton = new QPushButton(tr("Test: block F9 for %1 s").arg(kSwallowTestSeconds), m_body);
-    m_swallowResult = new QLabel(tr("While blocked, F9 must not reach any other application."), m_body);
-    for (QPushButton *b : {m_clickButton, m_swallowButton})
-        b->setCursor(Qt::PointingHandCursor);
-    for (QLabel *l : {m_clickResult, m_swallowResult}) {
-        l->setObjectName(QStringLiteral("hint"));
-        l->setWordWrap(true);
-    }
-    tests->addWidget(m_clickButton, 0, 0);
-    tests->addWidget(m_clickResult, 0, 1);
-    tests->addWidget(m_swallowButton, 1, 0);
-    tests->addWidget(m_swallowResult, 1, 1);
-    bodyLayout->addLayout(tests);
-
     contentLayout()->addWidget(m_body);
 
     m_refresh.setInterval(200);
@@ -94,59 +66,6 @@ InputDiagnosticsCard::InputDiagnosticsCard(InputService &input, QWidget *parent)
         if (m_body->isVisible())
             refresh();
     });
-
-    m_clickCountdown.setInterval(1000);
-    connect(&m_clickCountdown, &QTimer::timeout, this, [this] {
-        if (--m_clickSecondsLeft > 0) {
-            m_clickResult->setText(tr("Clicking in %1 s…").arg(m_clickSecondsLeft));
-            return;
-        }
-        m_clickCountdown.stop();
-        m_clickButton->setEnabled(true);
-        m_waitingForSyntheticClick = true;
-        m_clickSent.start();
-        const PlatformResult r = m_input.injectLeftClick();
-        m_clickResult->setText(r.ok() ? tr("Click sent – waiting for the hook to report it as synthetic…")
-                                      : tr("Click failed: %1").arg(r.message));
-        if (!r.ok())
-            m_waitingForSyntheticClick = false;
-        QTimer::singleShot(1500, this, [this] {
-            if (m_waitingForSyntheticClick) {
-                m_waitingForSyntheticClick = false;
-                m_clickResult->setText(tr("The click was sent, but the hook did not report it within 1.5 s."));
-                qCWarning(lcUi) << "Diagnostics click test: synthetic click not seen by the hook";
-            }
-        });
-    });
-    connect(&m_input, &InputService::syntheticClickSeen, this, [this](const InputEvent &e) {
-        if (!m_waitingForSyntheticClick)
-            return;
-        m_waitingForSyntheticClick = false;
-        m_clickResult->setText(tr("✅ Click at %1, %2 received back from the hook as synthetic after %3 ms.")
-                                   .arg(qRound(e.position.x()))
-                                   .arg(qRound(e.position.y()))
-                                   .arg(m_clickSent.elapsed()));
-        qCInfo(lcUi) << "Diagnostics click test passed";
-    });
-    connect(m_clickButton, &QPushButton::clicked, this, &InputDiagnosticsCard::startClickTest);
-
-    m_swallowCountdown.setInterval(1000);
-    connect(&m_swallowCountdown, &QTimer::timeout, this, [this] {
-        const quint64 blocked = m_input.stats().swallowed - m_swallowedAtStart;
-        if (--m_swallowSecondsLeft > 0) {
-            m_swallowResult->setText(tr("F9 is blocked for %1 s – press F9 in another application. Blocked key "
-                                        "events so far: %2.")
-                                         .arg(m_swallowSecondsLeft)
-                                         .arg(blocked));
-            return;
-        }
-        m_swallowCountdown.stop();
-        m_input.unregisterKey(kTestCombo);
-        m_swallowButton->setEnabled(true);
-        m_swallowResult->setText(tr("Test finished: %1 F9 key event(s) were blocked. F9 works normally again.")
-                                     .arg(blocked));
-    });
-    connect(m_swallowButton, &QPushButton::clicked, this, &InputDiagnosticsCard::startSwallowTest);
 
     setExpanded(false);
 }
@@ -212,28 +131,6 @@ void InputDiagnosticsCard::refresh()
                             .arg(s.watchdogReinstalls)
                             .arg(s.selfRepairs)
                             .arg(s.persistentFailure ? tr(" · PERSISTENT FAILURE") : QString()));
-}
-
-void InputDiagnosticsCard::startClickTest()
-{
-    m_clickButton->setEnabled(false);
-    m_clickSecondsLeft = kClickTestDelaySeconds;
-    m_clickResult->setText(tr("Clicking in %1 s…").arg(m_clickSecondsLeft));
-    m_clickCountdown.start();
-}
-
-void InputDiagnosticsCard::startSwallowTest()
-{
-    const PlatformResult r = m_input.registerKey(kTestCombo);
-    if (!r.ok()) {
-        m_swallowResult->setText(tr("Cannot block F9: %1").arg(r.message));
-        return;
-    }
-    m_swallowButton->setEnabled(false);
-    m_swallowedAtStart = m_input.stats().swallowed;
-    m_swallowSecondsLeft = kSwallowTestSeconds;
-    m_swallowResult->setText(tr("F9 is blocked for %1 s – press F9 in another application.").arg(m_swallowSecondsLeft));
-    m_swallowCountdown.start();
 }
 
 } // namespace ergo

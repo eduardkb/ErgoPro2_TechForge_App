@@ -112,12 +112,13 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
     auto *status = new CardWidget(tr("Status"), {}, content);
     auto *grid = new QGridLayout;
     grid->setHorizontalSpacing(24);
-    const QStringList names{tr("Active work time"), tr("Next break in"), tr("State")};
+    const QStringList names{tr("Active work time"), tr("Work started at"), tr("Next break in"), tr("State")};
     m_workTime = bigValue(status);
+    m_cycleStart = bigValue(status);
     m_untilBreak = bigValue(status);
     m_state = bigValue(status);
-    const QList<QLabel *> values{m_workTime, m_untilBreak, m_state};
-    for (int i = 0; i < 3; ++i) {
+    const QList<QLabel *> values{m_workTime, m_cycleStart, m_untilBreak, m_state};
+    for (int i = 0; i < values.size(); ++i) {
         auto *name = new QLabel(names[i], status);
         name->setObjectName(QStringLiteral("hint"));
         grid->addWidget(name, 0, i);
@@ -185,6 +186,9 @@ void BreakTimerTab::refreshStatus()
         m_badge->setState(StatusBadge::State::Inactive, tr("INACTIVE"));
 
     m_workTime->setText(running ? formatDuration(m_controller.interactionMs()) : QStringLiteral("–"));
+    // Start of the current work cycle (24 h); "–" after a reset until the next input (1.7.5).
+    const QDateTime started = m_controller.cycleStartTime();
+    m_cycleStart->setText(started.isValid() ? started.toString(QStringLiteral("HH:mm:ss")) : QStringLiteral("–"));
     const qint64 until = m_controller.timeUntilBreakMs();
     QString untilText = until < 0 ? QStringLiteral("–") : formatDuration(until);
     if (m_controller.isBreakDelayedByFullscreen())

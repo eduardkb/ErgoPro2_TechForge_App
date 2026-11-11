@@ -2,6 +2,7 @@
 
 #include "core/Clock.h"
 
+#include <QDateTime>
 #include <QtGlobal>
 
 namespace ergo {
@@ -82,6 +83,9 @@ public:
     // Working, but the work time stands still: no input for pauseAfterMs (1.7.1:
     // shown as "Paused" on the tab). Always false in the other states.
     bool isWorkTimePaused() const;
+    // Wall-clock time the current work cycle started (first input after a
+    // reset); invalid while no cycle runs (1.7.5: shown on the tab, "-" when invalid).
+    QDateTime cycleStartTime() const;
 
 private:
     qint64 now() const { return m_clock.now().toMSecsSinceEpoch(); }

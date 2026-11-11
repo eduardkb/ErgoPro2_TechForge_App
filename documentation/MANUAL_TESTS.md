@@ -658,3 +658,19 @@ Release and Windows setup program. Push to `main`; wait for the green CI run.
 | 9 | Run an old portable `ErgoPro2.exe` (zip, before 1.7.4), then the setup. | The old copy is ended (it does not know `--quit`); the setup continues. |
 | 10 | General tab › **Uninstall** › Yes. | ErgoPro2 exits, the uninstaller removes the folder, Start Menu entry, desktop icon and start at login. `%APPDATA%\techforge\ErgoPro2` (settings, logs, statistics) is still there. |
 | 11 | macOS/Linux: `ErgoPro2 --quit` while ErgoPro2 runs. | ErgoPro2 exits normally (statistics saved); the command returns 0. With nothing running it also returns 0. |
+
+---
+
+## Bug fix – v1.7.5
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass (`tst_breaktimer`: 27 cases). |
+| 2 | Break Timer › Status right after starting ErgoPro2, without touching mouse/keyboard. | Four fields: *Active work time*, **Work started at**, *Next break in*, *State*. *Work started at* shows "–" (State *Idle*). |
+| 3 | Move the mouse at e.g. 14:05:12. | *Work started at* shows **14:05:12** and keeps that value while you work, during short pauses (*Paused*), during a break and a postpone. |
+| 4 | Do nothing for *Reset after a pause of* (e.g. 1 min with the short test values). | State *Idle*, *Work started at* "–". The next input shows the new start time. |
+| 5 | Switch Break reminders off. | *Work started at* "–". |
+| 6 | On every tab with sliders (General, Break Timer, Auto Click, Statistics): put the pointer on a slider and on its number box and turn the mouse wheel / scroll on the trackpad. | The value does **not** change; the page scrolls (if it is longer than the window). |
+| 7 | Drag a slider, click on the slider track, type a value into the box, click its arrows. | The value changes as before and is saved. |
+| 7a | General tab: scroll with the mouse wheel / trackpad over *Started at login*, *Started manually* and *Log level*; Key Control › Add Hotkey › action list (closed). | The selection does **not** change; the page scrolls. Clicking a box opens the list and a value can be chosen as before (scrolling inside the open list works). |
+| 8 | General › Input diagnostics › Show. | Only the live information (hook, pointer, last key/button, synthetic, events per second, watchdog); no "Test left click" or "Test: block F9" buttons. |

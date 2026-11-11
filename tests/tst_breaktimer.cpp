@@ -65,6 +65,32 @@ private slots:
         QCOMPARE(f.engine.interactionMs(), 11 * kMin + 10000);
     }
 
+    void cycleStartTimeIsKeptUntilTheCycleResets()
+    {
+        Fixture f;
+        QVERIFY(!f.engine.cycleStartTime().isValid()); // no cycle yet
+        f.idle(5000);
+        const QDateTime start = f.clock.now();
+        f.engine.onActivity();
+        QCOMPARE(f.engine.cycleStartTime(), start);
+        f.work(10 * kMin);
+        f.idle(kMin); // short pause: same cycle
+        f.engine.onActivity();
+        QCOMPARE(f.engine.cycleStartTime(), start);
+        f.work(40 * kMin); // reaches 50 min of work time
+        QCOMPARE(f.engine.state(), S::BreakShown);
+        QCOMPARE(f.engine.cycleStartTime(), start); // still the cycle of this break
+        f.engine.postpone();
+        QCOMPARE(f.engine.cycleStartTime(), start);
+        f.idle(5 * kMin); // idle reset
+        QCOMPARE(f.engine.state(), S::WaitingForActivity);
+        QVERIFY(!f.engine.cycleStartTime().isValid()); // shown as "-" (1.7.5)
+        f.engine.onActivity();
+        QCOMPARE(f.engine.cycleStartTime(), f.clock.now()); // a new cycle
+        f.engine.setEnabled(false);
+        QVERIFY(!f.engine.cycleStartTime().isValid());
+    }
+
     void workTimeIsReportedAsPausedWithoutInput()
     {
         Fixture f;

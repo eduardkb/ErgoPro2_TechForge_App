@@ -36,6 +36,7 @@ public:
 
     BreakTimerEngine::State state() const { return m_engine.state(); }
     bool isWorkTimePaused() const { return m_engine.isWorkTimePaused(); }
+    QDateTime cycleStartTime() const { return m_engine.cycleStartTime(); }
     qint64 interactionMs() const { return m_engine.interactionMs(); }
     qint64 timeUntilBreakMs() const { return m_engine.timeUntilBreakMs(); }
     bool isBreakDelayedByFullscreen() const { return m_engine.isBreakDelayedByFullscreen(); }

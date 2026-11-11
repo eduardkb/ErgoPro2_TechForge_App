@@ -5,3 +5,8 @@
 =====
 - Break timer tab - status box: between active work time and next break in insert a new field that shows the hour (24h format), minute and second when the active work timer started last. it can show "-" if it was reset and user did not start any action yet. I want it to show the time the user last started a cycle and if the work cycle was reset it shows "-".
 - change all sliders so they don't change their value with mouse scroll. mouse scroll only scrolls right throug the sliders. only mouse click or typing the value on the text box changes their value.
+- on general tab - input diagnostics box: remove both buttons ("Test left click" and "Test: Bloxk F9...") at the end of the box
+
+
+====
+- when installing on windows. try with the app and without. (strange exit message right before it starts installing)

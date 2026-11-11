@@ -7,6 +7,7 @@
 #include "core/settings/SettingsStore.h"
 #include "ui/AppContext.h"
 #include "ui/statistics/StatisticsController.h"
+#include "ui/widgets/WheelBlocker.h"
 #include "ui/TextUtils.h"
 #include "ui/tabs/DiagnosticsCard.h"
 #include "ui/tabs/InputDiagnosticsCard.h"
@@ -147,11 +148,13 @@ QWidget *GeneralTab::buildStartupCard(QWidget *parent)
     auto *card = new CardWidget(tr("Startup"), tr("What ErgoPro2 does with its window when it starts."), parent);
 
     m_startupAuto = new QComboBox(card);
+    blockWheelValueChanges(m_startupAuto); // 1.7.5: the wheel scrolls the page
     m_startupAuto->addItem(tr("Hide in tray"), GeneralSettings::StartupTray);
     m_startupAuto->addItem(tr("Show window"), GeneralSettings::StartupWindow);
     card->contentLayout()->addLayout(labeledRow(tr("Started at login"), m_startupAuto, card));
 
     m_startupManual = new QComboBox(card);
+    blockWheelValueChanges(m_startupManual); // 1.7.5: the wheel scrolls the page
     m_startupManual->addItem(tr("Show window"), GeneralSettings::StartupWindow);
     m_startupManual->addItem(tr("Hide in tray"), GeneralSettings::StartupTray);
     card->contentLayout()->addLayout(labeledRow(tr("Started manually"), m_startupManual, card));
@@ -169,6 +172,7 @@ QWidget *GeneralTab::buildLoggingCard(QWidget *parent)
                                 parent);
 
     m_logLevel = new QComboBox(card);
+    blockWheelValueChanges(m_logLevel); // 1.7.5: the wheel scrolls the page
     for (const auto &option : kLevelOptions)
         m_logLevel->addItem(tr(option.text), logLevelSelectionId(option.selection));
     card->contentLayout()->addLayout(labeledRow(tr("Log level"), m_logLevel, card));

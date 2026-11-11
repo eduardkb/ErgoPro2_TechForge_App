@@ -10,7 +10,8 @@ namespace ergo {
 
 // "Label  [-----o------] [ 30 ] days" row for numeric parameters.
 // Slider and spin box stay in sync; valueChanged() is emitted immediately on
-// every user change (the settings store debounces disk writes).
+// every user change (the settings store debounces disk writes). The mouse wheel
+// does not change the value; it scrolls the page (1.7.5).
 class ParameterRow : public QWidget {
     Q_OBJECT
 public:

@@ -1,5 +1,7 @@
 #include "ui/widgets/ParameterRow.h"
 
+#include "ui/widgets/WheelBlocker.h"
+
 #include <QGridLayout>
 #include <QLabel>
 #include <QSignalBlocker>
@@ -44,6 +46,10 @@ ParameterRow::ParameterRow(const QString &label, int minimum, int maximum, const
     grid->addWidget(unitLabel, 0, 3);
     grid->addWidget(m_hint, 1, 0, 1, 4);
     grid->setColumnStretch(1, 1);
+
+    // The mouse wheel never changes a value (1.7.5): it scrolls the page.
+    blockWheelValueChanges(m_slider);
+    blockWheelValueChanges(m_spin);
 
     connect(m_slider, &QSlider::valueChanged, this, &ParameterRow::onUserValue);
     connect(m_spin, &QSpinBox::valueChanged, this, &ParameterRow::onUserValue);

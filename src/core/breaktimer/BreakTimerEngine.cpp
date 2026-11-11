@@ -173,6 +173,13 @@ qint64 BreakTimerEngine::timeUntilBreakMs() const
     return -1;
 }
 
+QDateTime BreakTimerEngine::cycleStartTime() const
+{
+    if (m_cycleStartMs == 0 || m_state == State::WaitingForActivity || m_state == State::Disabled)
+        return {};
+    return QDateTime::fromMSecsSinceEpoch(m_cycleStartMs);
+}
+
 bool BreakTimerEngine::isWorkTimePaused() const
 {
     return m_state == State::Working && m_cycleStartMs != 0 && now() - m_markMs >= m_config.pauseAfterMs;

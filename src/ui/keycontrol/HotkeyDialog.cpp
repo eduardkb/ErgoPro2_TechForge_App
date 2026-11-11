@@ -3,6 +3,7 @@
 #include "core/LogCategories.h"
 #include "ui/InputService.h"
 #include "ui/keycontrol/KeyControlController.h"
+#include "ui/widgets/WheelBlocker.h"
 
 #include <QComboBox>
 #include <QEvent>
@@ -166,6 +167,7 @@ QWidget *HotkeyDialog::buildActionPage()
     actionName->setObjectName(QStringLiteral("valueLabel"));
     actionName->setMinimumWidth(90);
     m_action = new QComboBox(page);
+    blockWheelValueChanges(m_action); // 1.7.5: the wheel does not change the action
     // Only actions without a hotkey (plus this hotkey's own action when modifying).
     for (IKeyAction *a : m_controller.selectableActions(m_bindingId))
         m_action->addItem(a->displayName(), a->id());
