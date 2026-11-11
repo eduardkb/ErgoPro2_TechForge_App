@@ -18,36 +18,34 @@ ErgoPro2 is a desktop application that helps people with wrist pain reduce mouse
 - **Auto Click** – clicks the left mouse button automatically when the pointer stops moving.
 - **Key Control** – assign keyboard shortcuts to mouse actions (click, right click, double click, drag lock).
 - **Break Timer** – reminds you to take a break after a period of continuous work.
-- **Statistics** – planned.
+- **Statistics** – daily charts and totals of your mouse and keyboard use, with a history of past days.
 
 It runs on **macOS (Tahoe 26)**, **Windows 11** and **Debian 13**, and is written in C++20 with Qt 6 Widgets.
 
-> Current status: **v1.7.0 – Stage 7** (application shell, settings, logging, tray, install / start at
-> login, permission checks, global input layer with diagnostics, Auto Click, Key Control, Break Timer,
-> Drag Lock, **Statistics**). The features above are
-> implemented stage by stage; see [`documentation/implementation_stages.md`](documentation/implementation_stages.md).
+## Quick start
 
-## Quick start (macOS with Homebrew)
+Download the latest version from **[GitHub Releases](https://github.com/eduardkb/ErgoPro2_TechForge_App/releases/latest)**
+(the file for your operating system is listed under *Assets*):
 
-```bash
-brew install cmake ninja qt
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
-cmake --build build
-ctest --test-dir build --output-on-failure
-open build/bin/ErgoPro2.app
-```
+| System | File | How to install |
+|--------|------|----------------|
+| **Windows 11** | `ErgoPro2-<version>-windows-x64-setup.exe` | Run the setup (no administrator rights needed). If SmartScreen warns about an unknown publisher: *More info › Run anyway*. Updating: run the newer setup – it closes ErgoPro2 and replaces the installed version. |
+| **macOS** (Apple silicon and Intel) | `ErgoPro2-<version>-macos.dmg` | Open the `.dmg`, start ErgoPro2 and click **Install** on the *General* tab. If macOS says it cannot verify the app: System Settings › Privacy & Security › *Open Anyway*. Then grant the Accessibility and Input Monitoring permissions the app asks for. |
+| **Debian 13** | `ergopro2_<version>_amd64.deb` | `sudo apt install ./ergopro2_<version>_amd64.deb`, then start ErgoPro2 from the application menu. |
 
-Full instructions for all three operating systems (prerequisites, release builds, packaging, code
-signing, autostart, troubleshooting): **[`documentation/BUILD.md`](documentation/BUILD.md)**.
+Your settings, logs and statistics are kept when you update.
+
+**Building from source:** the full build procedure for macOS, Windows and Debian (prerequisites, release
+builds, packaging, code signing, autostart, troubleshooting) is in
+**[`documentation/BUILD.md`](documentation/BUILD.md)**.
 
 ## Documentation
 
 | File | Content |
 |------|---------|
 | [`documentation/BUILD.md`](documentation/BUILD.md) | Build, run, package, sign and autostart on each OS |
-| [`documentation/MANUAL_TESTS.md`](documentation/MANUAL_TESTS.md) | Manual test checklists per stage |
+| [`documentation/initial development docs/MANUAL_TESTS.md`](documentation/initial%20development%20docs/MANUAL_TESTS.md) | Manual test checklists per stage |
 | [`documentation/implementation_stages.md`](documentation/implementation_stages.md) | Rules, specification and stage prompts |
-| [`documentation/ai_bugFix.md`](documentation/ai_bugFix.md) | Prompt for AI-assisted bug fixes |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 
 ## Project layout

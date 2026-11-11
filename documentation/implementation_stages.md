@@ -6,8 +6,8 @@ This document drives the implementation of ErgoPro2 by an AI coding tool, one st
 
 1. Open an AI coding tool at the **repository root** (`ergoPro2/`), so it can read and write the project files.
 2. Copy the prompt of the **next stage** from Part C (the full content of the `text` block) and paste it into the AI tool.
-3. When the AI finishes, review the changes, build and test manually using `documentation/BUILD.md` and `documentation/MANUAL_TESTS.md`.
-4. If you find bugs, use the prompt in `documentation/ai_bugFix.md` (this bumps the patch version, e.g. `1.3.0` → `1.3.1`).
+3. When the AI finishes, review the changes, build and test manually using `documentation/BUILD.md` and `documentation/initial development docs/MANUAL_TESTS.md`.
+4. If you find bugs, use the prompt in `documentation/initial development docs/ai_bugFix.md` (this bumps the patch version, e.g. `1.3.0` → `1.3.1`).
 5. Commit the stage yourself (the AI never commits), then continue with the next stage.
 
 Every stage prompt tells the AI to read this document. **Part A (rules)** and **Part B (functional specification)** are the same for all stages, so they are not repeated inside each prompt.
@@ -26,17 +26,17 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 7 | 1.7.0 | Statistics (Function 4) – daily usage charts, totals, CSV history |
 | 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
 
-> Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, baseDescription.md), so the final stage reviews and packages every feature.
+> Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, documentation/initial development docs/baseDescription.md), so the final stage reviews and packages every feature.
 
 ---
 
 # Part A – Project rules (apply to every stage and every bug fix)
 
 ### A.1 Source documents and precedence
-- `documentation/baseDescription.md` – original description.
-- `documentation/ai_questions.md` – questions **with the owner's answers** (`Answer:` and `REVIEW_RESULT:` lines).
+- `documentation/initial development docs/baseDescription.md` – original description.
+- `documentation/initial development docs/ai_questions.md` – questions **with the owner's answers** (`Answer:` and `REVIEW_RESULT:` lines).
 - `documentation/implementation_stages.md` (this file) – Part B is the **consolidated specification**.
-- **Precedence when they conflict:** Part B of this file > answers in `ai_questions.md` > `baseDescription.md`.
+- **Precedence when they conflict:** Part B of this file > answers in `documentation/initial development docs/ai_questions.md` > `documentation/initial development docs/baseDescription.md`.
 - If something is still ambiguous, **stop and ask the user** instead of guessing. Do not invent features.
 
 ### A.2 Technology
@@ -55,7 +55,8 @@ ergoPro2/
 ├── CMakeLists.txt            # single source of the version number
 ├── CHANGELOG.md
 ├── .github/workflows/ci.yml
-├── documentation/            # all documentation (BUILD.md, MANUAL_TESTS.md, ...)
+├── documentation/            # BUILD.md, implementation_stages.md; "initial development docs/" holds
+│                             # baseDescription.md, ai_questions.md, ai_bugFix.md, MANUAL_TESTS.md
 ├── resources/                # icons, images (SVG/PNG), stylesheet (.qss), .qrc
 ├── src/
 │   ├── main.cpp
@@ -90,7 +91,7 @@ ergoPro2/
 ### A.6 Testing
 - Every stage adds/updates unit tests for its `core` logic. `ctest` must pass before the stage is reported as done.
 - The project must build **without warnings** that matter (enable `-Wall -Wextra` / `/W4`) on macOS locally. Windows and Linux are verified through CI (GitHub Actions).
-- Every stage appends a section `## Stage N – vX.Y.0` to `documentation/MANUAL_TESTS.md` with a numbered manual test checklist (steps + expected result) for the new functionality.
+- Every stage appends a section `## Stage N – vX.Y.0` to `documentation/initial development docs/MANUAL_TESTS.md` with a numbered manual test checklist (steps + expected result) for the new functionality.
 
 ### A.7 Workflow rules for the AI
 - **Do not run `git commit`, `git push` or create branches.** The user reviews and commits.
@@ -101,7 +102,7 @@ ergoPro2/
   2. List of created/modified files.
   3. Build and test results (copy the relevant output).
   4. Known limitations / anything not verified (e.g. Windows/Linux only compile-checked by CI).
-  5. Pointer to the new section in `MANUAL_TESTS.md`.
+  5. Pointer to the new section in `documentation/initial development docs/MANUAL_TESTS.md`.
   6. Any open question for the user.
 
 ---
@@ -362,8 +363,8 @@ Copy the full content of one `text` block into the AI tool.
 You are implementing STAGE 0 of the ErgoPro2 desktop application (C++20 / Qt 6 Widgets / CMake), cross-platform: Windows 11, macOS 26 Tahoe, Debian 13.
 
 FIRST read completely:
-- documentation/baseDescription.md
-- documentation/ai_questions.md (the "Answer:" and "REVIEW_RESULT:" lines are the owner's decisions)
+- documentation/initial development docs/baseDescription.md
+- documentation/initial development docs/ai_questions.md (the "Answer:" and "REVIEW_RESULT:" lines are the owner's decisions)
 - documentation/implementation_stages.md (Part A = mandatory rules, Part B = consolidated specification; Part B wins on conflicts)
 
 This is the first stage: the repository contains only the documentation folder. Create the project from scratch.
@@ -393,8 +394,8 @@ IMPLEMENT:
     f. Where settings and logs are stored on each OS.
     g. A "Starting automatically at login" section explaining that this will be done by the app's Install button (stage 1), plus the manual method per OS (LaunchAgent / Login Items, HKCU Run key / Startup folder, ~/.config/autostart .desktop) and why a system "service" is not appropriate for a GUI app.
     h. Troubleshooting section.
-    i. A short "How to test each stage" section pointing to documentation/MANUAL_TESTS.md.
-15. documentation/MANUAL_TESTS.md with the "Stage 0 – v1.0.0" checklist.
+    i. A short "How to test each stage" section pointing to documentation/initial development docs/MANUAL_TESTS.md.
+15. documentation/initial development docs/MANUAL_TESTS.md with the "Stage 0 – v1.0.0" checklist.
 16. CHANGELOG.md with the 1.0.0 entry. A short README.md at the root (what the app is, link to BUILD.md).
 
 OUT OF SCOPE: autostart/install, permissions, input hooks, AutoClick, Key Control, Break Timer logic.
@@ -409,7 +410,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 1 of ErgoPro2. Current version must be 1.0.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – Part B wins on conflicts). Then study the existing code before changing it.
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – Part B wins on conflicts). Then study the existing code before changing it.
 
 GOAL: complete General tab, install/uninstall with start-at-login on all three OSes, startup behavior, permission detection and the macOS permissions window, and the feature-availability framework used by the next stages.
 
@@ -426,7 +427,7 @@ IMPLEMENT:
 7. macOS startup permissions window (REVIEW 1.2): modal, explains each permission and why ErgoPro2 needs it, buttons to open settings, "Check again", "Restart app" when needed. If closed without granting, the banners explain what is unavailable and how to fix it.
 8. Tray tooltip shows the version.
 9. Unit tests for any core logic added (e.g. temp/Downloads folder detection, availability rules, startup-mode decision).
-10. Update documentation/BUILD.md (install/uninstall via the app, autostart verification per OS, permission granting steps with the exact System Settings paths on macOS Tahoe, Wayland input group/udev steps) and add "Stage 1 – v1.1.0" to documentation/MANUAL_TESTS.md.
+10. Update documentation/BUILD.md (install/uninstall via the app, autostart verification per OS, permission granting steps with the exact System Settings paths on macOS Tahoe, Wayland input group/udev steps) and add "Stage 1 – v1.1.0" to documentation/initial development docs/MANUAL_TESTS.md.
 
 OUT OF SCOPE: the input hook itself, AutoClick, Key Control, Break Timer logic.
 
@@ -440,7 +441,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 2 of ErgoPro2. Current version must be 1.1.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.1.4, B.5.4 and B.6). Then study the existing code.
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.1.4, B.5.4 and B.6). Then study the existing code.
 
 GOAL: a robust, shared global input layer on every OS that later stages (AutoClick, Key Control, Break Timer) build on. No end-user feature yet, but a diagnostics view to test it manually.
 
@@ -460,7 +461,7 @@ IMPLEMENT:
 9. Diagnostics UI on the General tab (collapsible "Input diagnostics" card): hook status, live pointer position, last key event (with modifiers), last mouse button event, synthetic flag, counter of events/s, a "Test left click in 3 s" button and a "Test: swallow F9 for 30 s" button (to verify suppression manually), and the watchdog reinstall count.
 10. Performance: hook callbacks must never block (no logging I/O, no locks held for long inside callbacks – use a lock-free queue or a fast mutex + condition).
 11. Unit tests for the core parts (event normalization helpers, dispatcher, key-combo matching incl. modifiers, watchdog logic with fake clock).
-12. Update BUILD.md (new dependencies: X11/XTest/XRecord dev packages, optional libevdev; macOS frameworks) and add "Stage 2 – v1.2.0" to MANUAL_TESTS.md (including a long-running test: leave the app running for 2+ hours and through sleep/resume, then verify the hook and the F9 swallow test still work).
+12. Update BUILD.md (new dependencies: X11/XTest/XRecord dev packages, optional libevdev; macOS frameworks) and add "Stage 2 – v1.2.0" to documentation/initial development docs/MANUAL_TESTS.md (including a long-running test: leave the app running for 2+ hours and through sleep/resume, then verify the hook and the F9 swallow test still work).
 
 OUT OF SCOPE: AutoClick, Key Control UI, Break Timer logic.
 
@@ -474,7 +475,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 3 of ErgoPro2: Function 1 – AutoClick. Current version must be 1.2.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.4 and B.6). Then study the existing code, especially the input layer from stage 2.
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.4 and B.6). Then study the existing code, especially the input layer from stage 2.
 
 GOAL: a reliable dwell-click feature exactly as specified in Part B.4.
 
@@ -490,7 +491,7 @@ IMPLEMENT:
 9. AutoClick works on all windows, including the ErgoPro2 window (A-06).
 10. If AutoClick is unavailable (permissions/Wayland), the controls are disabled and the banner explains why.
 11. Unit tests for the state machine covering every rule with the fake clock (arming distance, jitter, timer, cancel by manual click, held button, typing suspension, drag-lock suppression hooks, reference point reset, parameter change while armed).
-12. Add "Stage 3 – v1.3.0" to MANUAL_TESTS.md.
+12. Add "Stage 3 – v1.3.0" to documentation/initial development docs/MANUAL_TESTS.md.
 
 OUT OF SCOPE: Key Control, Drag Lock action, Break Timer.
 
@@ -504,7 +505,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 4 of ErgoPro2: Function 2 – Key Control (without Drag Lock, which is stage 6). Current version must be 1.3.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.5.1, B.5.2, B.5.4 and B.6). Then study the existing code, especially the input layer (stage 2) and AutoClick (stage 3).
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.5.1, B.5.2, B.5.4 and B.6). Then study the existing code, especially the input layer (stage 2) and AutoClick (stage 3).
 
 GOAL: user-defined, exclusive global hotkeys that trigger mouse actions, robust over long periods.
 
@@ -519,7 +520,7 @@ IMPLEMENT:
 8. Key Control tab: unavailable banner, "Add Hotkey" button, list/table of actions with Enable/Disable, Modify, Reset binding, Delete (with confirmation) exactly as in B.5.2; Add/Modify dialog flow of K-15 (press combo → Confirm/Retry → choose action → Save → register; on failure show the reason and let the user pick another combo).
 9. Behavior details: Disable releases the key to the OS; Reset binding unregisters and re-registers; Modify can change key and/or action; Delete releases and removes.
 10. Unit tests: key combo parsing/normalization/validation (including reserved combos per OS), duplicate detection, action registry, service logic with a fake input layer (fire once per press, auto-repeat ignored, pause during capture, re-registration after hook reinstall).
-11. Add "Stage 4 – v1.4.0" to MANUAL_TESTS.md (include: verify the bound key no longer reaches other apps, e.g. a text editor; verify a disabled binding types normally again; verify bindings still work after 2+ hours and after sleep/resume).
+11. Add "Stage 4 – v1.4.0" to documentation/initial development docs/MANUAL_TESTS.md (include: verify the bound key no longer reaches other apps, e.g. a text editor; verify a disabled binding types normally again; verify bindings still work after 2+ hours and after sleep/resume).
 
 OUT OF SCOPE: Drag Lock behavior, Break Timer.
 
@@ -533,7 +534,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 5 of ErgoPro2: Function 3 – Break Timer. Current version must be 1.4.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.7, plus B.4/B.5 interactions). Then study the existing code.
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.7, plus B.4/B.5 interactions). Then study the existing code.
 
 GOAL: break reminders based on real user activity, with a full-screen break window, exactly as in Part B.7.
 
@@ -548,7 +549,7 @@ IMPLEMENT:
 8. Tray menu: "Break Timer on/off" (checkable) and "Start break now".
 9. Provide a hook/signal "break window shown" that stage 6 will use to release Drag Lock.
 10. Unit tests for the state machine covering every rule with the fake clock (idle reset, sleep/lock, threshold, auto close, dismiss, postpone, idle during postpone, parameter change mid-cycle, disable/enable, synthetic events ignored).
-11. Add "Stage 5 – v1.5.0" to MANUAL_TESTS.md (tip: set short values, e.g. max work 5 min, break 1 min, idle reset 1 min, postpone 1 min, for manual testing).
+11. Add "Stage 5 – v1.5.0" to documentation/initial development docs/MANUAL_TESTS.md (tip: set short values, e.g. max work 5 min, break 1 min, idle reset 1 min, postpone 1 min, for manual testing).
 
 OUT OF SCOPE: Drag Lock, Statistics.
 
@@ -562,7 +563,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 6 of ErgoPro2: the Drag Lock action of Key Control and its interaction with AutoClick and the Break Timer. Current version must be 1.5.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines, especially the "Function 2" Drag Lock description and D-01..D-06), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.5.3, B.4 rule 7 and B.7). Then study the existing code (input layer, AutoClick engine, Key Control service, Break Timer).
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines, especially the "Function 2" Drag Lock description and D-01..D-06), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.5.3, B.4 rule 7 and B.7). Then study the existing code (input layer, AutoClick engine, Key Control service, Break Timer).
 
 GOAL: a safe drag-lock that never leaves the mouse button stuck, fully integrated with AutoClick.
 
@@ -578,7 +579,7 @@ IMPLEMENT:
 9. Safety: on any unexpected error, crash handler or exit, send left button up if Holding (log it).
 10. Make "Drag lock (left button)" selectable in the Add/Modify Hotkey dialog.
 11. Unit tests for the state machine with the fake clock (every release condition, modifiers not releasing, timeout reset by movement, consumed click, AutoClick reference point update, break release).
-12. Add "Stage 6 – v1.6.0" to MANUAL_TESTS.md (drag a file to a folder, select text, drag a window, each release condition, AutoClick not clicking after release until the distance is moved).
+12. Add "Stage 6 – v1.6.0" to documentation/initial development docs/MANUAL_TESTS.md (drag a file to a folder, select text, drag a window, each release condition, AutoClick not clicking after release until the distance is moved).
 
 OUT OF SCOPE: Statistics, packaging.
 
@@ -592,7 +593,7 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 7 of ErgoPro2: Function 4 – Statistics. Current version must be 1.6.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.8, plus B.2, B.3, B.6 and B.7 which the statistics depend on). Then study the existing code (input layer and dispatcher, AutoClick and Key Control click paths, Break Timer controller and its signals, Logger retention, settings, tab widgets).
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules, Part B specification – especially B.8, plus B.2, B.3, B.6 and B.7 which the statistics depend on). Then study the existing code (input layer and dispatcher, AutoClick and Key Control click paths, Break Timer controller and its signals, Logger retention, settings, tab widgets).
 
 GOAL: a Statistics tab with a daily usage-percent chart, an activity chart, daily totals and day-by-day history read from one CSV file per day, exactly as in Part B.8.
 
@@ -612,7 +613,7 @@ IMPLEMENT:
    - options card: "Open statistics folder" button and "Keep statistics for" (days) parameter row;
    - availability banner when the input hook is not running; good look in light and dark mode and at the minimum window size.
 9. Unit tests (fake clock) for the collector and the usage percent: per-second classification (mouse/keyboard/both), counters (repeat keys ignored, synthetic ignored, clicks done for you), distance, minute records, reset after BREAKTIMER_BREAK_TIME without input, no reset on dismiss/postpone/break end, growth beyond 100 %, sleep/lock counting as no input, midnight change keeps the percent, settings change mid-period. Unit tests for the CSV layer: write/read round trip, header, continue after restart, partial last line repair, invalid lines skipped, navigation finding previous/next existing day, retention cleanup. Unit tests for the chart axis logic (hour range, y scaling, 5-minute bucketing) kept in src/core.
-10. Add "Stage 7 – v1.7.0" to MANUAL_TESTS.md (tip: set BREAKTIMER_MAX_WORK_TIME 5 min and BREAKTIMER_BREAK_TIME 1 min to see 100 %, overflow after Dismiss and the reset within minutes; check the CSV in a spreadsheet; create files for older dates by copying/renaming a CSV to test navigation and retention).
+10. Add "Stage 7 – v1.7.0" to documentation/initial development docs/MANUAL_TESTS.md (tip: set BREAKTIMER_MAX_WORK_TIME 5 min and BREAKTIMER_BREAK_TIME 1 min to see 100 %, overflow after Dismiss and the reset within minutes; check the CSV in a spreadsheet; create files for older dates by copying/renaming a CSV to test navigation and retention).
 
 OUT OF SCOPE: hardening/packaging (stage 8), export or upload of statistics, statistics older than the retention, per-application statistics.
 
@@ -626,13 +627,13 @@ Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```text
 You are implementing STAGE 8 of ErgoPro2: hardening, packaging and final documentation. Current version must be 1.7.x.
 
-FIRST read completely: documentation/baseDescription.md, documentation/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules and the full Part B specification), documentation/BUILD.md, documentation/MANUAL_TESTS.md and CHANGELOG.md. Then review the whole codebase.
+FIRST read completely: documentation/initial development docs/baseDescription.md, documentation/initial development docs/ai_questions.md (owner's Answer/REVIEW_RESULT lines), documentation/implementation_stages.md (Part A rules and the full Part B specification), documentation/BUILD.md, documentation/initial development docs/MANUAL_TESTS.md and CHANGELOG.md. Then review the whole codebase.
 
 GOAL: a release-quality 1.8.0 build for all three OSes with complete documentation.
 
 IMPLEMENT:
 1. Version 1.8.0 + CHANGELOG entry.
-2. Requirements audit: create documentation/REQUIREMENTS_TRACE.md – a table mapping every requirement in baseDescription.md, every answered question in ai_questions.md and every item in Part B to the implementing file(s)/class(es), the unit test(s) and the manual test(s). Mark gaps clearly. Fix every gap that is small and within the existing scope; list the others for the owner (do not add new features).
+2. Requirements audit: create documentation/REQUIREMENTS_TRACE.md – a table mapping every requirement in documentation/initial development docs/baseDescription.md, every answered question in documentation/initial development docs/ai_questions.md and every item in Part B to the implementing file(s)/class(es), the unit test(s) and the manual test(s). Mark gaps clearly. Fix every gap that is small and within the existing scope; list the others for the owner (do not add new features).
 3. Code review pass: error handling (no silent failures), thread safety (hook callbacks, shutdown order), resource cleanup on exit (hooks removed, keys released, mouse button never left down), memory leaks, log noise at INFO level, consistent UI texts and styling, light/dark mode check of every window.
 4. Cross-platform review of the Windows and Linux (X11 and Wayland) implementations against the macOS behavior; fix discrepancies found by reading the code and by CI. Make CI run the full test suite on all three OSes and publish packaged artifacts.
 5. Packaging:
@@ -644,7 +645,7 @@ IMPLEMENT:
    - documentation/BUILD.md fully updated (build, package, install, run, autostart, signing, permissions, troubleshooting) for each OS.
    - documentation/USER_GUIDE.md: end-user guide for every tab and feature, including OS permission instructions and limitations (e.g. Wayland, elevated Windows apps, reserved key combos).
    - documentation/ARCHITECTURE.md: modules, threads, event flow, how to add a new Key Control action, how the statistics collector gets its events and stores its files.
-   - MANUAL_TESTS.md: "Stage 8 – v1.8.0" full regression checklist across all features (and a long-run/sleep-resume test).
+   - documentation/initial development docs/MANUAL_TESTS.md: "Stage 8 – v1.8.0" full regression checklist across all features (and a long-run/sleep-resume test).
 7. Make sure ctest passes and the app builds without relevant warnings.
 
 OUT OF SCOPE: new features.

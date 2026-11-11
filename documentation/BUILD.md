@@ -694,6 +694,6 @@ programs running **as Administrator**, unless ErgoPro2 also runs as Administrato
 4. On macOS, sign the build (1.6) when the stage uses OS permissions (stage 1 and later) and start it
    from Finder / `open` so macOS attributes the permissions to ErgoPro2.
 5. Start the new build and follow the checklist of that stage in
-   [`MANUAL_TESTS.md`](MANUAL_TESTS.md). Earlier stages' checklists can be re-run as regression tests.
+   [`MANUAL_TESTS.md`](initial%20development%20docs/MANUAL_TESTS.md). Earlier stages' checklists can be re-run as regression tests.
 6. If something fails, collect the steps, the version and the relevant log lines and use the prompt in
-   [`ai_bugFix.md`](ai_bugFix.md).
+   [`ai_bugFix.md`](initial%20development%20docs/ai_bugFix.md).

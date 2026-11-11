@@ -1,7 +1,7 @@
 # ErgoPro2 – Manual Test Checklists
 
 Each stage (and bug fix) adds a section here. Build and start the app as described in
-[`BUILD.md`](BUILD.md). Paths of the settings file and log folder for each OS are listed in
+[`BUILD.md`](../BUILD.md). Paths of the settings file and log folder for each OS are listed in
 `BUILD.md` section 4 (they are also printed in the log at every start).
 
 Mark each step ✅ / ❌ and note the OS and version you tested on.

@@ -2,7 +2,7 @@ You are fixing a bug in the ErgoPro2 desktop application (C++20 / Qt 6 Widgets /
 
 FIRST read:
 - documentation/implementation_stages.md – Part A (mandatory rules: architecture, versioning, coding, testing, workflow) and Part B (consolidated functional specification, which defines the CORRECT behavior).
-- documentation/AI_questions.md (owner's "Answer:" and "REVIEW_RESULT:" decisions) and documentation/baseDescription.md when the behavior in question needs more context.
+- documentation/initial development docs/ai_questions.md (owner's "Answer:" and "REVIEW_RESULT:" decisions) and documentation/initial development docs/baseDescription.md when the behavior in question needs more context.
 - CHANGELOG.md, to see the current version and recent changes.
 Then study the code related to the bug.
 
@@ -15,7 +15,7 @@ PROCESS:
 6. Make sure there is enough logging around the fixed area to diagnose a recurrence (correct log levels).
 7. Versioning: bump ONLY the PATCH number of project(ErgoPro2 VERSION x.y.z) in the root CMakeLists.txt (e.g. 1.3.0 → 1.3.1). MAJOR stays 1, MINOR unchanged. Exactly one bump per run, even if several related issues are fixed.
 8. Add a CHANGELOG.md entry at the top: "## [x.y.z] - YYYY-MM-DD" with a "### Fixed" list describing the bug from the user's point of view (and the root cause in one short sentence).
-9. Add a regression check to documentation/MANUAL_TESTS.md under a heading "## Bug fix – vx.y.z" (steps + expected result).
+9. Add a regression check to documentation/initial development docs/MANUAL_TESTS.md under a heading "## Bug fix – vx.y.z" (steps + expected result).
 10. Build the project and run ctest. All tests must pass.
 11. Do NOT run git commit, git push or create branches.
 
