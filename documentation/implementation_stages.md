@@ -118,6 +118,7 @@ ergoPro2/
 - App and tray icons: create simple, clean SVG icons (a stylized hand/wrist or mouse). Tray icon variants: normal, **AutoClick active**, **Drag Lock active** (if easy to implement on the OS; not mandatory for AutoClick per A-09).
 - Statistics tab: placeholder "Coming soon" until stage 7 (B.8).
 - Numeric parameters: **slider + spin box** side by side with units, applied immediately. The mouse wheel never changes them – it scrolls the page; values change only by clicking/dragging the slider or typing/using the spin box (1.7.5, owner request). The same applies to every drop-down (combo box): the wheel scrolls the page, a value is chosen only by opening the list (`ui/widgets/WheelBlocker`).
+- **Window size** (1.7.8, owner request): the main window can be resized but **not maximized or made full screen** on any OS (no maximize button, macOS green button without zoom/full screen; a maximized/full-screen state set by the window manager is undone). Maximum size = **80 %** of the usable width and height of the screen the window is on; minimum 720 × 560, reduced to the maximum on small screens; start size 820 × 620, reduced to fit. Recalculated when the window moves to another screen or the screen's usable area changes (`core/WindowLimits`).
 - General tab › *Input diagnostics* shows the live hook information only; the manual test buttons ("Test left click", "Test: block F9") were removed (1.7.5, owner request; Part C stage 2 item 9 is historical).
 
 ### B.1.2 Tray, close and exit
@@ -267,6 +268,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 ### B.5.4 Binding robustness (REVIEW 1.4)
 - One shared input hook (no thread per action). Keys stay exclusive over hours/days:
   - macOS: handle `kCGEventTapDisabledByTimeout` / `kCGEventTapDisabledByUserInput` by re-enabling the tap immediately (and logging it). Keep the callback very fast.
+  - macOS: an **active** tap is never re-enabled without the Accessibility permission. The hook thread checks `AXIsProcessTrusted()` every second; when the permission is removed while ErgoPro2 runs, the tap is disabled and removed at once (an active tap without the permission can block all mouse/keyboard input of the session – 1.7.8). The input layer notices the stopped hook within a second, re-reads the permissions (banners shown) and starts the hook again when the permission is granted again.
   - Windows: keep the `WH_KEYBOARD_LL` callback very fast (hand work to other threads), because Windows silently removes slow hooks. Run a **health watchdog** that detects a dead hook and reinstalls it.
   - Linux: re-grab after keyboard mapping changes (`MappingNotify`) and after device hotplug (evdev).
   - All OSes: re-install hooks after **sleep/resume** and **session unlock**, and log every re-install.
@@ -322,11 +324,12 @@ Owner description (stage 7 request) with the owner's answers to the clarificatio
 - Day boundary: **local midnight**. Counters start at zero each day; the usage percent (B.8.2) is **not** reset at midnight.
 
 ### B.8.2 Computer usage percent
-- `usage % = used seconds since the last usage reset ÷ (BREAKTIMER_MAX_WORK_TIME × 60) × 100`, where "used seconds" = active seconds (B.8.1). Only time with actual input counts (reading without touching anything does not).
+- `usage % = used time since the last usage reset ÷ BREAKTIMER_MAX_WORK_TIME × 100` (1.7.8, owner request): the used time is counted **exactly like the Break Timer's active work time** (B.7): a pause between inputs counts up to `BREAKTIMER_ACTIVITY_PAUSE` seconds, then the time stands still until the next input; nothing counts while the break window is shown; the *Postpone* click counts as input. So 0 % = no work time and 100 % = the active work time reached *Break after working*. (Before 1.7.8 only seconds with input counted, so the break came at e.g. 70 %.)
 - **Reset to 0 %** when there was **no input for `BREAKTIMER_BREAK_TIME` minutes** (owner's rule; this is intentionally the break length, not `BREAKTIMER_IDLE_RESET`; sleep / lock / app not running count as no input) **and when the break window closes by itself** (countdown over), even if there was input while it was shown (1.7.6, owner request).
-- Dismiss and Postpone do **not** reset it: the value keeps growing beyond 100 % on the same scale. Postponing any number of times changes nothing.
+- Dismiss and Postpone do **not** reset it: the value keeps growing beyond 100 %. Postponing any number of times changes nothing.
+- **Maximum 500 %** (1.7.8, owner request): when the usage goes above 500 % (breaks ignored), it is set to **0 %** and a new usage cycle starts with the current setting, so the half-time rule of B.7 ends and the next break comes after the full *Break after working*. The Break Timer's active work time is not changed. Logged as INFO.
 - Calculated the same way when the Break Timer is disabled (with its current settings).
-- **Scale per usage cycle** (1.7.6, owner request): the `BREAKTIMER_MAX_WORK_TIME` used as 100 % is taken when the usage (re)starts at 0. Changing the setting later never makes the shown percent jump (neither up nor down); the new value becomes the 100 % reference at the next reset to 0 (immediately only while the usage is 0). The Break Timer itself applies the new value at once (B.7), so a break can come before 100 % is reached. `BREAKTIMER_BREAK_TIME` (reset pause) applies at once. Recorded minutes are never recalculated.
+- **Scale per work period** (1.7.6; changed in 1.7.8, owner request): a changed `BREAKTIMER_MAX_WORK_TIME` becomes the 100 % reference when a **new work period starts**, i.e. when the Break Timer's active work time is reset (idle reset, break completed, Dismiss, timer switched off), or **immediately** if the active work time is already 0 (or the usage is 0). The used time is kept, so the percent can change once at that moment (e.g. after a Dismiss above 0 %). The Break Timer itself applies the new value at once (B.7). `BREAKTIMER_BREAK_TIME` (reset pause) and `BREAKTIMER_ACTIVITY_PAUSE` apply at once. Recorded minutes are never recalculated.
 - Recorded **per minute**: the value at the end of each minute (minutes without data are empty, not 0).
 
 ### B.8.3 Statistics tab
@@ -334,7 +337,7 @@ Layout from top to bottom (scrollable, card style of B.1.1, light and dark mode)
 1. **Header:** the shown date (e.g. "Tuesday, 10 November 2026", "Today" when it is today).
 2. **Chart 1 – Computer usage percent:** line chart, one point per minute.
    - x axis = time of day; shows the hours from the first to the last recorded minute of the day, rounded out to whole hours (empty day: 08:00–18:00 with "No data for this day"); hour labels.
-   - y axis = percent, starts at 0, auto-scales to the day's maximum but always shows at least 0–100 %; a highlighted reference line at 100 %.
+   - y axis = percent, starts at 0, auto-scales to the day's maximum but always shows at least 0–100 % and at most 0–500 % (1.7.8; older values above 500 % are drawn at the top); a highlighted reference line at 100 %.
    - Gaps (no data) are not connected.
    - Markers for break events: break shown, dismissed, postponed, completed (small symbols with a legend).
    - Hover tooltip: time, percent, and the event if any.

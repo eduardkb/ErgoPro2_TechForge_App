@@ -84,10 +84,11 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     // --- 2. chart 1
     auto *usageCard = new CardWidget(
         tr("Computer usage"),
-        tr("100 % = mouse/keyboard use for the whole “Break after working” time. It keeps growing when a break "
-           "is dismissed or postponed (breaks then come after half the time) and goes back to 0 % when a break "
-           "is completed or after a pause as long as the break length. A changed “Break after working” "
-           "applies from the next 0 %."),
+        tr("100 % = the active work time reached “Break after working” (time is counted as on the Break Timer "
+           "tab). It keeps growing when a break is dismissed or postponed (breaks then come after half the "
+           "time) and goes back to 0 % when a break is completed, after a pause as long as the break length "
+           "and above 500 %. A changed “Break after working” applies when the active work time starts "
+           "again from 0."),
         content);
     m_usage = new UsageChart(usageCard);
     usageCard->contentLayout()->addWidget(m_usage);

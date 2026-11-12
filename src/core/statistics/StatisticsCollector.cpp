@@ -20,14 +20,44 @@ void StatisticsCollector::setConfig(const Config &config)
     m_config = config;
     if (m_config.maxWorkMs <= 0)
         m_config.maxWorkMs = 60000;
-    if (m_usedSeconds == 0)
+    if (m_config.pauseAfterMs < 0)
+        m_config.pauseAfterMs = 0;
+    if (usedAt(now()) == 0)
         m_scaleMaxWorkMs = m_config.maxWorkMs; // nothing counted yet: the new scale applies at once
 }
 
 void StatisticsCollector::resetUsage()
 {
-    m_usedSeconds = 0;
+    m_usedMs = 0;
+    m_markMs = 0; // counting starts again with the next input
     m_scaleMaxWorkMs = m_config.maxWorkMs; // a new usage cycle uses the current setting
+}
+
+void StatisticsCollector::onWorkCycleReset()
+{
+    m_scaleMaxWorkMs = m_config.maxWorkMs;
+}
+
+bool StatisticsCollector::takeCapReset()
+{
+    const bool r = m_capReset;
+    m_capReset = false;
+    return r;
+}
+
+qint64 StatisticsCollector::usedAt(qint64 t) const
+{
+    if (m_markMs == 0)
+        return m_usedMs;
+    return m_usedMs + std::clamp<qint64>(t - m_markMs, 0, m_config.pauseAfterMs);
+}
+
+void StatisticsCollector::checkCap(qint64 t)
+{
+    if (percentAt(t) > kMaxPercent) {
+        resetUsage();
+        m_capReset = true;
+    }
 }
 
 void StatisticsCollector::setPixelsPerCm(double pixelsPerCm)
@@ -46,7 +76,8 @@ void StatisticsCollector::restore(const DayStats &day, qint64 lastDataEndMs, dou
     if (lastDataEndMs > 0 && now() - lastDataEndMs < m_config.resetAfterMs && lastPercent > 0) {
         // Restarted within the reset time: the usage percent continues.
         m_scaleMaxWorkMs = m_config.maxWorkMs;
-        m_usedSeconds = qint64(std::llround(lastPercent / 100.0 * double(m_scaleMaxWorkMs) / 1000.0));
+        m_usedMs = qint64(std::llround(lastPercent / 100.0 * double(m_scaleMaxWorkMs)));
+        m_markMs = 0; // counting continues with the next input
         m_lastInputMs = lastDataEndMs;
     }
 }
@@ -67,7 +98,7 @@ double StatisticsCollector::percentAt(qint64 t) const
 {
     if (m_lastInputMs == 0 || t - m_lastInputMs >= m_config.resetAfterMs)
         return 0.0; // rested long enough (also: never used)
-    return double(m_usedSeconds) * 1000.0 * 100.0 / double(m_scaleMaxWorkMs);
+    return double(usedAt(t)) * 100.0 / double(m_scaleMaxWorkMs);
 }
 
 void StatisticsCollector::commitSecond()
@@ -78,10 +109,8 @@ void StatisticsCollector::commitSecond()
         ++m_minute.mouseSeconds;
     if (m_secondKeyboard)
         ++m_minute.keyboardSeconds;
-    if (m_secondMouse || m_secondKeyboard) {
+    if (m_secondMouse || m_secondKeyboard)
         ++m_minute.activeSeconds;
-        ++m_usedSeconds;
-    }
     m_second = -1;
     m_secondMouse = m_secondKeyboard = false;
 }
@@ -89,7 +118,8 @@ void StatisticsCollector::commitSecond()
 void StatisticsCollector::finishMinute()
 {
     if (m_minute.hasData()) {
-        m_minute.usagePercent = percentAt(m_minuteEndMs - 1);
+        // One decimal, as stored in the CSV file.
+        m_minute.usagePercent = std::round(percentAt(m_minuteEndMs - 1) * 10.0) / 10.0;
         if (m_minuteDate == m_today.date)
             m_today.add(m_minute);
         m_finished.append({m_minuteDate, m_minute});
@@ -98,6 +128,7 @@ void StatisticsCollector::finishMinute()
 
 void StatisticsCollector::advanceTo(qint64 t)
 {
+    checkCap(t);
     if (m_second >= 0 && t / 1000 != m_second)
         commitSecond();
     if (t >= m_minuteStartMs && t < m_minuteEndMs)
@@ -120,6 +151,13 @@ void StatisticsCollector::onInputEvent(const InputEvent &event)
     if (m_lastInputMs != 0 && t - m_lastInputMs >= m_config.resetAfterMs)
         resetUsage(); // B.8.2: a pause of BREAKTIMER_BREAK_TIME resets the usage
     m_lastInputMs = t;
+    if (!m_onBreak) {
+        // Like the Break Timer's work time: the gap since the last input counts
+        // up to pauseAfterMs (1.7.8).
+        m_usedMs = usedAt(t);
+        m_markMs = t;
+        checkCap(t);
+    }
     if (m_second < 0)
         m_second = t / 1000;
 
@@ -173,6 +211,24 @@ void StatisticsCollector::onBreakEvent(BreakEvent event)
 {
     advanceTo(now());
     m_minute.events.append(breakEventToken(event));
+    const qint64 t = now();
+    switch (event) {
+    case BreakEvent::Shown:
+        // Nothing counts while the break window is shown (like the work time).
+        m_usedMs = usedAt(t);
+        m_markMs = 0;
+        m_onBreak = true;
+        break;
+    case BreakEvent::Postponed:
+        m_onBreak = false;
+        m_usedMs = usedAt(t);
+        m_markMs = t; // the Postpone click counts as input (as for the work time)
+        break;
+    case BreakEvent::Dismissed:
+    case BreakEvent::Completed:
+        m_onBreak = false;
+        break;
+    }
     if (event == BreakEvent::Completed) {
         // The break window closed by itself: the break was taken (1.7.6), even if
         // there was input while it was shown.

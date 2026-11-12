@@ -80,6 +80,7 @@ private:
     void onEvent(const InputEvent &event);
     void onPowerEvent(PowerEvent event);
     void runHealthCheck();
+    void checkHookStopped();
     void updateAvailability(const QString &error);
 
     Platform &m_platform;
@@ -89,6 +90,10 @@ private:
     KeySuppressionRegistry m_suppression;
     HookWatchdog m_watchdog;
     QTimer m_watchdogTimer;
+    // 1.7.8: notices within a second when the hook stopped by itself (macOS
+    // removes the event tap when Accessibility is revoked).
+    QTimer m_stoppedCheckTimer;
+    bool m_hookWasRunning = false;
     bool m_started = false;
     bool m_starting = false; // re-entry guard (availability changes while starting)
     QString m_lastError;

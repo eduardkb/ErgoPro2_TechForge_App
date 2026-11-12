@@ -704,3 +704,19 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 2 | Break Timer tab: drag each slider to both ends, type values outside the range into the boxes. | *Break after working* 20–120, *Reset after a pause of* 2–15, *Postpone by* 3–20 (values outside cannot be entered). |
 | 3 | General › *Reset all settings*, then Break Timer. | 50 / 5 / 4 (break length) / 10 min. |
 | 4 | With ErgoPro2 closed, set in `settings.json` › `breaktimer`: `BREAKTIMER_MAX_WORK_TIME` 10, `BREAKTIMER_IDLE_RESET` 30, `BREAKTIMER_POSTPONE_TIME` 1; start ErgoPro2. | The tab shows 50 / 5 / 10; the log has a WARNING "Invalid value for …" for each of the three. |
+
+## Bug fix – v1.7.8
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 18 test programs pass. |
+| 2 | macOS: ErgoPro2 running with Accessibility and Input Monitoring granted (Key Control hotkey working). System Settings › Privacy & Security › Accessibility: switch ErgoPro2 **off**. | Mouse and keyboard keep working everywhere (at most a 1-second hiccup). Within a few seconds the function tabs show the "permission missing" banner. Log: CRITICAL "Accessibility permission was removed while the event tap was active…" and "Input hook stopped by itself…". |
+| 3 | Continue: switch ErgoPro2 **on** again in Accessibility. | Within a few seconds the banners disappear and the hook runs again (General › Input diagnostics: hook running, events counting; hotkeys work). No restart needed (if macOS asks for one, *Restart app*). |
+| 4 | macOS: repeat 2 with only **Input Monitoring** removed (Accessibility on). | No freeze; banners appear; the hook starts again after granting it again. |
+| 5 | Break after working = 20 min. Work normally (type, read with short pauses) until the break window appears; open Statistics. | The usage line reaches about 100 % at the minute the break window appeared (not ~70 % as before). Active work time and usage % grow together. |
+| 6 | With usage at e.g. 30 %, change *Break after working* 20 → 40 min. | The usage % does not jump. After the next active-work-time reset (e.g. pause of 5 min, or Dismiss of a break) the percent is shown on the 40-min scale (log: "Statistics: usage 100 % = 40 min (was 20 min) because the active work time was reset"). |
+| 7 | Same change while the Break Timer tab shows *Active work time* 00:00. | The new scale applies at once (log line "…because the active work time is 0"). |
+| 8 | Break after working = 20 min; dismiss every break and keep working (about 100 min of active work in total) until the usage passes 500 %. | At just above 500 % the usage drops to 0 % (log: "usage above 500 % - reset to 0 %"); the next break comes after the full 20 min again (not 10). The chart axis never goes above 500 %. |
+| 9 | Windows / macOS / Debian: look at the window's title bar. | No maximize button (Windows), green button without zoom / full screen (macOS). Double-clicking the title bar does not maximize. Win+Up (Windows) / window-manager maximize (Linux) does not maximize either (the window returns to its normal size). |
+| 10 | Drag the window's corner to make it as large as possible. | It stops at 80 % of the screen's usable width and height. It can still be made smaller down to 720 × 560 (less on a small screen). |
+| 11 | Move the window to a second screen with a different resolution (or change the resolution). | The limits follow the new screen (log: "Main window size limits for screen …"); a too-large window shrinks to 80 % of it. |

@@ -37,14 +37,17 @@ InputEvent key(int qtKey, bool repeat = false, InputEventType type = InputEventT
 }
 
 // Clock starts at 09:00:00 local time; max work 5 min, reset after 1 min.
+// The usage counts like the Break Timer's active work time (1.7.8): a pause
+// counts up to pauseAfterMs. The fixture uses 1 s so that "input every second"
+// gives round numbers (n seconds of use = n seconds counted).
 struct Fixture {
     FakeClock clock{QDateTime(QDate(2026, 3, 10), QTime(9, 0))};
     StatisticsCollector collector{clock};
     QList<StatisticsCollector::FinishedMinute> finished;
 
-    explicit Fixture(qint64 maxWorkMs = 5 * kMin, qint64 resetAfterMs = kMin)
+    explicit Fixture(qint64 maxWorkMs = 5 * kMin, qint64 resetAfterMs = kMin, qint64 pauseAfterMs = kSec)
     {
-        collector.setConfig({maxWorkMs, resetAfterMs});
+        collector.setConfig({maxWorkMs, resetAfterMs, pauseAfterMs});
     }
     void advance(qint64 ms)
     {
@@ -291,12 +294,12 @@ private slots:
         Fixture f; // max work 5 min, reset after 1 min
         f.use(kMin);
         QCOMPARE(f.lastPercent(), 20.0);
-        f.collector.setConfig({10 * kMin, kMin}); // "Break after working" changed to 10 min
+        f.collector.setConfig({10 * kMin, kMin, kSec}); // "Break after working" changed to 10 min
         QCOMPARE(f.collector.usagePercent(), 20.0); // no jump (1.7.6)
         f.use(kMin);
         QCOMPARE(f.finished[0].record.usagePercent, 20.0);
         QCOMPARE(f.lastPercent(), 40.0); // still the old 5-minute scale
-        f.collector.setConfig({kMin, kMin}); // lowered: no jump either
+        f.collector.setConfig({kMin, kMin, kSec}); // lowered: no jump either
         QCOMPARE(f.collector.usagePercent(), 40.0);
         // Usage restarts at 0 (pause of the break length): the new scale applies.
         f.idle(kMin);
@@ -308,7 +311,7 @@ private slots:
     void maxWorkChangeAppliesAtOnceWhileTheUsageIsZero()
     {
         Fixture f;
-        f.collector.setConfig({10 * kMin, kMin});
+        f.collector.setConfig({10 * kMin, kMin, kSec});
         f.use(kMin);
         QCOMPARE(f.lastPercent(), 10.0);
     }
@@ -318,13 +321,62 @@ private slots:
         Fixture f;
         f.use(4 * kMin);
         f.collector.onBreakEvent(BreakEvent::Shown);
-        f.use(kMin); // input while the break window is shown
-        QCOMPARE(f.lastPercent(), 100.0);
+        f.use(kMin); // input while the break window is shown does not count (1.7.8, like the work time)
+        QCOMPARE(f.lastPercent(), 80.0);
         f.collector.onBreakEvent(BreakEvent::Completed); // the break window closed by itself
         QCOMPARE(f.collector.usagePercent(), 0.0);
         f.use(3 * kSec);
         f.idle(kMin);
         QCOMPARE(f.lastPercent(), 1.0); // counting starts again from 0 (3 s of 300 s)
+    }
+
+    // 1.7.8: the usage counts time like the Break Timer's active work time.
+    void pausesCountUpToTheActivityPauseLikeTheWorkTime()
+    {
+        Fixture f(5 * kMin, 5 * kMin, 20 * kSec); // pause after 20 s
+        // One key press every 10 s for 5 minutes: the gaps count completely.
+        for (int i = 0; i < 30; ++i) {
+            f.collector.onInputEvent(key(Qt::Key_A));
+            f.advance(10 * kSec);
+        }
+        QCOMPARE(f.lastPercent(), 100.0); // 5 min of work time = 100 % (was 10 % before 1.7.8)
+        // A longer pause counts only 20 s, then the usage stands still.
+        f.collector.onInputEvent(key(Qt::Key_A));
+        f.advance(50 * kSec);
+        QCOMPARE(f.collector.usagePercent(), 100.0 + 20.0 * 100 / 300);
+        f.advance(60 * kSec);
+        QCOMPARE(f.collector.usagePercent(), 100.0 + 20.0 * 100 / 300);
+    }
+
+    void workCycleResetAppliesTheNewScale()
+    {
+        Fixture f; // 5 min
+        f.use(kMin);
+        f.collector.setConfig({10 * kMin, kMin, kSec});
+        QCOMPARE(f.collector.usagePercent(), 20.0); // no jump while the work cycle runs
+        f.collector.onWorkCycleReset(); // e.g. Dismiss or the Break Timer's idle reset
+        QCOMPARE(f.collector.scaleMaxWorkMs(), 10 * kMin);
+        QCOMPARE(f.collector.usagePercent(), 10.0); // same used time on the new scale
+        f.use(kMin);
+        QCOMPARE(f.lastPercent(), 20.0);
+    }
+
+    void aboveFiveHundredPercentResetsToZero()
+    {
+        Fixture f(kMin, 10 * kMin); // 100 % = 1 min
+        f.use(5 * kMin);
+        QCOMPARE(f.lastPercent(), 500.0); // exactly 500 %: kept
+        QVERIFY(!f.collector.takeCapReset());
+        f.use(2 * kSec);
+        QVERIFY(f.collector.takeCapReset()); // reported once
+        QVERIFY(!f.collector.takeCapReset());
+        QVERIFY(f.collector.usagePercent() < 5.0);
+        f.use(30 * kSec);
+        f.idle(kMin);
+        QVERIFY(f.lastPercent() <= 500.0);
+        QVERIFY(f.collector.usagePercent() < 60.0);
+        for (const auto &m : std::as_const(f.finished))
+            QVERIFY(m.record.usagePercent <= 500.0);
     }
 
     void dismissAndPostponeDoNotReset()
@@ -430,8 +482,10 @@ private slots:
         QCOMPARE(percentAxisMax(130), 150.0);
         QCOMPARE(percentAxisMax(260, &step), 300.0);
         QCOMPARE(step, 50.0);
-        QCOMPARE(percentAxisMax(612, &step), 700.0);
-        QCOMPARE(step, 100.0);
+        QCOMPARE(percentAxisMax(480, &step), 500.0);
+        QCOMPARE(step, 50.0);
+        QCOMPARE(percentAxisMax(612, &step), 500.0); // the usage never exceeds 500 % (1.7.8)
+        QCOMPARE(step, 50.0);
     }
 
     void niceCeilings()

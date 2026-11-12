@@ -1,12 +1,14 @@
 # Todo Items
 
 ## Open:
-- removing the accessibility permissions on MacOS while the app was running blocked the whole operationg system (no mouse or keyboard actions were being done at all anywhere). it was only resoted after I locked and un-locked the laptop.
-- do not allow maximizing the window. it should be prevented on all operating systems. allow resizing. calculate a acceptable minimum and maximum height and width for each screen size and apply that. It should not allow maximum size (width or heigth) beyond 80% of the screen size.
+- 
 
 
 ## Completed to verify:
-- 
+- removing the accessibility permissions on MacOS while the app was running blocked the whole operationg system (no mouse or keyboard actions were being done at all anywhere). it was only resoted after I locked and un-locked the laptop.
+- the computer usage chart is not scaling correctly. 0% should be when Active work time equals 0. 100% should be when "break after working" time is reached by the active work time timer. When the user changes the "brak after working" parameter the scale (what is considered 100%) should be modified when a new working period starts (Active work time is reset or immediatelly only if it is alredy zero). It should still go beyond 100% if the user does not take breaks. How or why the percentage increases or decreases should not be changed.
+- the computer usage chart should have a maximum of 500%. if the user ignores breaks when chart reaches more than 500%, the computer usage percentage is simply changed to zero percent. which would automatically make the next break window show at full "break after working" time.
+- do not allow maximizing the window. it should be prevented on all operating systems. allow resizing. calculate a acceptable minimum and maximum height and width for each screen size and apply that. It should not allow maximum size (width or heigth) beyond 80% of the screen size.
 
 ## Improvement and new features suggestions
 

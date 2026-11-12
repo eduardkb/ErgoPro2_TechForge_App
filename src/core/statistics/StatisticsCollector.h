@@ -20,19 +20,28 @@ namespace ergo {
 // second if it had either. A minute is finished when the clock has passed it;
 // only minutes with data are reported.
 //
-// Usage percent = active seconds since the last reset / (maxWorkMs / 1000) x 100.
+// Usage percent = used time since the last reset / maxWorkMs x 100 (1.7.8).
+// The used time is counted like the Break Timer's active work time: a pause
+// between two inputs counts up to pauseAfterMs, then the time stands still until
+// the next input; nothing counts while the break window is shown. So 100 % is
+// reached when the work time reaches "Break after working".
 // Reset to 0 after resetAfterMs without input (sleep, lock and the app not
-// running count as no input because the wall clock keeps running) and when a
-// break completes by itself (1.7.6). Dismiss/Postpone do not reset it, so it can
-// grow beyond 100 %. Midnight does not reset it. The maxWorkMs of the 100 %
-// scale is taken when the usage (re)starts at 0; a later change of the setting
-// applies only from the next reset, so the percent never jumps (1.7.6).
+// running count as no input because the wall clock keeps running), when a
+// break completes by itself (1.7.6) and when it goes above kMaxPercent (500 %,
+// 1.7.8). Dismiss/Postpone do not reset it, so it can grow beyond 100 %.
+// Midnight does not reset it. The maxWorkMs of the 100 % scale is taken when the
+// usage restarts at 0 and when the Break Timer's work cycle resets
+// (onWorkCycleReset(), 1.7.8).
 class StatisticsCollector {
 public:
     struct Config {
         qint64 maxWorkMs = 50 * 60000;   // BREAKTIMER_MAX_WORK_TIME
         qint64 resetAfterMs = 4 * 60000; // BREAKTIMER_BREAK_TIME
+        qint64 pauseAfterMs = 20000;     // BREAKTIMER_ACTIVITY_PAUSE
     };
+
+    // Above this the usage is set back to 0 % (1.7.8, owner request).
+    static constexpr double kMaxPercent = 500.0;
 
     struct FinishedMinute {
         QDate date;
@@ -41,8 +50,9 @@ public:
 
     explicit StatisticsCollector(const IClock &clock);
 
-    // resetAfterMs applies at once; maxWorkMs from the next usage reset (or at
-    // once while the usage is 0). Recorded minutes are not recalculated.
+    // resetAfterMs and pauseAfterMs apply at once; maxWorkMs from the next usage
+    // reset or work cycle reset (or at once while the usage is 0). Recorded
+    // minutes are not recalculated.
     void setConfig(const Config &config);
     const Config &config() const { return m_config; }
 
@@ -60,6 +70,13 @@ public:
     // Clicks made by ErgoPro2 (Auto Click, Key Control, Drag Lock press).
     void onClicksDoneForYou(int count);
     void onBreakEvent(BreakEvent event);
+    // The Break Timer's work cycle was reset (Active work time back to 0: idle
+    // reset, break over, Dismiss) or is 0 when the setting changes: the current
+    // maxWorkMs becomes the 100 % scale (1.7.8). The used time is kept, so the
+    // percent can change once.
+    void onWorkCycleReset();
+    // True once after the usage went above kMaxPercent and was reset to 0.
+    bool takeCapReset();
     // Sleep / screen lock: input is ignored until unlocked / resumed.
     void setLocked(bool locked) { m_locked = locked; }
 
@@ -85,6 +102,8 @@ private:
     void openMinuteAt(qint64 t);
     double percentAt(qint64 t) const;
     void resetUsage();
+    qint64 usedAt(qint64 t) const;
+    void checkCap(qint64 t);
 
     const IClock &m_clock;
     Config m_config;
@@ -106,9 +125,12 @@ private:
     bool m_secondKeyboard = false;
 
     // Usage percent.
-    qint64 m_usedSeconds = 0;
+    qint64 m_usedMs = 0;  // used time up to m_markMs
+    qint64 m_markMs = 0;  // last counted input; 0 = not counting (after a reset, on break)
     qint64 m_scaleMaxWorkMs = 50 * 60000;
-    qint64 m_lastInputMs = 0;
+    qint64 m_lastInputMs = 0; // for the reset after resetAfterMs
+    bool m_onBreak = false;
+    bool m_capReset = false;
 
     QPointF m_lastPosition;
     bool m_hasPosition = false;

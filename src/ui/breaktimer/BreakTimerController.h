@@ -58,6 +58,9 @@ signals:
     void breakWindowClosed();
     // Statistics (stage 7): BreakEvent (core/statistics/StatisticsTypes.h) as int.
     void breakEvent(int event);
+    // The work cycle was reset: Active work time is back to 0 (idle reset, break
+    // over, Dismiss, timer switched off). Used by the Statistics (1.7.8).
+    void workCycleReset();
 
 private:
     void applyConfig();

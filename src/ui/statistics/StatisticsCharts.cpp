@@ -163,7 +163,8 @@ QRectF UsageChart::plotRect() const
 
 double UsageChart::yFor(double percent, const QRectF &plot) const
 {
-    return plot.bottom() - percent / m_yMax * plot.height();
+    // Values above the axis (files from before 1.7.8) are drawn at the top.
+    return plot.bottom() - std::min(percent, m_yMax) / m_yMax * plot.height();
 }
 
 void UsageChart::paintEvent(QPaintEvent *)

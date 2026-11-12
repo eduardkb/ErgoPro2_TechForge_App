@@ -221,9 +221,37 @@ struct MacInputHook::State {
     KeySuppressionRegistry *suppression = nullptr;
     bool active = false;
     std::atomic<int> *selfRepairs = nullptr;
+    // 1.7.8: an active tap whose Accessibility permission is removed while it
+    // runs can block all mouse/keyboard input of the whole session. The hook
+    // thread checks the permission every second and removes the tap at once.
+    CFRunLoopTimerRef trustTimer = nullptr;
+    bool permissionLost = false; // hook thread only
 };
 
 namespace {
+
+constexpr CFTimeInterval kTrustCheckIntervalS = 1.0;
+
+// Hook thread: stops passing events through the tap immediately and ends the
+// run loop; start()'s thread then removes the tap and the hook reports
+// isRunning() == false (InputService notices it within a second).
+void dropTapAfterPermissionLoss(MacInputHook::State *s)
+{
+    if (s->permissionLost)
+        return;
+    s->permissionLost = true;
+    if (s->tap)
+        CGEventTapEnable(s->tap, false);
+    if (s->runLoop)
+        CFRunLoopStop(s->runLoop);
+}
+
+void trustTimerCallback(CFRunLoopTimerRef, void *info)
+{
+    auto *s = static_cast<MacInputHook::State *>(info);
+    if (s->active && !AXIsProcessTrusted())
+        dropTapAfterPermissionLoss(s);
+}
 
 // Runs on the hook thread for every event. Must stay fast: no logging I/O,
 // no allocation beyond the event copy, only the short suppression mutex.
@@ -234,6 +262,12 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef cgEvent, vo
     if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput) {
         // macOS disables taps whose callback was too slow or on secure input:
         // re-enable immediately (B.5.4). The watchdog logs the counter.
+        // Never re-enable an active tap without Accessibility (1.7.8): that
+        // can freeze all input of the session.
+        if (s->active && !AXIsProcessTrusted()) {
+            dropTapAfterPermissionLoss(s);
+            return cgEvent;
+        }
         if (s->tap)
             CGEventTapEnable(s->tap, true);
         s->selfRepairs->fetch_add(1);
@@ -377,13 +411,28 @@ PlatformResult MacInputHook::start(InputEventSink sink, KeySuppressionRegistry *
         s->runLoop = CFRunLoopGetCurrent();
         CFRetain(s->runLoop);
         CFRunLoopAddSource(s->runLoop, s->source, kCFRunLoopCommonModes);
+        if (s->active) {
+            CFRunLoopTimerContext context{0, s, nullptr, nullptr, nullptr};
+            s->trustTimer = CFRunLoopTimerCreate(kCFAllocatorDefault,
+                                                 CFAbsoluteTimeGetCurrent() + kTrustCheckIntervalS,
+                                                 kTrustCheckIntervalS, 0, 0, trustTimerCallback, &context);
+            CFRunLoopAddTimer(s->runLoop, s->trustTimer, kCFRunLoopCommonModes);
+        }
         CGEventTapEnable(s->tap, true);
         m_active.store(s->active);
         m_running.store(true);
         started.set_value(PlatformResult::success());
 
-        CFRunLoopRun(); // until stop() calls CFRunLoopStop
+        CFRunLoopRun(); // until stop() calls CFRunLoopStop (or the permission is lost)
 
+        if (s->trustTimer) {
+            CFRunLoopTimerInvalidate(s->trustTimer);
+            CFRelease(s->trustTimer);
+            s->trustTimer = nullptr;
+        }
+        if (s->permissionLost)
+            qCCritical(lcPlatform) << "Accessibility permission was removed while the event tap was active:"
+                                   << "tap removed at once so that mouse and keyboard keep working";
         CFRunLoopRemoveSource(s->runLoop, s->source, kCFRunLoopCommonModes);
         CGEventTapEnable(s->tap, false);
         CFMachPortInvalidate(s->tap);
@@ -426,6 +475,12 @@ bool MacInputHook::checkHealth()
         return false;
     if (!CFMachPortIsValid(m_state->tap))
         return false;
+    if (m_active.load() && !AXIsProcessTrusted()) {
+        // Do not re-enable an active tap without Accessibility (1.7.8); the
+        // hook thread removes it within a second.
+        qCWarning(lcPlatform) << "Accessibility permission missing: the active event tap must be removed";
+        return false;
+    }
     if (!CGEventTapIsEnabled(m_state->tap)) {
         CGEventTapEnable(m_state->tap, true);
         m_selfRepairs.fetch_add(1);

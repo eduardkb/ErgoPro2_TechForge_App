@@ -91,6 +91,10 @@ void StatisticsController::start()
     connect(&m_autoclick, &AutoClickController::clickPerformed, this, [this] { m_collector.onClicksDoneForYou(1); });
     connect(&m_keycontrol, &KeyControlController::clicksDoneForYou, this,
             [this](int count) { m_collector.onClicksDoneForYou(count); });
+    // A new work period (Active work time reset): a changed "Break after
+    // working" becomes the 100 % of the usage (1.7.8, owner request).
+    connect(&m_breaktimer, &BreakTimerController::workCycleReset, this,
+            [this] { applyNewScale("the active work time was reset"); });
     connect(&m_breaktimer, &BreakTimerController::breakEvent, this, [this](int event) {
         m_collector.onBreakEvent(BreakEvent(event));
         if (BreakEvent(event) == BreakEvent::Completed)
@@ -98,8 +102,13 @@ void StatisticsController::start()
         checkUsageLimit();
     });
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
-        if (key == BreakTimerSettings::MaxWorkMin || key == BreakTimerSettings::BreakMin)
+        if (key == BreakTimerSettings::MaxWorkMin || key == BreakTimerSettings::BreakMin
+            || key == BreakTimerSettings::ActivityPauseS) {
             applyConfig();
+            // Active work time is 0: the new "Break after working" is the 100 % at once (1.7.8).
+            if (key == BreakTimerSettings::MaxWorkMin && m_breaktimer.interactionMs() == 0)
+                applyNewScale("the active work time is 0");
+        }
         else if (key == StatisticsSettings::RetentionDays)
             // Applied at the next start or day change only, so moving the slider by
             // mistake deletes nothing (1.7.1, owner request).
@@ -146,11 +155,28 @@ void StatisticsController::applyConfig()
     StatisticsCollector::Config c;
     c.maxWorkMs = qint64(m_settings.intValue(BreakTimerSettings::MaxWorkMin)) * 60000;
     c.resetAfterMs = qint64(m_settings.intValue(BreakTimerSettings::BreakMin)) * 60000;
+    c.pauseAfterMs = qint64(m_settings.intValue(BreakTimerSettings::ActivityPauseS)) * 1000;
     m_collector.setConfig(c);
     qCInfo(lcApp) << "Statistics: usage 100 % =" << m_collector.scaleMaxWorkMs() / 60000
-                  << "min of use (setting:" << c.maxWorkMs / 60000
-                  << "min, applies when the usage restarts at 0), reset after" << c.resetAfterMs / 60000
-                  << "min without input or when a break completes";
+                  << "min of work time (setting:" << c.maxWorkMs / 60000
+                  << "min, applies at the next work period), pauses count up to" << c.pauseAfterMs / 1000
+                  << "s, reset after" << c.resetAfterMs / 60000
+                  << "min without input, when a break completes or above 500 %";
+}
+
+void StatisticsController::applyNewScale(const char *reason)
+{
+    const qint64 before = m_collector.scaleMaxWorkMs();
+    m_collector.onWorkCycleReset();
+    if (m_collector.scaleMaxWorkMs() != before) {
+        qCInfo(lcApp).noquote() << QStringLiteral("Statistics: usage 100 %% = %1 min (was %2 min) because %3; usage now %4 %%")
+                                       .arg(m_collector.scaleMaxWorkMs() / 60000)
+                                       .arg(before / 60000)
+                                       .arg(QString::fromLatin1(reason))
+                                       .arg(m_collector.usagePercent(), 0, 'f', 1);
+        emit todayChanged();
+    }
+    checkUsageLimit();
 }
 
 void StatisticsController::restore()
@@ -195,6 +221,9 @@ void StatisticsController::onTick()
 
 void StatisticsController::checkUsageLimit()
 {
+    if (m_collector.takeCapReset())
+        qCInfo(lcApp) << "Statistics: usage above" << StatisticsCollector::kMaxPercent
+                      << "% - reset to 0 % (breaks ignored); the next break comes after the full work time";
     const double percent = m_collector.usagePercent();
     const bool over = percent > 100.0;
     if (over == m_usageOverLimit)

@@ -19,7 +19,8 @@ HourRange hourRange(const DayStats &day)
 
 double percentAxisMax(double maxValue, double *step)
 {
-    const double top = std::max(100.0, maxValue);
+    // The usage never exceeds 500 % (1.7.8); older files may contain more.
+    const double top = std::clamp(maxValue, 100.0, kMaxUsagePercentAxis);
     const double s = top <= 200 ? 25.0 : top <= 500 ? 50.0 : 100.0;
     if (step)
         *step = s;

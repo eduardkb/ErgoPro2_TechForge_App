@@ -4,7 +4,9 @@
 
 #include <functional>
 
+class QScreen;
 class QTabWidget;
+class QWindow;
 
 namespace ergo {
 
@@ -39,12 +41,17 @@ signals:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private:
     void updateTabIcons();
+    // Min/max size for the usable area of 'screen' (B.1.1, 1.7.8).
+    void applySizeLimits(QScreen *screen);
 
     QTabWidget *m_tabs = nullptr;
     GeneralTab *m_general = nullptr;
+    QWindow *m_trackedWindow = nullptr;
+    QMetaObject::Connection m_screenConnection;
     bool m_hideToTray = true;
     bool m_exiting = false;
     std::function<bool()> m_sessionEnding;

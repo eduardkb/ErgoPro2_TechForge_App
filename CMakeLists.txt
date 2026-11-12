@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 #   - MAJOR stays 1.
 # ---------------------------------------------------------------------------
 project(ErgoPro2
-    VERSION 1.7.7
+    VERSION 1.7.8
     DESCRIPTION "Ergonomic helper: auto click, key control and break reminders"
     HOMEPAGE_URL "https://techforge.com/ergopro2"
     LANGUAGES CXX)

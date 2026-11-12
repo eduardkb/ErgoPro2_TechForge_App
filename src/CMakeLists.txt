@@ -21,6 +21,7 @@ add_library(ergopro2_core STATIC
     core/input/KeyCombo.cpp core/input/KeyCombo.h
     core/LocationClassifier.cpp core/LocationClassifier.h
     core/StartupMode.cpp core/StartupMode.h
+    core/WindowLimits.cpp core/WindowLimits.h
     core/statistics/ChartAxis.cpp core/statistics/ChartAxis.h
     core/statistics/StatisticsCollector.cpp core/statistics/StatisticsCollector.h
     core/statistics/StatisticsStore.cpp core/statistics/StatisticsStore.h

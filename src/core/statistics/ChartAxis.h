@@ -20,8 +20,9 @@ struct HourRange {
 // hours; an empty day shows 08:00-18:00.
 HourRange hourRange(const DayStats &day);
 
-// Top of the percent axis: at least 100, rounded up to a step of
-// percentAxisStep(). Returns the step through *step if given.
+// Top of the percent axis: at least 100, at most kMaxUsagePercentAxis (500,
+// 1.7.8), rounded up to the step. Returns the step through *step if given.
+constexpr double kMaxUsagePercentAxis = 500.0;
 double percentAxisMax(double maxValue, double *step = nullptr);
 
 // "Nice" upper bound for a bar chart scale (1, 2, 5 x 10^n), at least 1.

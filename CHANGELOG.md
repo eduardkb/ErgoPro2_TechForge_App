@@ -5,6 +5,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.8] - 2026-11-12
+
+Bug fix and owner-requested changes (specification updated: B.1.1, B.5.4, B.8.2, B.8.3).
+
+### Fixed
+- **macOS: removing the Accessibility permission while ErgoPro2 was running froze the whole computer** (no mouse
+  or keyboard input anywhere until the screen was locked and unlocked). ErgoPro2 now notices within a second that
+  the permission is gone, removes its event tap at once and shows the "permission missing" banners; it starts
+  again by itself when the permission is granted again. Cause: the active event tap stayed installed (and was
+  even re-enabled) after the permission was removed; only the reinstall at unlock removed it.
+
+### Changed
+- **Computer usage % now follows the Break Timer's active work time:** 0 % = no work time, 100 % = the active
+  work time reached *Break after working* (short pauses count the same way as on the Break Timer tab; nothing
+  counts while the break window is shown). Before, only seconds with input counted, so the break window
+  appeared at e.g. 70 %. Resets (pause as long as the break, completed break) and Dismiss/Postpone (keeps
+  growing beyond 100 %) work as before.
+- **A changed *Break after working* becomes the new 100 % when a new work period starts** (active work time
+  reset: idle reset, break completed, Dismiss) or immediately if the active work time is 0.
+- **Maximum 500 %:** if breaks are ignored until the usage goes above 500 %, it is set back to 0 % – breaks then
+  come after the full *Break after working* time again. The usage chart's axis stops at 500 %.
+- **Main window:** can no longer be maximized or made full screen (all OSes); it can still be resized, up to
+  80 % of the screen's usable width/height (minimum 720 × 560, smaller on small screens).
+- Tests: 3 new / 2 adapted Statistics tests, new `tst_windowlimits` (18 test programs).
+
 ## [1.7.7] - 2026-11-11
 
 Owner-requested change (specification B.2 updated).

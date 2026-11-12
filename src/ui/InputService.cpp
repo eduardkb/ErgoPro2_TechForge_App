@@ -22,6 +22,8 @@ InputService::InputService(Platform &platform, FeatureAvailabilityService &avail
     connect(&m_dispatcher, &InputDispatcher::inputEvent, this, &InputService::onEvent);
     m_watchdogTimer.setInterval(m_watchdog.config().checkIntervalMs);
     connect(&m_watchdogTimer, &QTimer::timeout, this, &InputService::runHealthCheck);
+    m_stoppedCheckTimer.setInterval(1000);
+    connect(&m_stoppedCheckTimer, &QTimer::timeout, this, &InputService::checkHookStopped);
     // Start the hook as soon as the user grants the missing permissions.
     connect(&m_availability, &FeatureAvailabilityService::changed, this, [this] {
         if (m_started && !m_platform.inputHook->isRunning() && !m_availability.anyOsPermissionMissing())
@@ -53,6 +55,8 @@ void InputService::start()
     else
         tryStartHook("application start");
     m_watchdogTimer.start();
+    m_hookWasRunning = m_platform.inputHook->isRunning();
+    m_stoppedCheckTimer.start();
 }
 
 void InputService::stop()
@@ -60,6 +64,7 @@ void InputService::stop()
     if (!m_started)
         return;
     m_watchdogTimer.stop();
+    m_stoppedCheckTimer.stop();
     m_platform.powerEvents->stop();
     m_platform.inputHook->stop();
     m_started = false;
@@ -104,6 +109,25 @@ void InputService::reinstall(const char *reason)
         updateAvailability(m_lastError.isEmpty() ? tr("The input hook keeps failing.") : m_lastError);
     }
     emit statusChanged();
+}
+
+void InputService::checkHookStopped()
+{
+    const bool running = m_platform.inputHook->isRunning();
+    const bool stoppedByItself = m_started && !m_starting && m_hookWasRunning && !running;
+    m_hookWasRunning = running;
+    if (!stoppedByItself)
+        return;
+    qCCritical(lcPlatform) << "Input hook stopped by itself (e.g. an OS permission was removed); re-reading permissions";
+    m_availability.refresh(); // shows the banners when a permission is missing
+    if (m_availability.anyOsPermissionMissing()) {
+        qCWarning(lcPlatform) << "Input hook waits for the missing OS permissions";
+        updateAvailability(tr("An OS permission was removed. Grant it again to use this function."));
+        emit statusChanged();
+        return;
+    }
+    reinstall("the hook stopped by itself");
+    m_hookWasRunning = m_platform.inputHook->isRunning();
 }
 
 void InputService::runHealthCheck()

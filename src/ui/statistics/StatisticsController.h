@@ -64,6 +64,7 @@ private:
     void cleanup(const char *reason);
     void restore();
     void checkUsageLimit();
+    void applyNewScale(const char *reason);
 
     SettingsStore &m_settings;
     FeatureAvailabilityService &m_availability;

@@ -234,6 +234,8 @@ void BreakTimerController::sync()
             emit breakEvent(int(BreakEvent::Completed));
         if (wasBreak)
             m_closedByUser = false;
+        if (s == BreakTimerEngine::State::WaitingForActivity || s == BreakTimerEngine::State::Disabled)
+            emit workCycleReset();
     }
     if (s == BreakTimerEngine::State::BreakShown && m_windows)
         m_windows->setRemaining(m_engine.breakRemainingMs());
