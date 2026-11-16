@@ -15,8 +15,8 @@ class SettingsStore;
 class StatisticsController;
 class UsageChart;
 
-// "Statistics" tab content (B.8.3): date header, usage chart, activity chart,
-// daily totals, day navigation and the options card. The availability banner
+// "Statistics" tab content (B.8.3): fixed top bar (date + day navigation), one
+// card with the usage chart, activity chart and day totals, and the options card. The availability banner
 // is added around it by FeaturePage.
 class StatisticsTab : public QWidget {
     Q_OBJECT
@@ -35,7 +35,6 @@ private:
     bool m_followToday = true; // the shown day is "today" and moves on at midnight
 
     QLabel *m_title = nullptr;
-    QLabel *m_subtitle = nullptr;
     UsageChart *m_usage = nullptr;
     ActivityChart *m_activity = nullptr;
     QList<QLabel *> m_values;

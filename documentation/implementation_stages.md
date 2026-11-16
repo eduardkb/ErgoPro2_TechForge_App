@@ -333,8 +333,8 @@ Owner description (stage 7 request) with the owner's answers to the clarificatio
 - Recorded **per minute**: the value at the end of each minute (minutes without data are empty, not 0).
 
 ### B.8.3 Statistics tab
-Layout from top to bottom (scrollable, card style of B.1.1, light and dark mode):
-1. **Header:** the shown date (e.g. "Tuesday, 10 November 2026", "Today" when it is today).
+Layout from top to bottom (card style of B.1.1, light and dark mode). Redesigned in 1.7.9 (owner request): the date and the day navigation are a **fixed bar at the top** (they do not scroll); below it the page scrolls. The three day sections (charts 1 and 2, daily totals) are **one card**, each section with a short title only (no descriptions), separated by thin divider lines. No explanatory texts on the tab apart from the chart legend.
+1. **Header (fixed):** the shown date (e.g. "Tuesday, 10 November 2026", "Today – …" when it is today), directly below it the **slim day navigation buttons** (item 5).
 2. **Chart 1 – Computer usage percent:** line chart, one point per minute.
    - x axis = time of day; shows the hours from the first to the last recorded minute of the day, rounded out to whole hours (empty day: 08:00–18:00 with "No data for this day"); hour labels.
    - y axis = percent, starts at 0, auto-scales to the day's maximum but always shows at least 0–100 % and at most 0–500 % (1.7.8; older values above 500 % are drawn at the top); a highlighted reference line at 100 %.
@@ -343,8 +343,8 @@ Layout from top to bottom (scrollable, card style of B.1.1, light and dark mode)
    - Hover tooltip: time, percent, and the event if any.
 3. **Chart 2 – Activity:** three thin bar charts stacked on the **same** time axis as chart 1, in **5-minute buckets**: mouse clicks, key presses, mouse distance. Each has its own y scale and label; distinct colors from the accent palette; hover tooltip with the exact values of the bucket.
 4. **Daily totals** (grid of value tiles): mouse clicks (with left/right/other), clicks done for you, key presses, wheel events, mouse distance (cm/m), mouse usage time, keyboard usage time, total active computer time (all `h:mm:ss`), highest usage percent of the day.
-5. **Day navigation:** **‹ Previous day**, **Next day ›**, **Today**. Previous/next jump to the nearest day **that has a statistics file** (days without a file are skipped); buttons are disabled when there is no such day; Today is disabled when today is shown. Today's view updates live once per minute; past days are read-only.
-6. **Options card:** "Open statistics folder" button, then the setting **Keep statistics for** 1–360 days (default 90, slider + spin box).
+5. **Day navigation** (in the fixed header, 1.7.9): **‹ Previous day**, **Today**, **Next day ›** (slim buttons). Previous/next jump to the nearest day **that has a statistics file** (days without a file are skipped); buttons are disabled when there is no such day; Today is disabled when today is shown. Today's view updates live once per minute; past days are read-only.
+6. **Options card** (separate card below the day card): the statistics folder with an "Open statistics folder" button, then the setting **Keep statistics for** 1–360 days (default 90, slider + spin box).
 - No on/off switch: statistics are always recorded. The tab shows the usual availability banner when the input hook does not run (B.1.4).
 - Charts are drawn with the app's own `QPainter` widgets (no Qt Charts dependency).
 

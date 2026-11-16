@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.7.9] - 2026-11-16
+
+Owner-requested change (specification B.8.3 updated).
+
+### Changed
+- **Statistics tab redesign:**
+  - The date and the **‹ Previous day / Today / Next day ›** buttons are now at the top and stay visible while
+    scrolling. The buttons are slimmer.
+  - *Computer usage*, *Activity* and *Day totals* are now one card (they always show the same day), separated by
+    thin lines.
+  - The long descriptions were removed: only a title per section (plus the chart legend). Also removed: the
+    "Live – updated every minute" line, the privacy note under the totals and the hint under *Keep statistics
+    for*.
+  - The *Options* card stays at the bottom.
+
 ## [1.7.8] - 2026-11-12
 
 Bug fix and owner-requested changes (specification updated: B.1.1, B.5.4, B.8.2, B.8.3).

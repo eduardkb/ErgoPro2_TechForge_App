@@ -52,13 +52,47 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     , m_controller(controller)
     , m_settings(settings)
 {
+    // 1.7.9 (owner request): the date and the day navigation are fixed at the
+    // top; the three day sections share one card below them; titles only.
     auto *pageLayout = new QVBoxLayout(this);
     pageLayout->setContentsMargins(0, 0, 0, 0);
+    pageLayout->setSpacing(0);
+
+    // --- 1. fixed top bar: date, then slim navigation buttons
+    auto *topBar = new QWidget(this);
+    auto *top = new QVBoxLayout(topBar);
+    top->setContentsMargins(4, 10, 4, 10);
+    top->setSpacing(6);
+    m_title = new QLabel(topBar);
+    m_title->setObjectName(QStringLiteral("cardTitle"));
+    QFont titleFont = m_title->font();
+    titleFont.setPointSizeF(titleFont.pointSizeF() * 1.25);
+    m_title->setFont(titleFont);
+    top->addWidget(m_title);
+    auto *nav = new QHBoxLayout;
+    nav->setSpacing(6);
+    m_previous = navButton(tr("‹ Previous day"), topBar);
+    m_today = navButton(tr("Today"), topBar);
+    m_next = navButton(tr("Next day ›"), topBar);
+    m_today->setProperty("variant", QStringLiteral("primary"));
+    for (QPushButton *b : {m_previous, m_today, m_next}) {
+        b->setProperty("size", QStringLiteral("slim"));
+        nav->addWidget(b);
+    }
+    nav->addStretch(1);
+    top->addLayout(nav);
+    pageLayout->addWidget(topBar);
+    auto *topLine = new QFrame(this);
+    topLine->setObjectName(QStringLiteral("sectionDivider"));
+    topLine->setFrameShape(QFrame::NoFrame);
+    topLine->setFixedHeight(1);
+    pageLayout->addWidget(topLine);
+
     auto *scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    pageLayout->addWidget(scroll);
+    pageLayout->addWidget(scroll, 1);
     auto *content = new QWidget(scroll);
     content->setObjectName(QStringLiteral("scrollContent"));
     scroll->setWidget(content);
@@ -66,55 +100,50 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     layout->setContentsMargins(0, 12, 0, 20);
     layout->setSpacing(16);
 
-    // --- 1. date header
-    auto *header = new QVBoxLayout;
-    header->setContentsMargins(4, 0, 4, 0);
-    header->setSpacing(2);
-    m_title = new QLabel(content);
-    m_title->setObjectName(QStringLiteral("cardTitle"));
-    QFont titleFont = m_title->font();
-    titleFont.setPointSizeF(titleFont.pointSizeF() * 1.25);
-    m_title->setFont(titleFont);
-    m_subtitle = new QLabel(content);
-    m_subtitle->setObjectName(QStringLiteral("hint"));
-    header->addWidget(m_title);
-    header->addWidget(m_subtitle);
-    layout->addLayout(header);
+    // --- 2. one card with the three sections of the shown day
+    auto *dayCard = new QFrame(content);
+    dayCard->setObjectName(QStringLiteral("card"));
+    dayCard->setAttribute(Qt::WA_StyledBackground, true);
+    auto *day = new QVBoxLayout(dayCard);
+    day->setContentsMargins(20, 16, 20, 18);
+    day->setSpacing(10);
+    const auto addSection = [&](const QString &title, bool divider) {
+        if (divider) {
+            auto *line = new QFrame(dayCard);
+            line->setObjectName(QStringLiteral("sectionDivider"));
+            line->setFrameShape(QFrame::NoFrame);
+            line->setFixedHeight(1);
+            day->addSpacing(6);
+            day->addWidget(line);
+            day->addSpacing(6);
+        }
+        auto *label = new QLabel(title, dayCard);
+        label->setObjectName(QStringLiteral("cardTitle"));
+        day->addWidget(label);
+    };
 
-    // --- 2. chart 1
-    auto *usageCard = new CardWidget(
-        tr("Computer usage"),
-        tr("100 % = the active work time reached “Break after working” (time is counted as on the Break Timer "
-           "tab). It keeps growing when a break is dismissed or postponed (breaks then come after half the "
-           "time) and goes back to 0 % when a break is completed, after a pause as long as the break length "
-           "and above 500 %. A changed “Break after working” applies when the active work time starts "
-           "again from 0."),
-        content);
-    m_usage = new UsageChart(usageCard);
-    usageCard->contentLayout()->addWidget(m_usage);
+    // 2a. computer usage chart + legend
+    addSection(tr("Computer usage"), false);
+    m_usage = new UsageChart(dayCard);
+    day->addWidget(m_usage);
     QStringList legend;
     for (BreakEvent e : {BreakEvent::Shown, BreakEvent::Dismissed, BreakEvent::Postponed, BreakEvent::Completed}) {
         const QString names[] = {tr("break shown"), tr("dismissed"), tr("postponed"), tr("completed")};
         legend << QStringLiteral("<span style=\"color:%1; font-weight:600\">%2</span> %3")
                       .arg(UsageChart::markerColor(e).name(), UsageChart::markerGlyph(e), names[int(e)]);
     }
-    auto *legendLabel = new QLabel(legend.join(QStringLiteral("&nbsp;&nbsp;&nbsp;")), usageCard);
+    auto *legendLabel = new QLabel(legend.join(QStringLiteral("&nbsp;&nbsp;&nbsp;")), dayCard);
     legendLabel->setObjectName(QStringLiteral("hint"));
     legendLabel->setTextFormat(Qt::RichText);
-    usageCard->contentLayout()->addWidget(legendLabel);
-    layout->addWidget(usageCard);
+    day->addWidget(legendLabel);
 
-    // --- 3. chart 2
-    auto *activityCard = new CardWidget(tr("Activity"),
-                                        tr("Mouse clicks, key presses and mouse distance in 5-minute steps. Point "
-                                           "at a bar for the exact values."),
-                                        content);
-    m_activity = new ActivityChart(activityCard);
-    activityCard->contentLayout()->addWidget(m_activity);
-    layout->addWidget(activityCard);
+    // 2b. activity chart
+    addSection(tr("Activity"), true);
+    m_activity = new ActivityChart(dayCard);
+    day->addWidget(m_activity);
 
-    // --- 4. daily totals
-    auto *totals = new CardWidget(tr("Day totals"), {}, content);
+    // 2c. day totals
+    addSection(tr("Day totals"), true);
     auto *grid = new QGridLayout;
     grid->setHorizontalSpacing(24);
     grid->setVerticalSpacing(12);
@@ -126,9 +155,9 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     for (int i = 0; i < TileCount; ++i) {
         auto *tile = new QVBoxLayout;
         tile->setSpacing(2);
-        auto *name = new QLabel(names[i], totals);
+        auto *name = new QLabel(names[i], dayCard);
         name->setObjectName(QStringLiteral("hint"));
-        auto *value = new QLabel(QStringLiteral("–"), totals);
+        auto *value = new QLabel(QStringLiteral("–"), dayCard);
         value->setObjectName(QStringLiteral("cardTitle"));
         value->setTextInteractionFlags(Qt::TextSelectableByMouse);
         tile->addWidget(name);
@@ -138,30 +167,10 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     }
     for (int col = 0; col < 3; ++col)
         grid->setColumnStretch(col, 1);
-    totals->contentLayout()->addLayout(grid);
-    auto *note = new QLabel(tr("Only counts and times are recorded – never which keys you pressed or where you "
-                               "clicked. Mouse distance is approximate (screen size). Mouse and keyboard use can add "
-                               "up to more than the total when both are used in the same second."),
-                            totals);
-    note->setObjectName(QStringLiteral("hint"));
-    note->setWordWrap(true);
-    totals->contentLayout()->addWidget(note);
-    layout->addWidget(totals);
+    day->addLayout(grid);
+    layout->addWidget(dayCard);
 
-    // --- 5. day navigation (end of the daily section)
-    auto *nav = new QHBoxLayout;
-    m_previous = navButton(tr("‹ Previous day"), content);
-    m_today = navButton(tr("Today"), content);
-    m_next = navButton(tr("Next day ›"), content);
-    m_today->setProperty("variant", QStringLiteral("primary"));
-    nav->addStretch(1);
-    nav->addWidget(m_previous);
-    nav->addWidget(m_today);
-    nav->addWidget(m_next);
-    nav->addStretch(1);
-    layout->addLayout(nav);
-
-    // --- 6. options
+    // --- 3. options
     namespace SS = StatisticsSettings;
     auto *options = new CardWidget(tr("Options"), {}, content);
     auto *folderRow = new QHBoxLayout;
@@ -176,7 +185,6 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     options->contentLayout()->addLayout(folderRow);
     m_retention = new ParameterRow(tr("Keep statistics for"), SS::kRetentionMin, SS::kRetentionMax, tr("days"),
                                    options);
-    m_retention->setHint(tr("One file per day. Older files are deleted when ErgoPro2 starts and once a day."));
     m_retention->setValue(m_settings.intValue(SS::RetentionDays));
     options->contentLayout()->addWidget(m_retention);
     layout->addWidget(options);
@@ -228,7 +236,6 @@ void StatisticsTab::refresh()
     const bool isToday = m_date == m_controller.today();
     m_title->setText(isToday ? tr("Today – %1").arg(QLocale().toString(m_date, QLocale::LongFormat))
                              : QLocale().toString(m_date, QLocale::LongFormat));
-    m_subtitle->setText(isToday ? tr("Live – updated every minute.") : tr("Saved statistics (read-only)."));
 
     const HourRange range = hourRange(day);
     m_usage->setDay(day, range);

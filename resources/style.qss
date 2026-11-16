@@ -268,6 +268,17 @@ QPushButton[variant="primary"]:disabled, QPushButton[variant="danger"]:disabled 
     border: 1px solid @border@;
 }
 
+/* Slim buttons (Statistics day navigation, 1.7.9) */
+QPushButton[size="slim"] {
+    padding: 3px 12px;
+}
+
+/* Thin line between sections (Statistics, 1.7.9) */
+QFrame#sectionDivider {
+    background: @border@;
+    border: none;
+}
+
 /* ---------- Inputs ---------- */
 
 QComboBox, QSpinBox, QLineEdit {

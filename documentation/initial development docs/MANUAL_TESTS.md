@@ -720,3 +720,14 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 9 | Windows / macOS / Debian: look at the window's title bar. | No maximize button (Windows), green button without zoom / full screen (macOS). Double-clicking the title bar does not maximize. Win+Up (Windows) / window-manager maximize (Linux) does not maximize either (the window returns to its normal size). |
 | 10 | Drag the window's corner to make it as large as possible. | It stops at 80 % of the screen's usable width and height. It can still be made smaller down to 720 × 560 (less on a small screen). |
 | 11 | Move the window to a second screen with a different resolution (or change the resolution). | The limits follow the new screen (log: "Main window size limits for screen …"); a too-large window shrinks to 80 % of it. |
+
+## Bug fix – v1.7.9
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All 18 test programs pass. |
+| 2 | Open the Statistics tab. | Top: the date ("Today – …"), directly below it slim **‹ Previous day**, **Today**, **Next day ›** buttons. Below: one card with *Computer usage* (chart + legend), a thin line, *Activity*, a thin line, *Day totals*. Then the *Options* card. No description texts except the chart legend. |
+| 3 | Scroll down to the *Options* card. | The date and the three buttons stay visible at the top; only the cards scroll. |
+| 4 | Click *‹ Previous day*, *Next day ›*, *Today*. | The date and all three sections change together; buttons are disabled as before (no earlier/later day, Today while today is shown). |
+| 5 | Switch the OS between light and dark mode. | Divider lines, buttons and cards are readable in both. |
+| 6 | Make the window as small as possible. | The buttons and the date stay fully visible; the charts are not cut off horizontally. |
