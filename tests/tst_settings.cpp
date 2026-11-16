@@ -1,8 +1,11 @@
 #include "core/settings/AutoClickSettings.h"
+#include "core/settings/BreakTimerSettings.h"
 #include "core/settings/GeneralSettings.h"
+#include "core/settings/KeyControlSettings.h"
 #include "core/settings/SettingsRegistry.h"
 #include "core/settings/SettingsSchema.h"
 #include "core/settings/SettingsStore.h"
+#include "core/settings/StatisticsSettings.h"
 
 #include <QDir>
 #include <QFile>
@@ -68,6 +71,63 @@ private slots:
         QVERIFY(!SettingsSchema::validate(*jitter, 0));
         QVERIFY(!SettingsSchema::validate(*jitter, 11));
         QCOMPARE(m_schema.find(AutoClickSettings::Enabled)->defaultValue.toBool(), false);
+    }
+
+    // 1.8.0 (requirements trace G-a1): defaults and ranges of the Break Timer,
+    // Drag Lock and Statistics keys (B.2; ranges changed in 1.7.6 / 1.7.7).
+    void integerRanges_data()
+    {
+        QTest::addColumn<QString>("key");
+        QTest::addColumn<int>("minimum");
+        QTest::addColumn<int>("maximum");
+        QTest::addColumn<int>("defaultValue");
+        namespace BT = BreakTimerSettings;
+        QTest::newRow("break after working") << BT::MaxWorkMin << 20 << 120 << 50;
+        QTest::newRow("reset after a pause") << BT::IdleResetMin << 2 << 15 << 5;
+        QTest::newRow("break length") << BT::BreakMin << 3 << 15 << 4;
+        QTest::newRow("postpone") << BT::PostponeMin << 3 << 20 << 10;
+        QTest::newRow("activity pause") << BT::ActivityPauseS << 5 << 60 << 20;
+        QTest::newRow("drag lock timeout") << KeyControlSettings::DragLockTimeoutS << 1 << 60 << 10;
+        QTest::newRow("statistics retention") << StatisticsSettings::RetentionDays << 1 << 360 << 90;
+    }
+
+    void integerRanges()
+    {
+        QFETCH(QString, key);
+        QFETCH(int, minimum);
+        QFETCH(int, maximum);
+        QFETCH(int, defaultValue);
+        const SettingDefinition *def = m_schema.find(key);
+        QVERIFY2(def, qPrintable(key));
+        QCOMPARE(def->defaultValue.toInt(), defaultValue);
+        QVERIFY(SettingsSchema::validate(*def, minimum));
+        QVERIFY(SettingsSchema::validate(*def, maximum));
+        QVERIFY(!SettingsSchema::validate(*def, minimum - 1));
+        QVERIFY(!SettingsSchema::validate(*def, maximum + 1));
+
+        // A stored value outside the range is replaced by the default at load.
+        QTemporaryDir dir;
+        const QString path = QDir(dir.path()).filePath(QStringLiteral("settings.json"));
+        const QStringList parts = key.split(QLatin1Char('.'));
+        QJsonObject section;
+        section.insert(parts.at(1), maximum + 1);
+        QJsonObject root;
+        root.insert(QStringLiteral("schemaVersion"), 1);
+        root.insert(parts.at(0), section);
+        writeRaw(path, QJsonDocument(root).toJson());
+        SettingsStore store(m_schema, path);
+        const SettingsLoadResult result = store.load();
+        QCOMPARE(result.invalidValues, 1);
+        QCOMPARE(store.intValue(key), defaultValue);
+    }
+
+    void booleanDefaults()
+    {
+        const SettingDefinition *enabled = m_schema.find(BreakTimerSettings::Enabled);
+        const SettingDefinition *fullscreen = m_schema.find(BreakTimerSettings::SuppressWhenFullscreen);
+        QVERIFY(enabled && fullscreen);
+        QCOMPARE(enabled->defaultValue.toBool(), true);
+        QCOMPARE(fullscreen->defaultValue.toBool(), false);
     }
 
     void startupModeSettings()

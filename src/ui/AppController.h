@@ -45,6 +45,9 @@ public slots:
     void showMainWindow();
     void hideMainWindowToTray();
     void exitApplication();
+    // Stops every feature, writes the statistics and saves the settings. Safe to
+    // call more than once (Exit, aboutToQuit, after exec(), destructor).
+    void shutdownAll(const char *reason);
     // Starts 'executable' as a new process (after releasing the single-instance
     // lock) and exits this one. Used by "Restart" and after Install.
     void relaunch(const QString &executable);
@@ -77,6 +80,7 @@ private:
     QPointer<PermissionsDialog> m_permissionsDialog;
     QTimer m_maintenanceTimer;
     bool m_exiting = false;
+    bool m_shutDown = false;
 };
 
 } // namespace ergo

@@ -76,6 +76,7 @@ private:
     StatisticsCollector m_collector;
     StatisticsStore m_store;
     QTimer m_tick;
+    QList<StatisticsCollector::FinishedMinute> m_unsaved; // write failed, retried
     QDate m_lastDate;
     bool m_started = false;
     bool m_writeFailing = false;

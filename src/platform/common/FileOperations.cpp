@@ -57,8 +57,8 @@ PlatformResult copyDirectory(const QString &source, const QString &destination)
             ok = QDir().mkpath(target);
         } else {
             ok = QFile::copy(info.filePath(), target);
-            if (ok)
-                QFile::setPermissions(target, info.permissions());
+            if (ok && !QFile::setPermissions(target, info.permissions()))
+                qCWarning(lcPlatform).noquote() << "Cannot copy the permissions of" << QDir::toNativeSeparators(target);
         }
         if (!ok) {
             const QString message = QCoreApplication::translate("ergo::fileops", "Cannot copy '%1' to '%2'.")
@@ -81,9 +81,13 @@ PlatformResult copyFile(const QString &source, const QString &destination, bool 
         qCCritical(lcPlatform).noquote() << message;
         return PlatformResult::failed(message);
     }
-    if (executable) {
-        QFile::setPermissions(destination, QFile::permissions(destination) | QFileDevice::ExeOwner
-                                               | QFileDevice::ExeUser | QFileDevice::ExeGroup | QFileDevice::ExeOther);
+    if (executable && !QFile::setPermissions(destination, QFile::permissions(destination) | QFileDevice::ExeOwner
+                                                              | QFileDevice::ExeUser | QFileDevice::ExeGroup
+                                                              | QFileDevice::ExeOther)) {
+        const QString message = QCoreApplication::translate("ergo::fileops", "Cannot make '%1' executable.")
+                                    .arg(QDir::toNativeSeparators(destination));
+        qCCritical(lcPlatform).noquote() << message;
+        return PlatformResult::failed(message);
     }
     return PlatformResult::success();
 }
@@ -107,9 +111,13 @@ PlatformResult writeTextFile(const QString &path, const QString &content, bool e
         qCCritical(lcPlatform).noquote() << message;
         return PlatformResult::failed(message);
     }
-    if (executable) {
-        QFile::setPermissions(path, QFile::permissions(path) | QFileDevice::ExeOwner | QFileDevice::ExeUser
-                                        | QFileDevice::ExeGroup | QFileDevice::ExeOther);
+    if (executable && !QFile::setPermissions(path, QFile::permissions(path) | QFileDevice::ExeOwner
+                                                       | QFileDevice::ExeUser | QFileDevice::ExeGroup
+                                                       | QFileDevice::ExeOther)) {
+        const QString message = QCoreApplication::translate("ergo::fileops", "Cannot make '%1' executable.")
+                                    .arg(QDir::toNativeSeparators(path));
+        qCCritical(lcPlatform).noquote() << message;
+        return PlatformResult::failed(message);
     }
     return PlatformResult::success();
 }

@@ -43,16 +43,27 @@ AppController::AppController(SettingsStore &settings, Logger &logger, Platform &
 
 AppController::~AppController()
 {
+    shutdownAll("controller destroyed");
+}
+
+void AppController::shutdownAll(const char *reason)
+{
+    if (m_shutDown)
+        return;
+    m_shutDown = true;
+    qCInfo(lcApp) << "Shutting down:" << reason;
     if (m_statistics)
-        m_statistics->shutdown();
+        m_statistics->shutdown(); // writes the current minute
     if (m_breaktimer)
         m_breaktimer->shutdown();
     if (m_keycontrol)
-        m_keycontrol->shutdown();
+        m_keycontrol->shutdown(); // release all hotkeys (and a held drag lock)
     if (m_autoclick)
         m_autoclick->shutdown();
     if (m_input)
-        m_input->stop();
+        m_input->stop(); // release hooks and key grabs
+    if (!m_settings.saveNow())
+        qCCritical(lcApp) << "Settings could not be saved on shutdown";
 }
 
 void AppController::start(const SettingsLoadResult &loadResult)
@@ -106,6 +117,10 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(&m_instance, &SingleInstance::activationRequested, this, &AppController::showMainWindow);
     // "ErgoPro2 --quit" from the Windows setup / uninstaller (1.7.4).
     connect(&m_instance, &SingleInstance::quitRequested, this, &AppController::exitApplication);
+    // OS logout / shutdown: Qt emits aboutToQuit and the process may then be
+    // ended without returning from exec() (Windows WM_ENDSESSION). Save and
+    // release everything there (1.8.0).
+    connect(qApp, &QCoreApplication::aboutToQuit, this, [this] { shutdownAll("application is quitting"); });
 
     m_maintenanceTimer.setInterval(kMaintenanceIntervalMs);
     connect(&m_maintenanceTimer, &QTimer::timeout, this, [this] {
@@ -202,18 +217,7 @@ void AppController::exitApplication()
         return;
     m_exiting = true;
     qCInfo(lcApp) << "Exit requested by the user";
-    if (m_statistics)
-        m_statistics->shutdown(); // writes the current minute
-    if (m_breaktimer)
-        m_breaktimer->shutdown();
-    if (m_keycontrol)
-        m_keycontrol->shutdown(); // release all hotkeys
-    if (m_autoclick)
-        m_autoclick->shutdown();
-    if (m_input)
-        m_input->stop(); // release hooks and key grabs before quitting
-    if (!m_settings.saveNow())
-        qCCritical(lcApp) << "Settings could not be saved before exit";
+    shutdownAll("exit requested");
     if (m_window) {
         m_window->setExiting(true);
         m_window->close();
@@ -322,6 +326,11 @@ void AppController::reportSettingsLoad(const SettingsLoadResult &result)
 
 void AppController::showError(const QString &title, const QString &message)
 {
+    if (m_exiting || m_shutDown) {
+        // No modal dialog while quitting: it could block the exit or an OS logout.
+        qCWarning(lcUi).noquote() << "Not shown (shutting down):" << title << "-" << message;
+        return;
+    }
     qCWarning(lcUi).noquote() << "Shown to user:" << title << "-" << message;
     QMessageBox::warning(m_window && m_window->isVisible() ? m_window.get() : nullptr, title, message);
 }

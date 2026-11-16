@@ -102,9 +102,9 @@ QList<PermissionState> MacPermissions::check() const
         if (!problem.isEmpty()) {
             accessibility.howToGrant +=
                 QLatin1Char(' ')
-                + tr("If it is already on: macOS cannot match it to this copy of ErgoPro2 because %1. Sign the "
-                     "app (documentation/BUILD.md 1.6), remove ErgoPro2 from the Accessibility list with “−”, "
-                     "then add it again.")
+                + tr("If it is already on: macOS cannot match it to this copy of ErgoPro2 because %1 (this "
+                     "happens after an update). Remove ErgoPro2 from the Accessibility list with “−”, then add it "
+                     "again. Developers: sign the app (documentation/BUILD.md 1.6).")
                       .arg(problem);
         }
     }

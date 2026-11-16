@@ -102,17 +102,6 @@ QLabel#pageTitle {
     color: @text@;
 }
 
-QLabel#placeholderTitle {
-    font-size: 18px;
-    font-weight: 700;
-    color: @text@;
-}
-
-QLabel#placeholderText {
-    color: @textMuted@;
-    font-size: 14px;
-}
-
 QLabel#valueLabel {
     font-weight: 600;
     color: @text@;

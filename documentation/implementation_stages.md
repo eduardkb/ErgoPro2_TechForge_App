@@ -132,7 +132,7 @@ ergoPro2/
 ### B.1.3 General tab
 - **Install / Uninstall** buttons (W-06, W-07):
   - *Install*: copies the application to a permanent per-user folder and registers it to **start at login**, pointing to the installed copy. No admin rights where possible; if admin rights are ever needed, ask the user first.
-    - macOS: copy `.app` to `~/Applications/ErgoPro2.app`; login item via `SMAppService` (fallback LaunchAgent plist in `~/Library/LaunchAgents/com.techforge.ergopro2.plist`).
+    - macOS: copy `.app` to `~/Applications/ErgoPro2.app`; login item via a LaunchAgent plist in `~/Library/LaunchAgents/com.techforge.ergopro2.plist` (1.8.0 documentation fix: `SMAppService` is not used – see `src/platform/mac/MacAutostart.h` for the reason).
     - Windows: copy the whole deployed folder to `%LOCALAPPDATA%\Programs\ErgoPro2\`; `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value; Start Menu shortcut.
     - Linux: copy to `~/.local/opt/ErgoPro2/`; `~/.config/autostart/ergopro2.desktop` and `~/.local/share/applications/ergopro2.desktop`.
     - After install, offer to restart from the installed location.
@@ -272,7 +272,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   - Windows: keep the `WH_KEYBOARD_LL` callback very fast (hand work to other threads), because Windows silently removes slow hooks. Run a **health watchdog** that detects a dead hook and reinstalls it.
   - Linux: re-grab after keyboard mapping changes (`MappingNotify`) and after device hotplug (evdev).
   - All OSes: re-install hooks after **sleep/resume** and **session unlock**, and log every re-install.
-  - Health check every 30 s; failures are logged and shown in the Status column / tab banner.
+  - Health check every 30 s; failures are logged and shown in the Status column / tab banner. The GUI thread never waits more than 2 s for the hook thread. *Self-repairs* count only real repairs (1.8.0: the routine Windows re-arm at every check is not counted).
 
 ## B.6 Shared input layer (Stage 2)
 - One **input hook thread** that receives all global keyboard and mouse events (move, button down/up, wheel, key down/up with modifiers), normalized into platform-independent event structs with a monotonic timestamp.

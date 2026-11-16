@@ -28,6 +28,7 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 
+#include <bitset>
 #include <future>
 #include <vector>
 
@@ -130,6 +131,14 @@ public:
         m_sink = std::move(sink);
         m_suppression = suppression;
         m_stop.store(false);
+        // The wake-up pipe is created and closed on the caller's thread only, so
+        // stop() never writes to a descriptor the hook thread already closed (1.8.0).
+        if (::pipe(m_wake) != 0) {
+            const PlatformResult r = PlatformResult::failed(tr("Cannot create the hook wake-up pipe."));
+            qCWarning(lcPlatform).noquote() << "Input hook not started:" << r.message << "errno" << errno;
+            return r;
+        }
+        fcntl(m_wake[0], F_SETFL, O_NONBLOCK);
 
         std::promise<PlatformResult> started;
         std::future<PlatformResult> result = started.get_future();
@@ -137,6 +146,7 @@ public:
         const PlatformResult r = result.get();
         if (!r.ok()) {
             m_thread.join();
+            closeWakePipe();
             qCWarning(lcPlatform).noquote() << "Input hook not started:" << r.message;
         } else {
             qCInfo(lcPlatform).noquote() << "Input hook started:" << backendName();
@@ -153,6 +163,7 @@ public:
         }
         if (m_thread.joinable())
             m_thread.join();
+        closeWakePipe();
         m_running.store(false);
     }
 
@@ -179,11 +190,6 @@ public:
 private:
     void run(std::promise<PlatformResult> &started)
     {
-        if (::pipe(m_wake) != 0) {
-            started.set_value(PlatformResult::failed(tr("Cannot create the hook wake-up pipe.")));
-            return;
-        }
-        fcntl(m_wake[0], F_SETFL, O_NONBLOCK);
         m_inotify = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
         if (m_inotify >= 0)
             inotify_add_watch(m_inotify, "/dev/input", IN_CREATE | IN_DELETE | IN_ATTRIB);
@@ -300,15 +306,46 @@ private:
     }
 
     // Keyboards are grabbed only while at least one combo must be blocked.
+    // 1.8.0: a keyboard is grabbed only while none of its keys is down (else the
+    // compositor never sees that key's release), and keys still held through the
+    // virtual keyboard are released before the grab ends (else they stay down).
     void updateGrabs()
     {
         const bool wantGrab = m_virtualKeyboard && m_suppression && !m_suppression->isEmpty();
+        if (!wantGrab)
+            releaseForwardedKeys();
         for (Device &d : m_devices) {
             if (!d.keyboard || d.ours || d.grabbed == wantGrab)
                 continue;
+            if (wantGrab && anyKeyDown(d.dev))
+                continue; // try again on the next loop
             if (libevdev_grab(d.dev, wantGrab ? LIBEVDEV_GRAB : LIBEVDEV_UNGRAB) == 0)
                 d.grabbed = wantGrab;
+            else
+                qCWarning(lcPlatform) << "Cannot" << (wantGrab ? "grab" : "release") << "keyboard"
+                                      << libevdev_get_name(d.dev);
         }
+    }
+
+    static bool anyKeyDown(libevdev *dev)
+    {
+        for (unsigned int code = KEY_ESC; code <= KEY_MICMUTE; ++code) {
+            if (libevdev_get_event_value(dev, EV_KEY, code) != 0)
+                return true;
+        }
+        return false;
+    }
+
+    void releaseForwardedKeys()
+    {
+        if (!m_virtualKeyboard || m_forwardedDown.none())
+            return;
+        for (unsigned int code = 0; code < m_forwardedDown.size(); ++code) {
+            if (m_forwardedDown.test(code))
+                libevdev_uinput_write_event(m_virtualKeyboard, EV_KEY, code, 0);
+        }
+        libevdev_uinput_write_event(m_virtualKeyboard, EV_SYN, SYN_REPORT, 0);
+        m_forwardedDown.reset();
     }
 
     void readDevice(Device &d)
@@ -350,6 +387,10 @@ private:
         if (ev.type != EV_KEY)
             return;
 
+        // Touchpad / tablet contact and tool codes (BTN_TOUCH, BTN_TOOL_FINGER, ...)
+        // are not mouse buttons (1.8.0: each touch was reported as a click).
+        if (ev.code >= BTN_DIGI && ev.code <= BTN_DIGI + 0xF)
+            return;
         if (ev.code >= BTN_MISC && ev.code < KEY_OK) { // mouse buttons
             if (ev.value == 2)
                 return;
@@ -399,12 +440,25 @@ private:
 
     void forward(unsigned int type, unsigned int code, int value)
     {
-        if (m_virtualKeyboard)
-            libevdev_uinput_write_event(m_virtualKeyboard, type, code, value);
+        if (!m_virtualKeyboard)
+            return;
+        libevdev_uinput_write_event(m_virtualKeyboard, type, code, value);
+        if (type == EV_KEY && code < m_forwardedDown.size())
+            m_forwardedDown.set(code, value != 0);
+    }
+
+    void closeWakePipe()
+    {
+        for (int &fd : m_wake) {
+            if (fd >= 0)
+                ::close(fd);
+            fd = -1;
+        }
     }
 
     void closeAll()
     {
+        releaseForwardedKeys(); // before the grabs end
         for (Device &d : m_devices) {
             if (d.grabbed)
                 libevdev_grab(d.dev, LIBEVDEV_UNGRAB);
@@ -420,11 +474,6 @@ private:
         if (m_inotify >= 0)
             ::close(m_inotify);
         m_inotify = -1;
-        for (int &fd : m_wake) {
-            if (fd >= 0)
-                ::close(fd);
-            fd = -1;
-        }
     }
 
     InputEventSink m_sink;
@@ -436,6 +485,7 @@ private:
     std::atomic<int> m_deviceCount{0};
     std::atomic<int> m_rescans{0};
     int m_wake[2] = {-1, -1};
+    std::bitset<KEY_CNT> m_forwardedDown; // keys held through the virtual keyboard
     int m_inotify = -1;
     std::vector<Device> m_devices;
     libevdev_uinput *m_virtualKeyboard = nullptr;

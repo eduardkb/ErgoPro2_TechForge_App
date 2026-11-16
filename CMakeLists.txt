@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 #   - MAJOR stays 1.
 # ---------------------------------------------------------------------------
 project(ErgoPro2
-    VERSION 1.7.9
+    VERSION 1.8.0
     DESCRIPTION "Ergonomic helper: auto click, key control and break reminders"
     HOMEPAGE_URL "https://techforge.com/ergopro2"
     LANGUAGES CXX)
@@ -116,5 +116,8 @@ if(UNIX AND NOT APPLE)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-svg-plugins")
     # Native Wayland windows (without it Qt uses XWayland).
     set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "qt6-wayland")
+    # Post-install note about the "input" group for Wayland sessions (1.8.0).
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/postinst")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
     include(CPack)
 endif()

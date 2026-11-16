@@ -1,5 +1,7 @@
 #include "core/statistics/StatisticsStore.h"
 
+#include "core/LogCategories.h"
+
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -168,7 +170,10 @@ bool StatisticsStore::append(const QDate &date, const QList<MinuteRecord> &recor
         return false;
     }
     const QString path = filePath(date);
-    repairPartialLine(path, nullptr);
+    QString repair;
+    repairPartialLine(path, &repair);
+    if (!repair.isEmpty()) // 1.8.0: was silent
+        qCWarning(lcApp).noquote() << "Statistics:" << repair;
     QFile file(path);
     const bool isNew = !file.exists() || file.size() == 0;
     if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {

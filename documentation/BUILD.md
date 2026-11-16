@@ -14,6 +14,12 @@ Shared information:
 - [Troubleshooting](#7-troubleshooting)
 - [How to test each stage](#8-how-to-test-each-stage)
 
+Other documents: [USER_GUIDE.md](USER_GUIDE.md) (end users: every tab and setting, permissions,
+limitations), [ARCHITECTURE.md](ARCHITECTURE.md) (developers: modules, threads, event flow),
+[REQUIREMENTS_TRACE.md](REQUIREMENTS_TRACE.md) (every requirement → code, unit test, manual test) and
+[CHANGELOG.md](../CHANGELOG.md). Ready-made packages for all three OSes are attached to every
+[GitHub release](#releases) – building from source is only needed for development.
+
 > All commands are run from the **repository root** (the `ergoPro2` folder that contains
 > `CMakeLists.txt`), unless stated otherwise.
 
@@ -442,7 +448,8 @@ ErgoPro2                                 # or from the application menu
 ```
 The package installs `/usr/bin/ErgoPro2`, the menu entry and the icon, and depends on the Qt 6, X11/XTest
 and libevdev packages (computed automatically) plus `qt6-svg-plugins` (icons); `qt6-wayland` is
-recommended. Remove it with `sudo apt remove ergopro2`. The CI builds the same `.deb` on every push and
+recommended. After installing, it prints a short note (`packaging/linux/postinst`, 1.8.0): on **Wayland**
+your user must be in the `input` group (6.3) – nothing is changed automatically. Remove it with `sudo apt remove ergopro2`. The CI builds the same `.deb` on every push and
 checks that it installs and starts.
 
 Without a package, install into your home folder instead:
@@ -675,6 +682,9 @@ programs running **as Administrator**, unless ErgoPro2 also runs as Administrato
 | ErgoPro2 does not start at login | Check the registration (5.0). macOS: System Settings → General → Login Items & Extensions → *Allow in the Background* must be on for ErgoPro2. |
 | The app looks wrong / reports an error at start | Check the latest log file (section 4). Every error is logged there. In a Debug build, run it from a terminal to see the log live. |
 | Settings were reset and a message mentions `settings.corrupt-…json` | The settings file was damaged; the old file was kept with that name for inspection. |
+| macOS: mouse/keyboard stopped working after removing a permission (before 1.7.8) | Lock and unlock the screen. Since 1.7.8 ErgoPro2 removes its event tap within a second when Accessibility is removed and starts again when it is granted again. |
+| General › Input diagnostics: *Self-repairs* keeps growing on Windows (before 1.8.0) | Normal for versions up to 1.7.9: the routine re-arm at every 30-second health check was counted. Since 1.8.0 only real repairs count. Only *PERSISTENT FAILURE* or a *NOT RUNNING* hook indicate a problem. |
+| GitHub Actions: "The job was not acquired by Runner of type hosted" | A temporary GitHub capacity problem (mostly macOS runners). Use **Re-run failed jobs**; the release job then runs too. |
 
 ---
 

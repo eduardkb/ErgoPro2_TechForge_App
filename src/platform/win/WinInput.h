@@ -26,7 +26,9 @@ public:
     // gives no notification. The health check therefore re-installs ("re-arms")
     // both hooks on the hook thread every time it runs.
     bool checkHealth() override;
-    int selfRepairCount() const override { return m_rearms.load(); }
+    // Hooks that had to be installed twice at a re-arm (routine re-arms at every
+    // health check are not repairs, 1.8.0).
+    int selfRepairCount() const override { return m_selfRepairs.load(); }
 
     PlatformResult registerKey(const KeyCombo &combo) override;
     PlatformResult unregisterKey(const KeyCombo &combo) override;
@@ -35,7 +37,8 @@ private:
     std::thread m_thread;
     std::atomic<unsigned long> m_threadId{0};
     std::atomic<bool> m_running{false};
-    std::atomic<int> m_rearms{0};
+    std::atomic<int> m_rearms{0}; // routine re-arms (for diagnostics in the log)
+    std::atomic<int> m_selfRepairs{0};
 };
 
 class WinClickInjector final : public IClickInjector {

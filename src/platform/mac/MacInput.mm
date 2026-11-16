@@ -12,6 +12,7 @@
 
 #include <future>
 #include <memory>
+#include <mutex>
 
 namespace ergo {
 
@@ -226,6 +227,9 @@ struct MacInputHook::State {
     // thread checks the permission every second and removes the tap at once.
     CFRunLoopTimerRef trustTimer = nullptr;
     bool permissionLost = false; // hook thread only
+    // Guards 'tap' between the teardown on the hook thread and checkHealth()
+    // on the GUI thread (1.8.0). The tap callback (hook thread) needs no lock.
+    std::mutex tapMutex;
 };
 
 namespace {
@@ -373,6 +377,11 @@ PlatformResult MacInputHook::start(InputEventSink sink, KeySuppressionRegistry *
         return PlatformResult::success();
     if (m_thread.joinable())
         m_thread.join();
+    if (m_state && m_state->runLoop) {
+        // The previous tap ended by itself (e.g. permission lost) without stop().
+        CFRelease(m_state->runLoop);
+        m_state->runLoop = nullptr;
+    }
 
     m_state = std::make_unique<State>();
     m_state->sink = std::move(sink);
@@ -433,6 +442,8 @@ PlatformResult MacInputHook::start(InputEventSink sink, KeySuppressionRegistry *
         if (s->permissionLost)
             qCCritical(lcPlatform) << "Accessibility permission was removed while the event tap was active:"
                                    << "tap removed at once so that mouse and keyboard keep working";
+        m_running.store(false); // before the teardown: checkHealth() stops using the tap
+        std::lock_guard<std::mutex> lock(s->tapMutex);
         CFRunLoopRemoveSource(s->runLoop, s->source, kCFRunLoopCommonModes);
         CGEventTapEnable(s->tap, false);
         CFMachPortInvalidate(s->tap);
@@ -440,7 +451,6 @@ PlatformResult MacInputHook::start(InputEventSink sink, KeySuppressionRegistry *
         CFRelease(s->tap);
         s->source = nullptr;
         s->tap = nullptr;
-        m_running.store(false);
     });
 
     const PlatformResult r = result.get();
@@ -471,7 +481,10 @@ void MacInputHook::stop()
 
 bool MacInputHook::checkHealth()
 {
-    if (!m_running.load() || !m_state || !m_state->tap)
+    if (!m_running.load() || !m_state)
+        return false;
+    std::lock_guard<std::mutex> lock(m_state->tapMutex);
+    if (!m_state->tap)
         return false;
     if (!CFMachPortIsValid(m_state->tap))
         return false;
@@ -516,6 +529,8 @@ PlatformResult postMouse(CGEventType type, CGMouseButton button, int clickState)
         return PlatformResult::permissionDenied(tr("Clicks need the Accessibility permission."));
     }
     CGEventRef current = CGEventCreate(nullptr);
+    if (!current)
+        return PlatformResult::failed(tr("Cannot read the pointer position."));
     const CGPoint position = CGEventGetLocation(current);
     CFRelease(current);
 

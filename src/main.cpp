@@ -102,6 +102,9 @@ int main(int argc, char *argv[])
 
     const int exitCode = app.exec();
 
+    // Shut down while the log handler is still installed (1.8.0: messages of
+    // the destructor's shutdown went to stderr only).
+    controller.shutdownAll("event loop ended");
     if (!settings.saveNow())
         qCCritical(lcApp) << "Settings could not be saved on shutdown";
     qCInfo(lcApp) << "ErgoPro2 exited with code" << exitCode;

@@ -6,6 +6,13 @@ Each stage (and bug fix) adds a section here. Build and start the app as describ
 
 Mark each step ✅ / ❌ and note the OS and version you tested on.
 
+> **Historical rows (1.8.0).** Older sections describe the behavior of their own version. Rows that no
+> longer match the current app: Stage 2 rows 7, 9–11 and 18 (test buttons removed in 1.7.5), Stage 3
+> rows 17–19 ("ring" – a cross since 1.4.1), Stage 5 row 2 (break default 5 – now 4) and its short-value
+> tip (impossible since 1.7.7), Stage 6 row 3 (Drag lock card removed in 1.6.1), Stage 7 row 18 (files are
+> no longer deleted immediately, 1.7.1). For a regression test of the current version use
+> **Stage 8 – v1.8.0** at the end of this file.
+
 ---
 
 ## Stage 0 – v1.0.0
@@ -731,3 +738,102 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 4 | Click *‹ Previous day*, *Next day ›*, *Today*. | The date and all three sections change together; buttons are disabled as before (no earlier/later day, Today while today is shown). |
 | 5 | Switch the OS between light and dark mode. | Divider lines, buttons and cards are readable in both. |
 | 6 | Make the window as small as possible. | The buttons and the date stay fully visible; the charts are not cut off horizontally. |
+
+## Stage 8 – v1.8.0
+
+Goal: release-quality build – full regression of every feature on the **packaged** app, packaging
+and documentation. Test with the package from the GitHub release `ErgoPro2_v1.8.0` (or made with
+`scripts/package-*`), not with a development build. Note the OS, version and session type (Linux:
+X11 / Wayland) for every block.
+
+**Preparation:** exit any running ErgoPro2. Keep a copy of your settings file and statistics folder
+(BUILD.md section 4) if you want to restore them afterwards.
+
+### A. Packages, install, update, uninstall
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| A1 | `ctest --test-dir build --output-on-failure` (each OS: CI log of the release run). | All test programs pass (18 on macOS, 17 on Windows/Linux). |
+| A2 | macOS: open `ErgoPro2-1.8.0-macos.dmg`, drag ErgoPro2 to Applications (or use *Install* on the General tab), start it (Gatekeeper: *Open Anyway* once). | Starts; title **ErgoPro2 v1.8.0**; permissions window appears if Accessibility / Input Monitoring are missing. |
+| A3 | Windows: run `ErgoPro2-1.8.0-windows-x64-setup.exe` (SmartScreen: *More info › Run anyway*), keep "start at login" on. | Installs without administrator rights; Start Menu entry; ErgoPro2 starts; General tab shows it as installed in the chosen folder. |
+| A4 | Windows: with 1.8.0 running, run the setup again (update). | The running ErgoPro2 is closed first, the update installs into the same folder without asking, settings and statistics are kept. |
+| A5 | Debian: `sudo apt install ./ergopro2_1.8.0_amd64.deb`. | Dependencies are installed; the note about the `input` group (Wayland) is printed; menu entry "ErgoPro2" with icon; `ErgoPro2` starts from a terminal. |
+| A6 | Each OS: General › *Install* / *Uninstall* (Windows setup installation: *Uninstall* runs the setup's uninstaller; Debian package: `sudo apt remove ergopro2`). | App files, menu entry and start-at-login entry are removed; settings, logs and statistics stay. |
+| A7 | Each OS: enable start at login, log out and in (or restart). | ErgoPro2 starts hidden in the tray (default) – or shows the window when *Show window* was chosen for automatic starts. |
+
+### B. Window, tray, single instance, look & feel
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| B1 | Look at all five tabs in light mode, then switch the OS to dark mode (and back). | Tabs in the order General, Break Timer, Auto Click, Key Control, Statistics; every card, badge, slider, chart, dialog and the break window are readable in both modes. |
+| B2 | Try to maximize the window (button, title-bar double click, Win+Up, macOS green button). Drag a corner to the largest / smallest size. | No maximize / full screen; largest = 80 % of the screen's usable area; smallest 720 × 560 (less on small screens). |
+| B3 | Close (X) and minimize the window. | It hides to the tray (first time: notification "still running in the tray"). Tray click / *Show window* brings it back. macOS: Dock icon only while the window is shown. |
+| B4 | Start ErgoPro2 a second time. | The running window comes to the front; no second instance. |
+| B5 | Scroll the mouse wheel over every slider, number box and drop-down. | Values never change; the page scrolls. |
+| B6 | Tray menu: *AutoClick on/off*, *Break Timer on/off*, *Start break now*, *Exit*. | Each works and the tabs follow; *Exit* quits completely (tray icon gone, process ended). |
+
+### C. General tab and permissions
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| C1 | General tab: version, folders (settings, logs, statistics) with *Open* buttons, log level, log retention, startup options. | All shown correctly; *Open* opens the folder; changes are saved and survive a restart. |
+| C2 | *Reset all settings*. | All settings back to defaults (Break Timer 50 / 5 / 4 / 10 min, pause after 20 s; statistics kept 90 days); hotkeys removed after confirmation. |
+| C3 | macOS: start without Accessibility / Input Monitoring. | Permissions window with buttons to the right System Settings pages; banners on the function tabs; granting is detected within a few seconds (restart only if macOS asks). |
+| C4 | macOS: while running, switch Accessibility off, then on again. | Mouse and keyboard keep working everywhere (1.7.8); banners appear, then disappear; the hook runs again. |
+| C5 | Linux Wayland without `input` group membership. | Banner explains the missing access with *Grant access*; after the group change and a new login the features work. |
+| C6 | Input diagnostics card. | Hook RUNNING with the backend name, events per second change while moving the mouse; self-repairs / reinstalls counters (Windows: self-repairs stay 0 in normal use since 1.8.0). |
+
+### D. Auto Click
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| D1 | Enable Auto Click; move the pointer more than the trigger distance and stop. | One left click after the trigger time; no click without enough movement; never repeated while the pointer rests. |
+| D2 | Change trigger time / distance to the extremes. | Behavior follows at once; values saved. |
+| D3 | Auto Click on the ErgoPro2 window and on the break window. | Works there too. |
+
+### E. Key Control and Drag Lock
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| E1 | Add hotkeys for left click, right click, double click and Drag Lock; try a reserved combination (e.g. Cmd+Tab / Alt+Tab / Ctrl+Alt+Del). | Reserved combinations are refused with an explanation; the others are listed and work system-wide; the key does nothing else in other apps. |
+| E2 | Disable, modify and reset a hotkey. | Disabled: the key works normally in other apps again; modified: the new key works; reset: re-registered. |
+| E3 | Drag Lock: press the hotkey over a window title / text and move the mouse, press it again. | The button is held while moving (window moves / text selected) and released by the second press. |
+| E4 | Drag Lock release rules: timeout, any key or mouse button, break window appears. | Released in every case; the releasing click does not click anything; Auto Click clicks again only after moving the trigger distance. |
+| E5 | Drag Lock held, then *Exit* from the tray (and once: kill the process – macOS `pkill ErgoPro2`, Windows Task Manager, Linux `pkill`). | The mouse button is never left pressed. |
+
+### F. Break Timer
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| F1 | Break after working 20 min, work normally. | Status shows Working / Paused (no input for 20 s), *Active work time*, *Work started at*, *Next break in*; the break window appears on all monitors at 20 min of active work. |
+| F2 | Break window: countdown, tips with images, *Dismiss*, *Postpone (10 min)*, Esc / Alt+F4 / Cmd+W. | Countdown runs; Dismiss closes and resets; Postpone reopens after 10 min; the window cannot be closed otherwise; it closes by itself at 0. |
+| F3 | Pause longer than *Reset after a pause of*; sleep; screen lock. | Active work time resets (counts as a break). |
+| F4 | Dismiss a break so that the usage goes above 100 %. | The next break comes after half the time until the usage is back to 0 %. |
+| F5 | Disable the Break Timer (tab and tray). | Any break window closes; state *Disabled*; enabling starts a new cycle. |
+
+### G. Statistics
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| G1 | Work a few minutes, open Statistics. | Fixed top bar (date + slim buttons); one card with *Computer usage*, *Activity*, *Day totals*; *Options* card below; values grow once per minute. |
+| G2 | Compare the usage chart with the Break Timer. | ~100 % when the break window appears; markers for shown / dismissed / postponed / completed; resets after a completed break or a pause as long as the break; above 500 % back to 0 %. |
+| G3 | *‹ Previous day*, *Today*, *Next day ›* with several days of files. | Days without files are skipped; buttons disabled at the ends; past days read-only. |
+| G4 | *Open statistics folder*; change *Keep statistics for*. | One CSV file per day; nothing is deleted immediately – older files are deleted at the next start / day change. |
+| G5 | Exit and start again within a minute. | Today's totals and the usage % continue. |
+
+### H. Long run, sleep / resume, shutdown
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| H1 | Leave ErgoPro2 running for a full working day (≥ 8 h) with normal use, including at least two sleep / resume cycles and several screen locks. | Hotkeys, Auto Click, Break Timer and Statistics keep working after every resume / unlock without a restart. The log shows "Reinstalling the input hook: resume from sleep / session unlock" and no ERROR / CRITICAL lines; no PERSISTENT FAILURE in Input diagnostics. |
+| H2 | Check memory use at the start and after H1 (Activity Monitor / Task Manager / `ps -o rss`). | No continuous growth (a few MB difference is fine). |
+| H3 | Log out / shut down the OS while ErgoPro2 runs. | Logout / shutdown is not blocked; the statistics of the last minute are saved (visible after the next start). |
+| H4 | Log level *Info*: look at a log of H1. | No lines repeating every second at INFO level; every warning/error has a clear reason. |
+
+### I. Documentation
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| I1 | Read `documentation/USER_GUIDE.md` while using the app. | Every tab, setting, range and default matches the app. |
+| I2 | Follow `documentation/BUILD.md` on a clean machine (at least macOS). | Build, tests, package and install work as written. |
+| I3 | Open `documentation/REQUIREMENTS_TRACE.md`. | Every requirement has an implementation and a test reference; open gaps are explained. |

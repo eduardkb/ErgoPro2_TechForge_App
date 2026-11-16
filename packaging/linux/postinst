@@ -1,0 +1,23 @@
+#!/bin/sh
+# Debian post-install script of ErgoPro2 (added by CPack, CMakeLists.txt).
+# Prints the one-time setup note for Wayland sessions (B.1.4, BUILD.md 3).
+set -e
+
+if [ "$1" = "configure" ]; then
+    cat <<'NOTE'
+
+ErgoPro2 installed. Start it from the application menu ("ErgoPro2") or with: ErgoPro2
+
+Wayland sessions only (Debian 13 GNOME default): global mouse/keyboard monitoring
+reads /dev/input, so your user must be in the "input" group:
+
+    sudo usermod -aG input "$USER"
+
+then log out and log in again. X11 sessions need nothing.
+Note: members of the "input" group can read all keyboard input of the machine.
+See the user guide (documentation/USER_GUIDE.md) for details.
+
+NOTE
+fi
+
+exit 0

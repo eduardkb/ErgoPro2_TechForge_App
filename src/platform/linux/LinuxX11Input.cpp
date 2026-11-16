@@ -337,6 +337,19 @@ PlatformResult X11InputHook::start(InputEventSink sink, KeySuppressionRegistry *
             return;
         }
 
+        // Failure after the displays were opened: free everything (1.8.0: the
+        // displays leaked, and the watchdog retries every 30 s).
+        const auto failStart = [s, &started](const QString &message) {
+            if (s->context) {
+                XRecordFreeContext(s->control, s->context);
+                s->context = 0;
+            }
+            for (Display *d : {s->data, s->grab, s->control})
+                XCloseDisplay(d);
+            s->control = s->data = s->grab = nullptr;
+            started.set_value(PlatformResult::failed(message));
+        };
+
         XRecordRange *range = XRecordAllocRange();
         range->device_events.first = KeyPress;
         range->device_events.last = MotionNotify;
@@ -346,13 +359,15 @@ PlatformResult X11InputHook::start(InputEventSink sink, KeySuppressionRegistry *
         XSync(s->control, False);
         if (!s->context || !XRecordEnableContextAsync(s->data, s->context, &Impl::recordCallback,
                                                       reinterpret_cast<XPointer>(s))) {
-            started.set_value(PlatformResult::failed(tr("Cannot start X11 event recording.")));
+            failStart(tr("Cannot start X11 event recording."));
             return;
         }
         // Receive MappingNotify on the grab connection (re-grab after keymap changes).
         XSelectInput(s->grab, DefaultRootWindow(s->grab), 0);
         if (::pipe(s->wakePipe) != 0) {
-            started.set_value(PlatformResult::failed(tr("Cannot create the hook wake-up pipe.")));
+            XRecordDisableContext(s->control, s->context);
+            failStart(tr("Cannot create the hook wake-up pipe."));
+            s->wakePipe[0] = s->wakePipe[1] = -1;
             return;
         }
         fcntl(s->wakePipe[0], F_SETFL, O_NONBLOCK);

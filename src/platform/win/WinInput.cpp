@@ -15,6 +15,7 @@
 
 #include <bitset>
 #include <future>
+#include <memory>
 
 namespace ergo {
 
@@ -54,13 +55,50 @@ Modifiers heldModifiers(const std::bitset<256> &held)
 
 QPointF toLogical(POINT pt)
 {
-    // Hook coordinates are physical pixels; Qt uses logical pixels (per-monitor DPI).
+    // Hook coordinates are physical pixels; Qt uses logical pixels (per-monitor
+    // DPI). Qt 6 keeps each screen's top-left corner and scales relative to it:
+    // logical = origin + (physical - origin) / scale (1.8.0: before, the whole
+    // coordinate was divided, which was wrong on monitors not at 0,0 with
+    // a scale other than 100 %).
     HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     UINT dpiX = 96, dpiY = 96;
     if (!monitor || FAILED(GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)) || dpiX == 0)
         dpiX = 96;
     const double scale = double(dpiX) / 96.0;
-    return QPointF(pt.x / scale, pt.y / scale);
+    MONITORINFO info = {};
+    info.cbSize = sizeof(info);
+    if (!monitor || !GetMonitorInfoW(monitor, &info))
+        return QPointF(pt.x / scale, pt.y / scale);
+    const double ox = info.rcMonitor.left;
+    const double oy = info.rcMonitor.top;
+    return QPointF(ox + (pt.x - ox) / scale, oy + (pt.y - oy) / scale);
+}
+
+// Windows opens the menu bar of the focused application when Alt (or the Start
+// menu for Win) is pressed and released with no other key in between. When a
+// hotkey with Alt/Win is swallowed, an unassigned, marked key is injected so
+// that the release is not a "lone" Alt/Win (1.8.0; same technique as
+// AutoHotkey's mask key). Runs on the hook thread.
+void sendMaskKey()
+{
+    constexpr WORD kMaskVk = 0xE8; // unassigned virtual key
+    INPUT input[2] = {};
+    for (INPUT &in : input) {
+        in.type = INPUT_KEYBOARD;
+        in.ki.wVk = kMaskVk;
+        in.ki.dwExtraInfo = ULONG_PTR(kSyntheticEventMarker);
+    }
+    input[1].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(2, input, sizeof(INPUT));
+}
+
+// Re-reads the modifier keys from the OS: key-ups missed while a secure desktop
+// (Ctrl+Alt+Del, UAC) was shown would otherwise leave them "held".
+void resyncModifiers(std::bitset<256> &held)
+{
+    for (int vk : {VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_MENU, VK_LMENU,
+                   VK_RMENU, VK_LWIN, VK_RWIN})
+        held.set(size_t(vk), (GetAsyncKeyState(vk) & 0x8000) != 0);
 }
 
 // Hook procedures run on the hook thread and must return quickly.
@@ -90,8 +128,11 @@ LRESULT CALLBACK keyboardProc(int code, WPARAM wParam, LPARAM lParam)
     if (g_hook->suppression && g_hook->suppression->shouldSwallow(e))
         e.swallowed = true;
     g_hook->sink(e);
-    if (e.swallowed)
+    if (e.swallowed) {
+        if (down && !e.synthetic && (e.modifiers & (Modifier::Alt | Modifier::Meta)))
+            sendMaskKey();
         return 1; // non-zero = the key never reaches other applications
+    }
     return CallNextHookEx(nullptr, code, wParam, lParam);
 }
 
@@ -267,10 +308,21 @@ PlatformResult WinInputHook::start(InputEventSink sink, KeySuppressionRegistry *
         // The low-level hooks are called through this thread's message loop.
         while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
             if (msg.message == kRearmMessage) {
+                // Routine re-arm (B.5.4): Windows silently removes slow low-level
+                // hooks, so they are installed again at every health check. Only a
+                // re-arm that needed a second attempt counts as a self-repair.
                 removeHooks(&state);
-                const bool ok = installHooks(&state);
-                auto *done = reinterpret_cast<std::promise<bool> *>(msg.lParam);
-                done->set_value(ok);
+                bool ok = installHooks(&state);
+                if (!ok) {
+                    removeHooks(&state);
+                    ok = installHooks(&state);
+                    if (ok)
+                        m_selfRepairs.fetch_add(1);
+                }
+                resyncModifiers(state.held);
+                std::unique_ptr<std::shared_ptr<std::promise<bool>>> done(
+                    reinterpret_cast<std::shared_ptr<std::promise<bool>> *>(msg.lParam));
+                (*done)->set_value(ok);
                 continue;
             }
             TranslateMessage(&msg);
@@ -307,18 +359,24 @@ bool WinInputHook::checkHealth()
     const unsigned long id = m_threadId.load();
     if (!m_running.load() || id == 0)
         return false;
-    std::promise<bool> done;
-    std::future<bool> ok = done.get_future();
-    if (!PostThreadMessageW(id, kRearmMessage, 0, reinterpret_cast<LPARAM>(&done)))
-        return false;
-    if (ok.wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
-        // The hook thread does not process messages: it must be reinstalled. The
-        // promise must outlive a late reply, so wait for it before returning.
-        ok.wait();
+    // Shared with the hook thread, so a late reply after the timeout is safe and
+    // the GUI thread never blocks longer than 2 s (1.8.0: it waited forever).
+    auto done = std::make_shared<std::promise<bool>>();
+    std::future<bool> ok = done->get_future();
+    auto *box = new std::shared_ptr<std::promise<bool>>(done);
+    if (!PostThreadMessageW(id, kRearmMessage, 0, reinterpret_cast<LPARAM>(box))) {
+        delete box;
+        qCWarning(lcPlatform) << "Cannot post the re-arm request to the hook thread, error" << GetLastError();
         return false;
     }
-    if (!ok.get())
+    if (ok.wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
+        qCWarning(lcPlatform) << "Hook thread did not answer the health check within 2 s";
+        return false; // the watchdog reinstalls the hook
+    }
+    if (!ok.get()) {
+        qCWarning(lcPlatform) << "Re-arming the low-level hooks failed, error" << GetLastError();
         return false;
+    }
     m_rearms.fetch_add(1);
     return true;
 }
@@ -415,7 +473,7 @@ LRESULT CALLBACK powerWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         if (g_powerCallback) {
             if (wParam == PBT_APMSUSPEND)
                 g_powerCallback(PowerEvent::Sleep);
-            else if (wParam == PBT_APMRESUMEAUTOMATIC || wParam == PBT_APMRESUMESUSPEND)
+            else if (wParam == PBT_APMRESUMEAUTOMATIC) // always sent once per resume (RESUMESUSPEND may follow)
                 g_powerCallback(PowerEvent::Resume);
         }
         return TRUE;
@@ -460,7 +518,8 @@ PlatformResult WinPowerEvents::start(std::function<void(PowerEvent)> callback)
         wc.lpfnWndProc = powerWindowProc;
         wc.hInstance = module;
         wc.lpszClassName = L"ErgoPro2PowerEvents";
-        RegisterClassW(&wc);
+        if (!RegisterClassW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+            qCWarning(lcPlatform) << "RegisterClassW for power notifications failed, error" << GetLastError();
         // A hidden top-level window: message-only windows do not get broadcasts.
         HWND hwnd = CreateWindowExW(0, wc.lpszClassName, L"", 0, 0, 0, 0, 0, nullptr, nullptr, module, nullptr);
         if (!hwnd) {
@@ -468,7 +527,9 @@ PlatformResult WinPowerEvents::start(std::function<void(PowerEvent)> callback)
                 tr("Cannot create the power notification window (error %1).").arg(GetLastError())));
             return;
         }
-        WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
+        if (!WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION))
+            qCWarning(lcPlatform) << "Screen lock/unlock notifications unavailable (WTSRegisterSessionNotification"
+                                  << "error" << GetLastError() << ")";
         m_window.store(hwnd);
         started.set_value(PlatformResult::success());
         MSG msg;

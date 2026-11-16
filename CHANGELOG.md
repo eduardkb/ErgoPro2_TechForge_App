@@ -5,6 +5,42 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.8.0] - 2026-11-16
+
+Stage 8 – hardening, packaging and final documentation. No new features.
+
+### Added
+- **Documentation:** `documentation/USER_GUIDE.md` (every tab and setting, permissions, limitations,
+  troubleshooting), `documentation/ARCHITECTURE.md` (modules, threads, event flow, how to add a Key Control
+  action, statistics pipeline) and `documentation/REQUIREMENTS_TRACE.md` (every requirement → code, unit test,
+  manual test; open gaps listed). `BUILD.md` links them and has new troubleshooting entries.
+- **Debian package:** after installation a note explains the `input` group needed on Wayland
+  (`packaging/linux/postinst`).
+- `MANUAL_TESTS.md`: full Stage 8 regression checklist including a long-run / sleep-resume test.
+
+### Fixed
+- **Exit on OS logout / shutdown (all OSes):** statistics of the last minute, the settings and the release of
+  hooks and keys now also happen when the OS ends the session (Windows did not return from the event loop);
+  shutdown messages are written to the log file again; no error dialog can block the exit.
+- **Statistics:** minutes that could not be written (e.g. disk full) are kept and written later instead of
+  being lost; repairing a damaged last line of a CSV file is logged.
+- **Windows:**
+  - pointer positions were wrong on a second monitor with a different scaling (Auto Click overlay and trigger
+    distance);
+  - a hotkey with **Alt** (e.g. Alt+F9) opened the menu bar of the active application;
+  - the 30-second health check could freeze ErgoPro2 when the hook thread hung; the routine re-arm is no
+    longer counted (and logged) as a self-repair every 30 s;
+  - Ctrl/Alt could stay "held" after Ctrl+Alt+Del or a UAC prompt, so hotkeys stopped working;
+  - resume from sleep was reported twice; failures of the lock/unlock notification are logged.
+- **Linux Wayland:** a key could stay pressed for the whole session when key blocking started or ended while
+  a key was held; touchpad touches were counted as mouse clicks (and blocked Auto Click); a rare race at hook
+  stop.
+- **Linux X11:** a failing hook start leaked three X server connections per retry (every 30 s).
+- **macOS:** a rare race between the health check and the removal of the event tap; a small leak when the hook
+  restarted after a lost permission; a missing error check when reading the pointer position. The permission
+  hint no longer points end users to a developer document.
+- Installer file copies: a failure to set the executable flag is now reported instead of ignored.
+
 ## [1.7.9] - 2026-11-16
 
 Owner-requested change (specification B.8.3 updated).

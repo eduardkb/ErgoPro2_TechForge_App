@@ -239,7 +239,11 @@ void StatisticsController::checkUsageLimit()
 
 void StatisticsController::writeFinished()
 {
-    const QList<StatisticsCollector::FinishedMinute> finished = m_collector.takeFinished();
+    // Minutes that could not be written before are tried again first (1.8.0:
+    // they were lost).
+    QList<StatisticsCollector::FinishedMinute> finished;
+    finished.swap(m_unsaved);
+    finished += m_collector.takeFinished();
     if (finished.isEmpty())
         return;
     bool today = false;
@@ -257,9 +261,20 @@ void StatisticsController::writeFinished()
             if (m_writeFailing)
                 qCInfo(lcApp) << "Statistics: writing works again";
             m_writeFailing = false;
-        } else if (!m_writeFailing) {
-            m_writeFailing = true; // log once per failure streak
-            qCCritical(lcApp).noquote() << "Statistics could not be saved:" << error;
+        } else {
+            if (!m_writeFailing) {
+                m_writeFailing = true; // log once per failure streak
+                qCCritical(lcApp).noquote() << "Statistics could not be saved (kept in memory, retried every second):"
+                                            << error;
+            }
+            for (const MinuteRecord &r : std::as_const(records))
+                m_unsaved.append({date, r});
+            constexpr qsizetype kMaxUnsaved = 24 * 60; // at most one day in memory
+            if (m_unsaved.size() > kMaxUnsaved) {
+                qCWarning(lcApp) << "Statistics: dropping" << m_unsaved.size() - kMaxUnsaved
+                                 << "unsaved minute(s) (writing keeps failing)";
+                m_unsaved.remove(0, m_unsaved.size() - kMaxUnsaved);
+            }
         }
         today = today || date == m_collector.currentDate();
         qCDebug(lcApp) << "Statistics:" << records.size() << "minute(s) written for" << date.toString(Qt::ISODate);
