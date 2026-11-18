@@ -25,6 +25,7 @@ ergopro2_add_test(tst_draglock)
 ergopro2_add_test(tst_statistics)
 ergopro2_add_test(tst_statisticsstore)
 ergopro2_add_test(tst_windowlimits)
+ergopro2_add_test(tst_datetext)
 
 # macOS platform test (Objective-C++, links the platform library): sleep/lock
 # notifications after MacPowerEvents::start() returned (1.7.3).

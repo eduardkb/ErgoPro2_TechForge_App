@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.8.1] - 2026-11-18
+
+Owner-requested change (specification B.8.3 updated).
+
+### Changed
+- **Statistics tab date header:** other days are shown as "<weekday> – <date>", e.g. "Tuesday – 10 November
+  2026" (before: "Tuesday, 10 November 2026"); today stays "Today – <date>" and no longer repeats the weekday
+  ("Today – 18 November 2026"). The date uses the system's long date format without the weekday.
+- New unit test `tst_datetext` (19 test programs on macOS).
+
 ## [1.8.0] - 2026-11-16
 
 Stage 8 – hardening, packaging and final documentation. No new features.

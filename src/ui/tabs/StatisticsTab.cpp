@@ -4,6 +4,7 @@
 #include "core/settings/SettingsStore.h"
 #include "core/settings/StatisticsSettings.h"
 #include "core/statistics/ChartAxis.h"
+#include "core/statistics/DateText.h"
 #include "ui/statistics/StatisticsCharts.h"
 #include "ui/statistics/StatisticsController.h"
 #include "ui/widgets/CardWidget.h"
@@ -234,8 +235,10 @@ void StatisticsTab::refresh()
 {
     const DayStats day = m_controller.day(m_date);
     const bool isToday = m_date == m_controller.today();
-    m_title->setText(isToday ? tr("Today – %1").arg(QLocale().toString(m_date, QLocale::LongFormat))
-                             : QLocale().toString(m_date, QLocale::LongFormat));
+    // "Today – 18 November 2026" / "Tuesday – 10 November 2026" (1.8.1, owner request).
+    const QString date = longDateWithoutWeekday(m_date, QLocale());
+    m_title->setText(isToday ? tr("Today – %1").arg(date)
+                             : tr("%1 – %2", "weekday – date").arg(weekdayName(m_date, QLocale()), date));
 
     const HourRange range = hourRange(day);
     m_usage->setDay(day, range);

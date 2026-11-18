@@ -23,6 +23,7 @@ add_library(ergopro2_core STATIC
     core/StartupMode.cpp core/StartupMode.h
     core/WindowLimits.cpp core/WindowLimits.h
     core/statistics/ChartAxis.cpp core/statistics/ChartAxis.h
+    core/statistics/DateText.cpp core/statistics/DateText.h
     core/statistics/StatisticsCollector.cpp core/statistics/StatisticsCollector.h
     core/statistics/StatisticsStore.cpp core/statistics/StatisticsStore.h
     core/statistics/StatisticsTypes.cpp core/statistics/StatisticsTypes.h

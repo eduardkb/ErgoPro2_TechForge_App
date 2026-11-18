@@ -837,3 +837,12 @@ X11 / Wayland) for every block.
 | I1 | Read `documentation/USER_GUIDE.md` while using the app. | Every tab, setting, range and default matches the app. |
 | I2 | Follow `documentation/BUILD.md` on a clean machine (at least macOS). | Build, tests, package and install work as written. |
 | I3 | Open `documentation/REQUIREMENTS_TRACE.md`. | Every requirement has an implementation and a test reference; open gaps are explained. |
+
+## Bug fix – v1.8.1
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (19 on macOS, 18 on Windows/Linux). |
+| 2 | Open the Statistics tab (today). | Header: **Today – 18 November 2026** (your system's date format, no weekday). |
+| 3 | Click *‹ Previous day*. | Header: **<weekday> – <date>**, e.g. **Tuesday – 10 November 2026**; the weekday matches the date. |
+| 4 | Change the system region (e.g. United States / Germany), restart ErgoPro2, repeat 2–3. | The date follows the region (e.g. "November 10, 2026", "10. November 2026") and the weekday is never shown twice. |

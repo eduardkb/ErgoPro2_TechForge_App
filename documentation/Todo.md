@@ -5,7 +5,7 @@
 
 
 ## Completed to verify:
-- statistics tab - redesign: the 3 first cards should be bundled together since nagivation menu will change all e of them. The controls buttons (previous day, today and next day) should be on top of the screen (maybe a more slim version vertically). Remove big descsriptions in favor of a very short summary only with very important information while maintaining a clean title for each chart/data section. Date representing what the charts are showing should still be at the top before the navigation buttons.
+- statystics tab - Day text. when today format "Today - <date>" is ok. But any other date should display format "<day of the week> - <date>"
 
 ## Improvement and new features suggestions
 

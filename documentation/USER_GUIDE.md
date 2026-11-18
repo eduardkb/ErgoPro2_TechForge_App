@@ -504,7 +504,7 @@ the "Statistics recording is unavailable" banner.)
 - **Privacy:** only counts and durations are stored. **Never** which keys you pressed, never pointer
   positions, never window or application names. The files stay on your computer.
 
-**Day navigation (fixed at the top)** – the shown date ("Today – …" for today) and the buttons
+**Day navigation (fixed at the top)** – the shown date ("Today – 18 November 2026" for today, e.g. "Tuesday – 10 November 2026" for other days) and the buttons
 **‹ Previous day**, **Today**, **Next day ›**. Previous/next jump to the nearest day that has statistics
 (days without data are skipped). Today's view updates once per minute; past days are read-only.
 

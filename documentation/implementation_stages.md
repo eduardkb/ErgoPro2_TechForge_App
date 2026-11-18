@@ -334,7 +334,7 @@ Owner description (stage 7 request) with the owner's answers to the clarificatio
 
 ### B.8.3 Statistics tab
 Layout from top to bottom (card style of B.1.1, light and dark mode). Redesigned in 1.7.9 (owner request): the date and the day navigation are a **fixed bar at the top** (they do not scroll); below it the page scrolls. The three day sections (charts 1 and 2, daily totals) are **one card**, each section with a short title only (no descriptions), separated by thin divider lines. No explanatory texts on the tab apart from the chart legend.
-1. **Header (fixed):** the shown date (e.g. "Tuesday, 10 November 2026", "Today – …" when it is today), directly below it the **slim day navigation buttons** (item 5).
+1. **Header (fixed):** the shown date as "<weekday> – <date>", e.g. "Tuesday – 10 November 2026", and "Today – 18 November 2026" when it is today (1.8.1, owner request; the date part is the system's long date format without the weekday), directly below it the **slim day navigation buttons** (item 5).
 2. **Chart 1 – Computer usage percent:** line chart, one point per minute.
    - x axis = time of day; shows the hours from the first to the last recorded minute of the day, rounded out to whole hours (empty day: 08:00–18:00 with "No data for this day"); hour labels.
    - y axis = percent, starts at 0, auto-scales to the day's maximum but always shows at least 0–100 % and at most 0–500 % (1.7.8; older values above 500 % are drawn at the top); a highlighted reference line at 100 %.
