@@ -130,7 +130,7 @@ bool DragLockController::release(Reason reason)
 void DragLockController::onHoldingChanged(bool holding, const QPointF &position)
 {
     // AutoClick: no click while holding, and after the release the pointer must
-    // travel AUTOCLICK_TRIGGER_DISTANCE from the release position (B.4 rule 7, D-04).
+    // travel autoclick.triggerDistancePx from the release position (B.4 rule 7, D-04).
     m_autoclick.setDragLockActive(holding, position);
     if (holding) {
         m_timer.start();

@@ -1,5 +1,7 @@
 #include "core/settings/SettingsStore.h"
 
+#include "core/settings/SettingsMigration.h"
+
 #include "core/LogCategories.h"
 
 #include <QDateTime>
@@ -89,8 +91,16 @@ SettingsLoadResult SettingsStore::load()
     }
 
     m_rawDocument = doc.object();
+    result.migratedKeys = migrateRenamedSettingKeys(m_rawDocument);
+    if (result.migratedKeys > 0) {
+        qCInfo(lcSettings) << "Settings: converted" << result.migratedKeys << "old key name(s); the file is rewritten";
+        m_dirty = true;
+    }
     const int fileSchema = m_rawDocument.value(QStringLiteral("schemaVersion")).toInt(-1);
-    if (fileSchema != kSchemaVersion) {
+    if (fileSchema >= 1 && fileSchema < kSchemaVersion) {
+        qCInfo(lcSettings) << "Settings file schemaVersion" << fileSchema << "converted to" << kSchemaVersion;
+        m_dirty = true;
+    } else if (fileSchema != kSchemaVersion) {
         qCWarning(lcSettings) << "Settings file schemaVersion is" << fileSchema << "- expected" << kSchemaVersion
                               << "; known keys are read and the file is rewritten";
         m_dirty = true;

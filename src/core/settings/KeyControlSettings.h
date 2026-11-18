@@ -14,7 +14,7 @@ inline const QString Actions = QStringLiteral("keycontrol.actions");
 
 // Drag Lock (stage 6, B.5.3): seconds without mouse movement before the held
 // left button is released. Stored in its own "draglock" section (B.2).
-inline const QString DragLockTimeoutS = QStringLiteral("draglock.DRAGLOCK_TIMEOUT");
+inline const QString DragLockTimeoutS = QStringLiteral("draglock.timeoutSeconds");
 inline constexpr int kDragLockTimeoutMin = 1, kDragLockTimeoutMax = 60, kDragLockTimeoutDefault = 10;
 
 void registerSettings(SettingsSchema &schema);

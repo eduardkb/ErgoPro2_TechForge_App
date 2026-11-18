@@ -135,7 +135,7 @@ src/core/                       ---- platform-independent logic (QtCore only) --
   settings/SettingsRegistry.*   registerAllSettings(): one registerSettings() call per feature
   settings/GeneralSettings.*    general.* keys
   settings/AutoClickSettings.*  autoclick.* keys
-  settings/KeyControlSettings.* keycontrol.actions, draglock.DRAGLOCK_TIMEOUT
+  settings/KeyControlSettings.* keycontrol.actions, draglock.timeoutSeconds
   settings/BreakTimerSettings.* breaktimer.* keys
   settings/StatisticsSettings.* statistics.retentionDays
 
@@ -415,7 +415,9 @@ them as activity, the Statistics collector does not record them.
     renamed `settings.corrupt-<yyyyMMdd-HHmmss>.json`, defaults used
     (`RecoveredCorrupt`); unreadable → defaults, saving disabled (`ReadError`); each
     invalid value falls back to its default with a warning (`invalidValues`);
-    `schemaVersion` mismatch is logged. `kSchemaVersion = 1`.
+    `schemaVersion` mismatch is logged. `kSchemaVersion = 2` (1.8.2); a version-1 file with the old
+    upper-case key names is converted first by `migrateRenamedSettingKeys()`
+    (`src/core/settings/SettingsMigration.cpp`).
   - `setValue()` validates, applies at once, emits `valueChanged(key, value)` and
     schedules a save debounced by `kDefaultSaveDelayMs = 300`. Writing uses
     `QSaveFile` (atomic). Unknown keys in the file are preserved.
@@ -625,16 +627,16 @@ distance in logical px and approximate cm. Never key identities, positions or ap
 `usage % = used time / scaleMaxWorkMs × 100` (`percentAt()`):
 
 - The used time counts like the Break Timer's work time: the gap after an input
-  counts up to `pauseAfterMs` (`BREAKTIMER_ACTIVITY_PAUSE`), then stands still until
+  counts up to `pauseAfterMs` (`breaktimer.activityPauseSeconds`), then stands still until
   the next input. Nothing counts while the break window is shown
   (`BreakEvent::Shown` stops counting); `Postponed` counts as an input.
 - **Reset to 0** when an input arrives after ≥ `resetAfterMs`
-  (`BREAKTIMER_BREAK_TIME`) without input (sleep, lock and app not running count as no
+  (`breaktimer.breakMinutes`) without input (sleep, lock and app not running count as no
   input because the wall clock runs on), and on `BreakEvent::Completed`.
   `Dismissed` / `Postponed` do not reset; midnight does not reset.
 - Above `kMaxPercent = 500` the usage is reset to 0 and `takeCapReset()` reports it
   once (logged at INFO).
-- The 100 % scale (`scaleMaxWorkMs()`) takes a changed `BREAKTIMER_MAX_WORK_TIME` only
+- The 100 % scale (`scaleMaxWorkMs()`) takes a changed `breaktimer.maxWorkMinutes` only
   at a usage reset, at `onWorkCycleReset()`, or immediately when the Break Timer's
   active work time is 0 (`StatisticsController` checks `interactionMs() == 0`).
 - `StatisticsController::checkUsageLimit()` emits `usageOverLimitChanged(percent > 100)`;

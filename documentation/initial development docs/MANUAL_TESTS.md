@@ -31,7 +31,7 @@ the settings file and the log folder first.
 | 5 | General tab. | Card "ErgoPro2" with a green **RUNNING** badge and **Version 1.0.0**; card "Logging" with *Log level* (default "Info + Warning + Error + Critical (recommended)"), *Keep log files for* slider + number box (default **30** days) and the log folder path; red **Exit ErgoPro2** button at the bottom. |
 | 6 | Check the tray / menu bar. | An ErgoPro2 icon (mouse) is shown. On macOS it is monochrome and adapts to a light/dark menu bar. Hovering shows **ErgoPro2 v1.0.0** (Windows/Linux). |
 | 7 | Open the tray icon's menu. | Entries: **Show window**, separator, **Exit**. |
-| 8 | Check the settings file (see BUILD.md §4). | `settings.json` exists, contains `"schemaVersion": 1` and a `general` section with `logLevel`, `logRetentionDays` (30) and `trayHintShown`. |
+| 8 | Check the settings file (see BUILD.md §4). | `settings.json` exists, contains `"schemaVersion": 1` (2 since 1.8.2) and a `general` section with `logLevel`, `logRetentionDays` (30) and `trayHintShown`. |
 | 9 | Check the log folder. | `ergopro2-<today>.log` exists; it contains the start lines (`ErgoPro2 1.0.0 starting on …`, `Settings file: …`, `Log folder: …`) in the format `YYYY-MM-DD HH:MM:SS.mmm [LEVEL] [thread] [module] message`. |
 | 10 | Close the window with the window's close button (red ● on macOS / X). | The window disappears, the app keeps running (tray icon remains). **The first time only**, a notification says "ErgoPro2 is still running in the tray…". On macOS the Dock icon disappears. |
 | 11 | Close the window a second time (after reopening it, step 12). | No notification this time. |
@@ -477,7 +477,7 @@ Keep the log open (General tab › *Open log folder*): every press and release i
 |---|-------|-----------------|
 | 1 | `ctest --test-dir build --output-on-failure` | All 14 test programs pass (adds `tst_draglock`). |
 | 2 | Open the Add Hotkey dialog. | **Drag lock (left button)** is in the action list (unless it already has a hotkey). |
-| 3 | Look at the Key Control tab. | New card **Drag lock** with *Drag lock timeout* (default **10 s**, range 1–60). Changing it is stored in `settings.json` → `draglock` → `DRAGLOCK_TIMEOUT`. |
+| 3 | Look at the Key Control tab. | New card **Drag lock** with *Drag lock timeout* (default **10 s**, range 1–60). Changing it is stored in `settings.json` → `draglock` → `draglock.timeoutSeconds`. |
 | 4 | Show the ErgoPro2 window (Key Control tab) next to some empty desktop space. Point at the empty space and press **F8**. Look at the tray icon and the hotkey row without clicking. | Tray icon shows the drag-lock variant; the F8 row shows **HOLDING** with "Left button held…". Log: `Drag lock: left button held at (x, y)`. |
 | 5 | Press **F8** again. | Button released; tray icon and row back to normal. Log: `… released at (x, y) - hotkey pressed again`. |
 
@@ -535,13 +535,13 @@ Build, **Reinstall** and restart from the installed copy (BUILD.md 5.0); permiss
 | 2 | Key Control: have 5 hotkeys (one per action). | All 5 rows are visible, the list has **no** scroll bar of its own; "Every action already has a hotkey…" is shown in orange **above** the list, readable, not overlapping. *Add Hotkey* is disabled. |
 | 3 | Make the window smaller (height and width). | A scroll bar appears on the page (right edge); scrolling shows every hotkey and the Tips card. Rows never overlap. |
 | 4 | Delete one hotkey, add it again. | The warning disappears/appears again; the list shrinks/grows by one row. |
-| 5 | Key Control tab. | No **Drag lock** card. `settings.json` still contains `draglock.DRAGLOCK_TIMEOUT`; changing it there (app closed) changes the drag-lock timeout. |
+| 5 | Key Control tab. | No **Drag lock** card. `settings.json` still contains `draglock.timeoutSeconds`; changing it there (app closed) changes the drag-lock timeout. |
 | 6 | Break Timer tab right after starting the app (permissions granted). | Switch, sliders and spin boxes are **enabled** and can be changed. |
 | 7 | Break Timer tab layout. | Order: on/off card, **Status**, Settings. |
 | 8 | General › *Reset all settings*, then Break Timer. | *Break length* = **4 min**. |
 | 9 | Use mouse/keyboard for 1 min, then do nothing for 1 min, watch *Active work time*. | It counts while you work, keeps counting for 20 s after the last input, then stands still; *Next break in* stands still too. It continues with the next mouse move. |
 | 10 | Short values (*Break after working* 5 min): work with pauses of ~1 min. | The break appears only after 5 min of **active** time, not 5 min of clock time. A pause of *Reset after a pause of* still resets the timer. |
-| 11 | `settings.json`: set `"BREAKTIMER_ACTIVITY_PAUSE": 5` in `breaktimer` (app closed), restart. | The work time stops 5 s after the last input. Log: `work time stops after 5 s without input`. |
+| 11 | `settings.json`: set `"breaktimer.activityPauseSeconds": 5` in `breaktimer` (app closed), restart. | The work time stops 5 s after the last input. Log: `work time stops after 5 s without input`. |
 
 ---
 
@@ -695,7 +695,7 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 3 | Set *Break after working* below the current *Active work time* (Break Timer tab). | The break window appears immediately. |
 | 4 | Let the break window close by itself (countdown), even while moving the mouse during the break. | Usage goes back to **0 %** (log `break completed - usage reset to 0 %`); the next minutes use the new *Break after working* as 100 %. |
 | 5 | Work until a break, click **Dismiss** while the usage is above 100 % (or keep working past 100 %). | Log `usage above 100 % - break after …`; *Next break in* shows **half** of *Break after working* (e.g. 05:00 for 10 min); the break comes after half the time. After a completed break (usage 0 %) the full time applies again. |
-| 6 | Break Timer tab › *Break length* slider. | Range 3–15 min. In `settings.json` set `BREAKTIMER_BREAK_TIME` to 1 (app closed), start: the value is 4 (log names the invalid value). |
+| 6 | Break Timer tab › *Break length* slider. | Range 3–15 min. In `settings.json` set `breaktimer.breakMinutes` to 1 (app closed), start: the value is 4 (log names the invalid value). |
 | 7 | Break Timer and Auto Click tabs: hints under the sliders. | Only descriptions, no `BREAKTIMER_…` / `AUTOCLICK_…` names. |
 
 ---
@@ -710,7 +710,7 @@ macOS (installed 1.7.6). Short values help: *Break after working* 10 min, *Break
 | 1 | `ctest --test-dir build --output-on-failure` | All 17 test programs pass. |
 | 2 | Break Timer tab: drag each slider to both ends, type values outside the range into the boxes. | *Break after working* 20–120, *Reset after a pause of* 2–15, *Postpone by* 3–20 (values outside cannot be entered). |
 | 3 | General › *Reset all settings*, then Break Timer. | 50 / 5 / 4 (break length) / 10 min. |
-| 4 | With ErgoPro2 closed, set in `settings.json` › `breaktimer`: `BREAKTIMER_MAX_WORK_TIME` 10, `BREAKTIMER_IDLE_RESET` 30, `BREAKTIMER_POSTPONE_TIME` 1; start ErgoPro2. | The tab shows 50 / 5 / 10; the log has a WARNING "Invalid value for …" for each of the three. |
+| 4 | With ErgoPro2 closed, set in `settings.json` › `breaktimer`: `breaktimer.maxWorkMinutes` 10, `breaktimer.idleResetMinutes` 30, `breaktimer.postponeMinutes` 1; start ErgoPro2. | The tab shows 50 / 5 / 10; the log has a WARNING "Invalid value for …" for each of the three. |
 
 ## Bug fix – v1.7.8
 
@@ -846,3 +846,14 @@ X11 / Wayland) for every block.
 | 2 | Open the Statistics tab (today). | Header: **Today – 18 November 2026** (your system's date format, no weekday). |
 | 3 | Click *‹ Previous day*. | Header: **<weekday> – <date>**, e.g. **Tuesday – 10 November 2026**; the weekday matches the date. |
 | 4 | Change the system region (e.g. United States / Germany), restart ErgoPro2, repeat 2–3. | The date follows the region (e.g. "November 10, 2026", "10. November 2026") and the weekday is never shown twice. |
+
+## Bug fix – v1.8.2
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (19 on macOS, 18 on Windows/Linux). |
+| 2 | Before updating: note your values on the Break Timer and Auto Click tabs (and, if changed, `draglock.DRAGLOCK_TIMEOUT` / `breaktimer.BREAKTIMER_ACTIVITY_PAUSE` in `settings.json`). Exit 1.8.1, start 1.8.2. | All values are unchanged on the tabs. The log has INFO lines "Settings: breaktimer.BREAKTIMER_MAX_WORK_TIME renamed to breaktimer.maxWorkMinutes" (one per old key) and "Settings file schemaVersion 1 converted to 2"; no WARNING about invalid values. |
+| 3 | Open `settings.json` (BUILD.md §4). | `"schemaVersion": 2`; no upper-case key left; the keys are `autoclick.triggerTimeMs`, `autoclick.triggerDistancePx`, `draglock.timeoutSeconds`, `breaktimer.idleResetMinutes`, `maxWorkMinutes`, `breakMinutes`, `postponeMinutes`, `activityPauseSeconds`. |
+| 4 | Change a Break Timer and an Auto Click slider, exit and start again. | The new values are kept (saved under the new names). |
+| 5 | Exit, edit `settings.json`: set `breaktimer.maxWorkMinutes` to 30; start. | Break after working shows 30 – the new name is read. |
+| 6 | Restart once more and check the log. | No "renamed" lines any more (nothing left to convert). |

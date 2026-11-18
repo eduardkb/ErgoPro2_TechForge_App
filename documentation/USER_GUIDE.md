@@ -660,5 +660,5 @@ Two values are not on any tab. Change them only if you need to: **exit ErgoPro2 
 
 | Key | What it does | Range | Default |
 |---|---|---|---|
-| `draglock` → `DRAGLOCK_TIMEOUT` | Seconds without mouse movement before Drag lock lets go. | 1–60 s | 10 s |
-| `breaktimer` → `BREAKTIMER_ACTIVITY_PAUSE` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
+| `draglock` → `draglock.timeoutSeconds` | Seconds without mouse movement before Drag lock lets go. | 1–60 s | 10 s |
+| `breaktimer` → `breaktimer.activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |

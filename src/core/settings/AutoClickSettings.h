@@ -7,13 +7,13 @@ namespace ergo {
 class SettingsSchema;
 
 // Keys of the "autoclick" section (implementation_stages.md B.2, stage 3).
-// The owner's parameter names (AUTOCLICK_TRIGGER_TIMER / _DISTANCE) are kept
-// as the JSON key names.
+// camelCase key names with the unit at the end (1.8.2; were AUTOCLICK_TRIGGER_TIMER
+// / _DISTANCE – old files are converted by SettingsMigration).
 namespace AutoClickSettings {
 
 inline const QString Enabled = QStringLiteral("autoclick.enabled");
-inline const QString TriggerTimerMs = QStringLiteral("autoclick.AUTOCLICK_TRIGGER_TIMER");
-inline const QString TriggerDistancePx = QStringLiteral("autoclick.AUTOCLICK_TRIGGER_DISTANCE");
+inline const QString TriggerTimerMs = QStringLiteral("autoclick.triggerTimeMs");
+inline const QString TriggerDistancePx = QStringLiteral("autoclick.triggerDistancePx");
 inline const QString JitterTolerancePx = QStringLiteral("autoclick.jitterTolerancePx");
 inline const QString ShowVisualFeedback = QStringLiteral("autoclick.showVisualFeedback");
 

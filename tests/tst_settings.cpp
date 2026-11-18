@@ -130,6 +130,52 @@ private slots:
         QCOMPARE(fullscreen->defaultValue.toBool(), false);
     }
 
+    // 1.8.2 (owner request): the upper-case keys were renamed; an old file is
+    // converted at load (schemaVersion 1 -> 2) without losing a value.
+    void oldUpperCaseKeysAreMigrated()
+    {
+        QTemporaryDir dir;
+        const QString path = QDir(dir.path()).filePath(QStringLiteral("settings.json"));
+        writeRaw(path, R"({"schemaVersion":1,
+            "autoclick":{"AUTOCLICK_TRIGGER_TIMER":450,"AUTOCLICK_TRIGGER_DISTANCE":30,"enabled":true},
+            "draglock":{"DRAGLOCK_TIMEOUT":25},
+            "breaktimer":{"BREAKTIMER_IDLE_RESET":7,"BREAKTIMER_MAX_WORK_TIME":35,"BREAKTIMER_BREAK_TIME":6,
+                          "BREAKTIMER_POSTPONE_TIME":12,"BREAKTIMER_ACTIVITY_PAUSE":30,
+                          "maxWorkMinutes":40}})");
+        SettingsStore store(m_schema, path);
+        const SettingsLoadResult result = store.load();
+        QCOMPARE(result.status, SettingsLoadResult::Status::Loaded);
+        QCOMPARE(result.migratedKeys, 8);
+        QCOMPARE(result.invalidValues, 0);
+        QCOMPARE(store.intValue(QStringLiteral("autoclick.triggerTimeMs")), 450);
+        QCOMPARE(store.intValue(QStringLiteral("autoclick.triggerDistancePx")), 30);
+        QCOMPARE(store.boolValue(QStringLiteral("autoclick.enabled")), true);
+        QCOMPARE(store.intValue(QStringLiteral("draglock.timeoutSeconds")), 25);
+        QCOMPARE(store.intValue(QStringLiteral("breaktimer.idleResetMinutes")), 7);
+        QCOMPARE(store.intValue(QStringLiteral("breaktimer.maxWorkMinutes")), 40); // the new key wins
+        QCOMPARE(store.intValue(QStringLiteral("breaktimer.breakMinutes")), 6);
+        QCOMPARE(store.intValue(QStringLiteral("breaktimer.postponeMinutes")), 12);
+        QCOMPARE(store.intValue(QStringLiteral("breaktimer.activityPauseSeconds")), 30);
+
+        // Rewritten file: new schema, no upper-case key left.
+        const QJsonObject json = readJson(path);
+        QCOMPARE(json.value(QStringLiteral("schemaVersion")).toInt(), 2);
+        const QByteArray text = QJsonDocument(json).toJson();
+        QVERIFY2(!text.contains("AUTOCLICK_") && !text.contains("BREAKTIMER_") && !text.contains("DRAGLOCK_"),
+                 text.constData());
+
+        // Loading the converted file again changes nothing.
+        SettingsStore again(m_schema, path);
+        QCOMPARE(again.load().migratedKeys, 0);
+        QCOMPARE(again.intValue(QStringLiteral("breaktimer.breakMinutes")), 6);
+    }
+
+    void noUpperCaseKeysInTheSchema()
+    {
+        for (const auto &d : m_schema.definitions())
+            QVERIFY2(d.name() != d.name().toUpper() || d.name().size() < 2, qPrintable(d.key));
+    }
+
     void startupModeSettings()
     {
         const SettingDefinition *autoMode = m_schema.find(GeneralSettings::StartupAutoMode);

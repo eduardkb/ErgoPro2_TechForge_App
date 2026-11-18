@@ -71,7 +71,7 @@ REVIEW_RESULT: it is ok for auto-click to click buttons on the app's interface. 
 | S-10 | Add a **global hotkey to toggle AutoClick** on/off (as an action type in Key Control). | Users of dwell-click tools need a quick way to stop it, e.g. while selecting text. |
 | S-11 | Make the hard-coded values configurable or at least constants in one place: drag-lock timeout (10 s), postpone duration (10 min). | Easy future tuning. |
 | S-12 | **Visual feedback for AutoClick**: a small countdown ring or dot near the cursor before the click happens (optional, toggleable). | Standard in accessibility dwell-click tools. Reduces unexpected clicks. |
-| S-13 | Handle **multiple monitors and HiDPI**: define whether `AUTOCLICK_TRIGGER_DISTANCE` is in physical or logical pixels (suggest logical). The break window covers all screens. | Avoid inconsistent behavior on Retina/4K displays. |
+| S-13 | Handle **multiple monitors and HiDPI**: define whether `autoclick.triggerDistancePx` is in physical or logical pixels (suggest logical). The break window covers all screens. | Avoid inconsistent behavior on Retina/4K displays. |
 | S-14 | Add a **"Permissions / Diagnostics"** section on the General tab showing whether required OS permissions are granted (macOS Accessibility, Input Monitoring; Linux session type) with a button that opens the right system settings page. | Most "it doesn't work" problems will be missing permissions. |
 | S-15 | Add **unit tests** (Qt Test or GoogleTest) for the core logic: timer state machine, settings load/save/validation, AutoClick decision logic, drag-lock state machine. Abstract time (an injectable clock) so tests don't need real waiting. | Lets the AI verify each stage automatically before moving on. |
 | S-16 | Implement in **stages**, each ending with a working, testable build (see Part 4). | Matches your plan to script the implementation in stages. |
@@ -181,15 +181,15 @@ Answer: default
 
 | Parameter | Proposed range | Proposed default |
 |-----------|----------------|------------------|
-| AUTOCLICK_TRIGGER_TIMER | 100–3000 ms (see 1.5) | 600 ms |
-| AUTOCLICK_TRIGGER_DISTANCE | 5–200 px | 15 px |
-| BREAKTIMER_IDLE_RESET | 1–30 min | 5 min |
-| BREAKTIMER_MAX_WORK_TIME | 5–180 min | 50 min |
-| BREAKTIMER_BREAK_TIME | 1–30 min | 5 min |
+| autoclick.triggerTimeMs | 100–3000 ms (see 1.5) | 600 ms |
+| autoclick.triggerDistancePx | 5–200 px | 15 px |
+| breaktimer.idleResetMinutes | 1–30 min | 5 min |
+| breaktimer.maxWorkMinutes | 5–180 min | 50 min |
+| breaktimer.breakMinutes | 1–30 min | 5 min |
 | Drag lock timeout | 1–60 s | 10 s |
 | Postpone duration | 1–60 min | 10 min |
 
-Answer:AUTOCLICK_TRIGGER_TIMER=200. all other defaults are ok.
+Answer:autoclick.triggerTimeMs=200. all other defaults are ok.
 
 **C-05** Should the enabled/disabled state of AutoClick and the Break Timer also be saved and restored at start-up?
 *Suggested default: yes, all states persist.*
@@ -206,8 +206,8 @@ Answer: yes.
 ### 3.4 Function 1 – AutoClick
 
 **A-01** Please confirm the exact AutoClick algorithm:
-1. The pointer moves at least `AUTOCLICK_TRIGGER_DISTANCE` px from the position of the last click (or from the position where AutoClick was armed) → AutoClick becomes **armed**.
-2. When the pointer stops moving (no movement for `AUTOCLICK_TRIGGER_TIMER` ms) → one left click at the current position → **disarmed**.
+1. The pointer moves at least `autoclick.triggerDistancePx` px from the position of the last click (or from the position where AutoClick was armed) → AutoClick becomes **armed**.
+2. When the pointer stops moving (no movement for `autoclick.triggerTimeMs` ms) → one left click at the current position → **disarmed**.
 3. No new click until step 1 happens again (so the user can rest the mouse without repeated clicks).
 
 Is that right? Is "distance" measured as a straight line from the last click position, or as the total path travelled?
@@ -327,7 +327,7 @@ Answer: default
 *Suggested default: consumed. It only releases the drag.*
 Answer: default
 
-**D-04** AutoClick re-arming after drag-lock: confirm that after release the pointer must travel `AUTOCLICK_TRIGGER_DISTANCE` from the **release position** before AutoClick can click again.
+**D-04** AutoClick re-arming after drag-lock: confirm that after release the pointer must travel `autoclick.triggerDistancePx` from the **release position** before AutoClick can click again.
 Answer: yes. confirmed.
 
 **D-05** Should a visual indicator (e.g. tray icon change, small overlay near the cursor) show that drag-lock is active?
@@ -341,7 +341,7 @@ Answer: default
 ### 3.7 Function 3 – Break Timer
 
 **B-01** Precise definition of INTERACTION_TIMER. Which one do you mean?
-a) **Wall-clock time** since the first activity, reset only after `BREAKTIMER_IDLE_RESET` minutes of inactivity (short pauses still count as work).
+a) **Wall-clock time** since the first activity, reset only after `breaktimer.idleResetMinutes` minutes of inactivity (short pauses still count as work).
 b) Only **active** time (time is counted only while the user produces input, e.g. per-second/minute buckets with activity).
 *Suggested default: (a), which is the usual model in break reminder tools.*
 Answer: default
@@ -350,8 +350,8 @@ Answer: default
 *Suggested default: all real user input; synthetic events excluded.*
 Answer: default is ok since synthetic events are always generated by real user input (auto-click needs mouse movement and keyboard actions need keyboard key presses)
 
-**B-03** Should a natural idle period ≥ `BREAKTIMER_IDLE_RESET` count as a "break taken" (reset the timer)? Confirm `BREAKTIMER_IDLE_RESET` should normally be ≤ `BREAKTIMER_BREAK_TIME`, or are they independent?
-Answer: yes. if BREAKTIMER_IDLE_RESET > idle period, reset the active timer. BREAKTIMER_IDLE_RESET and BREAKTIMER_BREAK_TIME are independant and have different functionality.
+**B-03** Should a natural idle period ≥ `breaktimer.idleResetMinutes` count as a "break taken" (reset the timer)? Confirm `breaktimer.idleResetMinutes` should normally be ≤ `breaktimer.breakMinutes`, or are they independent?
+Answer: yes. if breaktimer.idleResetMinutes > idle period, reset the active timer. breaktimer.idleResetMinutes and breaktimer.breakMinutes are independant and have different functionality.
 
 **B-04** **Where are the Dismiss / Postpone buttons?** The description says "Buttons on Break Timer tab", but from context they seem to belong on the **break window**. Please confirm. Should the Break Timer tab also have buttons like "Start break now" and "Reset timer"?
 Answer: "Dismiss and postpone" buttons are only on the break window do close the window if user needs to keep working on the instance the break window is shown. No. break timer tab should not have buttons to break now or reset the timer.
@@ -363,7 +363,7 @@ Should keyboard shortcuts like Alt+Tab / Cmd+Tab / Esc be blocked while it is sh
 *Suggested default: (b), semi-transparent full-screen overlay on all monitors, stays on top, Esc does nothing, but the OS task switcher is not blocked.*
 Answer: default.
 
-**B-06** What happens when the break window **closes automatically** after `BREAKTIMER_BREAK_TIME`? Does INTERACTION_TIMER reset (new cycle)?
+**B-06** What happens when the break window **closes automatically** after `breaktimer.breakMinutes`? Does INTERACTION_TIMER reset (new cycle)?
 *Suggested default: yes.*
 Answer: yes.
 
@@ -374,7 +374,7 @@ Answer: yes. disiss resets the timer. no confirmation or limit is needed.
 *Suggested default: 10 min (configurable), unlimited postpones, timer keeps counting.*
 Answer: default
 
-**B-09** If the user is **idle during the postponed 10 minutes** for longer than `BREAKTIMER_IDLE_RESET`, should the postponed break be cancelled (they already rested)?
+**B-09** If the user is **idle during the postponed 10 minutes** for longer than `breaktimer.idleResetMinutes`, should the postponed break be cancelled (they already rested)?
 *Suggested default: yes.*
 Answer: yes. break should be cancelled and INTERACTION_TIMER should be reset.
 

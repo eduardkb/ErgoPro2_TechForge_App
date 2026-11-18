@@ -55,8 +55,8 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | BD-15 | .md on building per OS, running, auto-execution "service" | `documentation/BUILD.md` §1–5 | – | – | ✅ Documented. "Service" ➖ by S-07 (per-user login item instead of a service). |
 | BD-16 | Left click automatically when the pointer stops | `AutoClickEngine` | `tst_autoclick::armsAtDistanceAndClicksOnceAfterTriggerTime`, `::firstPositionIsTheReference` | S3#7–8 | ✅ |
 | BD-17 | AutoClick has its own thread | `src/ui/autoclick/AutoClickController.cpp:24` (`AutoClickWorker` moved to a `QThread`) | – | – | 🟡 Thread wiring not unit-tested. |
-| BD-18 | AUTOCLICK_TRIGGER_TIMER 5–500 ms | `src/core/settings/AutoClickSettings.h:20-22` | `tst_settings::autoClickSettings` | S3#3 | ➖ Range changed to 100–3000 ms by 1.5 / C-04 (default 200 ms). |
-| BD-19 | AUTOCLICK_TRIGGER_DISTANCE 5–200 px | `AutoClickSettings.h:23-25` | `tst_settings::autoClickSettings`, `tst_autoclick::distanceIsStraightLine` | S3#3, S3#9 | ✅ |
+| BD-18 | autoclick.triggerTimeMs 5–500 ms | `src/core/settings/AutoClickSettings.h:20-22` | `tst_settings::autoClickSettings` | S3#3 | ➖ Range changed to 100–3000 ms by 1.5 / C-04 (default 200 ms). |
+| BD-19 | autoclick.triggerDistancePx 5–200 px | `AutoClickSettings.h:23-25` | `tst_settings::autoClickSettings`, `tst_autoclick::distanceIsStraightLine` | S3#3, S3#9 | ✅ |
 | BD-20 | Auto Click tab: active/inactive indicator + activate button | `src/ui/tabs/AutoClickTab` (`StatusBadge`, button) | – | S3#2, S3#6 | 🟡 |
 | BD-21 | Keys registered exclusively with the OS | `src/core/input/KeyCombo` (suppression registry), `src/platform/mac/MacInput.mm:332`, `src/platform/win/WinInput.cpp:90`, `src/platform/linux/LinuxX11Input.cpp` (XGrabKey), `LinuxEvdevInput.cpp` | `tst_keycombo::swallowDownRepeatAndUp`, `tst_keycontrol::addRegistersAndFiresOncePerPress` | S4#15, S4#18 | ✅ (core); OS swallowing manual only. |
 | BD-22 | "Add Hotkey": press combo, choose action, then exclusively bound | `src/ui/keycontrol/HotkeyDialog`, `KeyControlController` | `tst_keycontrol::addRegistersAndFiresOncePerPress` | S4#3–9 | ✅ |
@@ -67,11 +67,11 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | BD-27 | Action: double left click | `KeyAction`, `…ClickInjector::doubleClick` | `tst_keycontrol::allActionsDispatch` | S4#13 | ✅ |
 | BD-28 | Drag lock: press holds the left button, pressing the key again releases | `src/core/keycontrol/DragLockEngine`, `src/ui/keycontrol/DragLockController` | `tst_draglock::hotkeyPressesAndHolds`, `::hotkeyAgainReleasesAtTheCurrentPosition` | S6#4–10 | ✅ |
 | BD-29 | Drag lock released after 10 s or by any keyboard/mouse button | `DragLockEngine` | `tst_draglock::timeoutSinceTheLastMovement`, `::nonModifierKeyReleases`, `::anyMouseButtonReleases` | S6#11–15 | ✅ Refined by D-01 (modifiers alone do not release) and D-02 (10 s since the last movement). |
-| BD-30 | AutoClick does not click during drag lock nor after release until the pointer moved AUTOCLICK_TRIGGER_DISTANCE | `AutoClickEngine` (drag-lock suppression), `DragLockController` | `tst_autoclick::dragLockSuppressesAndResetsTheReferenceOnRelease`, `tst_draglock::autoClickDoesNotClickWhileHoldingNorAfterReleaseUntilTheDistanceIsMoved` | S6#21–25 | ✅ |
+| BD-30 | AutoClick does not click during drag lock nor after release until the pointer moved autoclick.triggerDistancePx | `AutoClickEngine` (drag-lock suppression), `DragLockController` | `tst_autoclick::dragLockSuppressesAndResetsTheReferenceOnRelease`, `tst_draglock::autoClickDoesNotClickWhileHoldingNorAfterReleaseUntilTheDistanceIsMoved` | S6#21–25 | ✅ |
 | BD-31 | Monitor input; INTERACTION_TIMER; break screen on top, closable only by its buttons | `BreakTimerEngine`, `src/ui/breaktimer/BreakWindow` (`closeEvent`/`keyPressEvent` ignore), `BreakWindowManager` | `tst_breaktimer::interactionTimerCountsOnlyWhileInputContinues`, `::breakAfterMaxWorkTime` | S5#5–6 | ✅ Timer definition changed to active work time (B.7, 1.6.1). |
-| BD-32 | BREAKTIMER_IDLE_RESET | `BreakTimerEngine`, `BreakTimerSettings.h:23` | `tst_breaktimer::idleResetCountsAsABreak`, `::idleResetChangeAppliesImmediately` | S5#16, F1.7.7#2 | ✅ Range now 2–15 min (1.7.7). |
-| BD-33 | BREAKTIMER_MAX_WORK_TIME | `BreakTimerEngine`, `BreakTimerSettings.h:24` | `tst_breaktimer::breakAfterMaxWorkTime`, `::maxWorkTimeChangeAppliesToTheCurrentCycle` | S5#5, S5#20, F1.7.7#2 | ✅ Range now 20–120 min (1.7.7). |
-| BD-34 | BREAKTIMER_BREAK_TIME | `BreakTimerEngine`, `BreakTimerSettings.h:25` | `tst_breaktimer::breakClosesAutomaticallyAndResets` | S5#8, F1.7.6#6 | ✅ Range 3–15, default 4 (1.6.1 / 1.7.6). |
+| BD-32 | breaktimer.idleResetMinutes | `BreakTimerEngine`, `BreakTimerSettings.h:23` | `tst_breaktimer::idleResetCountsAsABreak`, `::idleResetChangeAppliesImmediately` | S5#16, F1.7.7#2 | ✅ Range now 2–15 min (1.7.7). |
+| BD-33 | breaktimer.maxWorkMinutes | `BreakTimerEngine`, `BreakTimerSettings.h:24` | `tst_breaktimer::breakAfterMaxWorkTime`, `::maxWorkTimeChangeAppliesToTheCurrentCycle` | S5#5, S5#20, F1.7.7#2 | ✅ Range now 20–120 min (1.7.7). |
+| BD-34 | breaktimer.breakMinutes | `BreakTimerEngine`, `BreakTimerSettings.h:25` | `tst_breaktimer::breakClosesAutomaticallyAndResets` | S5#8, F1.7.6#6 | ✅ Range 3–15, default 4 (1.6.1 / 1.7.6). |
 | BD-35 | Show active working minutes at the bottom of the tab | `src/ui/tabs/BreakTimerTab` (status panel) | – | S5#4, F1.6.1#7 | ➖ Position changed: status panel is above the parameters (B.7, 1.6.1). Content 🟡. |
 | BD-36 | Buttons Dismiss / Postpone on the Break Timer tab | `BreakWindow` | – | S5#5 | ➖ B-04: buttons only on the break window; no break-now/reset on the tab. |
 | BD-37 | Dismiss closes and resets INTERACTION_TIMER | `BreakTimerEngine`, `BreakWindow` | `tst_breaktimer::dismissResetsImmediately` | S5#9 | ✅ |
@@ -199,7 +199,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | D-01 | Release conditions; modifiers alone do not release | `DragLockEngine` | `tst_draglock::nonModifierKeyReleases`, `::modifiersAloneDoNotRelease`, `::anyMouseButtonReleases` | S6#11–16 | ✅ |
 | D-02 | Timeout from the last mouse movement | `DragLockEngine` | `tst_draglock::timeoutSinceTheLastMovement`, `::sameMovePositionIsNoMovement` | S6#11 | ✅ |
 | D-03 | Releasing click is consumed | `KeySuppressionRegistry::shouldSwallowMouse`, `MacInput.mm:336`, `WinInput.cpp:130` | `tst_draglock::clickIsConsumedByTheInputLayer`, `::onlyOneClickIsConsumedEvenWhileStillHolding` | S6#14–15, S6#27 | ⚠️ Not possible on Linux (X11 and Wayland): `LinuxEvdevInput.cpp:161-163`, `PlatformInterfaces.h:48`. Gap O-1. |
-| D-04 | Re-arm only after AUTOCLICK_TRIGGER_DISTANCE from the release position | `AutoClickEngine`, `DragLockController` | `tst_draglock::autoClickDoesNotClickWhileHoldingNorAfterReleaseUntilTheDistanceIsMoved`, `::autoClickReferenceAfterAConsumedClickRelease` | S6#22–24 | ✅ |
+| D-04 | Re-arm only after autoclick.triggerDistancePx from the release position | `AutoClickEngine`, `DragLockController` | `tst_draglock::autoClickDoesNotClickWhileHoldingNorAfterReleaseUntilTheDistanceIsMoved`, `::autoClickReferenceAfterAConsumedClickRelease` | S6#22–24 | ✅ |
 | D-05 | Tray icon shows drag lock | `TrayController.cpp:71-72`, `AppController.cpp:242-249` | – | S6#4 | 🟡 |
 | D-06 | Break window releases the drag | `AppController.cpp:145-146` | `tst_draglock::applicationReleases` | S6#17 | ✅ |
 
@@ -309,20 +309,20 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.2-i | `general.logRetentionDays` 1–180, default 30 | `GeneralSettings.cpp:13` | `tst_settings::schemaHasStage0Keys`, `tst_logger::retentionIsClamped` | S0#18, S0#24 | ✅ |
 | B.2-j | `general.trayHintShown` bool | `GeneralSettings.cpp:15` | `tst_settings::schemaHasStage0Keys` | S0#10–11 | ✅ |
 | B.2-k | `autoclick.enabled` default false | `AutoClickSettings.cpp:9` | `tst_settings::autoClickSettings` | S3#2, S3#4 | ✅ |
-| B.2-l | `AUTOCLICK_TRIGGER_TIMER` 100–3000, default 200 | `AutoClickSettings.h:20-22` | `tst_settings::autoClickSettings` | S3#2–3 | ✅ |
-| B.2-m | `AUTOCLICK_TRIGGER_DISTANCE` 5–200, default 15 | `AutoClickSettings.h:23-25` | `tst_settings::autoClickSettings` | S3#2–3 | ✅ |
+| B.2-l | `autoclick.triggerTimeMs` 100–3000, default 200 | `AutoClickSettings.h:20-22` | `tst_settings::autoClickSettings` | S3#2–3 | ✅ |
+| B.2-m | `autoclick.triggerDistancePx` 5–200, default 15 | `AutoClickSettings.h:23-25` | `tst_settings::autoClickSettings` | S3#2–3 | ✅ |
 | B.2-n | `autoclick.jitterTolerancePx` 1–10, default 3 | `AutoClickSettings.h:26-28` | `tst_settings::autoClickSettings` | S3#2–3 | ✅ |
 | B.2-o | `autoclick.typingSuspendMs` fixed 500 (constant) | `AutoClickSettings.h:30` | `tst_autoclick::typingDelaysAPendingClick` | S3#13 | ✅ |
 | B.2-p | `autoclick.showVisualFeedback` default false | `AutoClickSettings.cpp:13` | `tst_settings::autoClickSettings` | S3#2 | ✅ |
 | B.2-q | `keycontrol.actions` list | `KeyControlSettings.cpp:11`, `KeyBinding.cpp:43-91` | `tst_keycontrol::storeRoundTripAndInvalidEntries`, `::loadShowsInvalidEntriesAsErrors` | S4#23–24 | ✅ |
-| B.2-r | `DRAGLOCK_TIMEOUT` 1–60, default 10, system-only | `KeyControlSettings.h:17-18` | `tst_settings::integerRanges` (engine only: `tst_draglock::timeoutChangeAppliesImmediately`) | F1.6.1#5 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-r | `draglock.timeoutSeconds` 1–60, default 10, system-only | `KeyControlSettings.h:17-18` | `tst_settings::integerRanges` (engine only: `tst_draglock::timeoutChangeAppliesImmediately`) | F1.6.1#5 | ✅ (G-a1 fixed in 1.8.0) |
 | B.2-s | `breaktimer.enabled` default true | `BreakTimerSettings.cpp:9` | `tst_settings::booleanDefaults` | S5#2 | ✅ (G-a1 fixed in 1.8.0) |
-| B.2-t | `BREAKTIMER_IDLE_RESET` 2–15, default 5 | `BreakTimerSettings.h:23` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
-| B.2-u | `BREAKTIMER_MAX_WORK_TIME` 20–120, default 50 | `BreakTimerSettings.h:24` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
-| B.2-v | `BREAKTIMER_BREAK_TIME` 3–15, default 4 | `BreakTimerSettings.h:25` | `tst_settings::integerRanges` | F1.6.1#8, F1.7.6#6 | ✅ (G-a1 fixed in 1.8.0) |
-| B.2-w | `BREAKTIMER_POSTPONE_TIME` 3–20, default 10 | `BreakTimerSettings.h:26` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-t | `breaktimer.idleResetMinutes` 2–15, default 5 | `BreakTimerSettings.h:23` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-u | `breaktimer.maxWorkMinutes` 20–120, default 50 | `BreakTimerSettings.h:24` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-v | `breaktimer.breakMinutes` 3–15, default 4 | `BreakTimerSettings.h:25` | `tst_settings::integerRanges` | F1.6.1#8, F1.7.6#6 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-w | `breaktimer.postponeMinutes` 3–20, default 10 | `BreakTimerSettings.h:26` | `tst_settings::integerRanges` | F1.7.7#2–4 | ✅ (G-a1 fixed in 1.8.0) |
 | B.2-x | `breaktimer.suppressWhenFullscreen` default false | `BreakTimerSettings.cpp:14` | `tst_settings::booleanDefaults` | S5#2 | ✅ (G-a1 fixed in 1.8.0) |
-| B.2-y | `BREAKTIMER_ACTIVITY_PAUSE` 5–60 s, default 20, system-only | `BreakTimerSettings.h:21,27` | `tst_settings::integerRanges` (engine only: `tst_breaktimer::pauseLimitIsConfigurable`) | F1.6.1#11 | ✅ (G-a1 fixed in 1.8.0) |
+| B.2-y | `breaktimer.activityPauseSeconds` 5–60 s, default 20, system-only | `BreakTimerSettings.h:21,27` | `tst_settings::integerRanges` (engine only: `tst_breaktimer::pauseLimitIsConfigurable`) | F1.6.1#11 | ✅ (G-a1 fixed in 1.8.0) |
 | B.2-z | `statistics.retentionDays` 1–360, default 90 | `StatisticsSettings.h:13-14` | `tst_settings::integerRanges` | F1.7.1#2–4 | ✅ (G-a1 fixed in 1.8.0) |
 
 ### B.3 Logging
@@ -387,14 +387,14 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 |----|--------------|----------------|--------------|----------------|----------------|
 | B.5.3-a | Hotkey → left button down at current position | `DragLockEngine`, `DragLockController` | `tst_draglock::hotkeyPressesAndHolds`, `::toggleUsesThePointerWhenNoEventWasSeen`, `::failedPressLeavesIdle` | S6#4, S6#6–10 | ✅ |
 | B.5.3-b | Released by the hotkey again (swallowed) | `DragLockEngine` | `tst_draglock::hotkeyAgainReleasesAtTheCurrentPosition`, `tst_keycontrol::dragLockHotkeyTogglesWithoutReleasingFirst` | S6#5 | ✅ |
-| B.5.3-c | Released after DRAGLOCK_TIMEOUT without movement | `DragLockEngine` | `tst_draglock::timeoutSinceTheLastMovement`, `::wheelDoesNotReleaseNorResetTheTimeout` | S6#11 | ✅ |
+| B.5.3-c | Released after draglock.timeoutSeconds without movement | `DragLockEngine` | `tst_draglock::timeoutSinceTheLastMovement`, `::wheelDoesNotReleaseNorResetTheTimeout` | S6#11 | ✅ |
 | B.5.3-d | Non-modifier key releases (passed on); modifiers do not | `DragLockEngine` | `tst_draglock::nonModifierKeyReleases`, `::modifiersAloneDoNotRelease`, `::swallowedHotkeysAndRepeatsAreLeftToTheirAction`, `tst_keycontrol::otherHotkeysReleaseTheDragLockBeforeTheirAction` | S6#12–13, S6#16, S6#18 | ✅ |
 | B.5.3-e | Any mouse click releases and is consumed | `DragLockEngine`, `MacInput.mm:336`, `WinInput.cpp:130` | `tst_draglock::anyMouseButtonReleases`, `::clickIsConsumedByTheInputLayer` | S6#14–15, S6#27 | ⚠️ Not consumed on Linux (O-1). |
 | B.5.3-f | Break window releases | `AppController.cpp:145-146` | `tst_draglock::applicationReleases` | S6#17 | ✅ |
 | B.5.3-g | App exit, AutoClick / Key Control disabled release; never stuck | `DragLockController.cpp:91-104`, `KeyControlController.cpp:178,279`, `src/platform/common/EmergencyRelease` (signals) | `tst_draglock::applicationReleases`, `::failedReleaseIsReported` | S6#19–20 | ✅ Signal path manual only. |
 | B.5.3-h | No AutoClick while held; reference = release position | `AutoClickEngine` | `tst_draglock::autoClickDoesNotClickWhileHoldingNorAfterReleaseUntilTheDistanceIsMoved`, `::autoClickReferenceAfterAConsumedClickRelease` | S6#21–25 | ✅ |
 | B.5.3-i | Tray icon shows drag lock | `TrayController.cpp:71-72` | – | S6#4–5 | 🟡 |
-| B.5.3-j | DRAGLOCK_TIMEOUT system-only, no card on the tab | `KeyControlTab` (no card), `KeyControlSettings.h:17` | – | F1.6.1#5 | 🟡 S6#3 describes the removed card; marked historical in 1.8.0 (G-a2). |
+| B.5.3-j | draglock.timeoutSeconds system-only, no card on the tab | `KeyControlTab` (no card), `KeyControlSettings.h:17` | – | F1.6.1#5 | 🟡 S6#3 describes the removed card; marked historical in 1.8.0 (G-a2). |
 
 ### B.5.4 Binding robustness
 
@@ -514,7 +514,7 @@ Row counts: Table A 39 rows, Table B 101 rows, Table C 171 rows.
 
 | ID | Rows | What is missing | Suggested fix |
 |----|------|-----------------|---------------|
-| G-a1 | C-04, B.2-r … B.2-z | `tests/tst_settings.cpp` only checks the General and Auto Click schema entries. The ranges/defaults of `breaktimer.*` (incl. the 1.7.6/1.7.7 range changes and break default 4), `draglock.DRAGLOCK_TIMEOUT` and `statistics.retentionDays` (`src/core/settings/BreakTimerSettings.h:23-27`, `KeyControlSettings.h:18`, `StatisticsSettings.h:14`) have no unit test; an old value outside the new range (F1.7.7#4) is only checked manually. | Add `tst_settings::breakTimerSettings`, `::keyControlAndDragLockSettings`, `::statisticsSettings`: default, min, max, out-of-range value falls back to the default with a warning. |
+| G-a1 | C-04, B.2-r … B.2-z | `tests/tst_settings.cpp` only checks the General and Auto Click schema entries. The ranges/defaults of `breaktimer.*` (incl. the 1.7.6/1.7.7 range changes and break default 4), `draglock.timeoutSeconds` and `statistics.retentionDays` (`src/core/settings/BreakTimerSettings.h:23-27`, `KeyControlSettings.h:18`, `StatisticsSettings.h:14`) have no unit test; an old value outside the new range (F1.7.7#4) is only checked manually. | Add `tst_settings::breakTimerSettings`, `::keyControlAndDragLockSettings`, `::statisticsSettings`: default, min, max, out-of-range value falls back to the default with a warning. |
 | G-a2 | B.1.1-h, B.5.3-j, B.8.4-e | `MANUAL_TESTS.md` rows that no longer match the app: S2#7, S2#9–11, S2#18 (test buttons removed in 1.7.5); S3#17–19 ("ring", now a cross since 1.4.1); S5#2 (break default 5, now 4) and the S5 short-value tip (impossible since 1.7.7); S6#3 (Drag lock card removed in 1.6.1); S7#18 (immediate deletion, changed in 1.7.1). | Mark them as historical in the stage sections and cover the current behavior in the Stage 8 full regression checklist. |
 | G-a3 | B.1.1-e | `src/ui/widgets/PlaceholderPage.{h,cpp}` is compiled (`src/CMakeLists.txt:157`) but no longer used since the Statistics tab exists. | Delete the class and its CMake entry. |
 | G-a4 | B.1.3-b | Part B says the macOS login item uses SMAppService with a LaunchAgent fallback; the code uses only the LaunchAgent, with a documented reason (`src/platform/mac/MacAutostart.h:10-13`). Behavior is correct and tested manually (S1#22–24). | With the owner's OK, align the B.1.3 macOS bullet (`documentation/implementation_stages.md:135`) with the implementation. |

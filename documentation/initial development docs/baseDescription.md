@@ -27,8 +27,8 @@ This application is intended to help persons with wrist pain to reduce mouse and
 - auto-click's main function is to left click the mouse button automatically whenever the mouse pointer stops moving.
 - this function should have a thread of its own to work separately from the main application's interface.
 - On the Auto Click tab, user can change parameters: 
-    - AUTOCLICK_TRIGGER_TIMER: in milisseconds the time Auto Click waits before clicking the left mouse button after the cursor has stopped moving (ranges from 5ms to 500ms)
-    - AUTOCLICK_TRIGGER_DISTANCE: in pixels the minimum ammount of pixels the mouse cursor has to move to trigger a auto-click (ranges from 5px to 200px)
+    - autoclick.triggerTimeMs: in milisseconds the time Auto Click waits before clicking the left mouse button after the cursor has stopped moving (ranges from 5ms to 500ms)
+    - autoclick.triggerDistancePx: in pixels the minimum ammount of pixels the mouse cursor has to move to trigger a auto-click (ranges from 5px to 200px)
 - on the Auto Click tab, clearly indicate in the top if the functionality is active or not and include a button to activate or deactivate it.
 
 ### Function 2
@@ -40,14 +40,14 @@ This application is intended to help persons with wrist pain to reduce mouse and
     - Left mouse click
     - Right mouse click
     - double left mouse click
-    - Drag lock (left mouse click) - This function will click and hold the left mouse button. then if the key associated to it is pressed again, the hold is released. Hold will also be released afte 10 seconds or if any keyboard or mouse button is clicked. Since the autoclick feature can cancel this action make auto click feature not click the left mouse button ducing drag lock action and not click after its release. Autoclick should only click again after mouse is moved the distance specified in "AUTOCLICK_TRIGGER_DISTANCE" parameter after the drag lock key is released (when released the movement count is reset again).
+    - Drag lock (left mouse click) - This function will click and hold the left mouse button. then if the key associated to it is pressed again, the hold is released. Hold will also be released afte 10 seconds or if any keyboard or mouse button is clicked. Since the autoclick feature can cancel this action make auto click feature not click the left mouse button ducing drag lock action and not click after its release. Autoclick should only click again after mouse is moved the distance specified in "autoclick.triggerDistancePx" parameter after the drag lock key is released (when released the movement count is reset again).
 
 ### Function 3
-Break timer funciton actively monitors keyboard key presses and mouse movements and clicks. The application maintains a timer (from now on called INTERACTION_TIMER) for how long the user is interacting with the PC. If this "INTERACTION_TIMER" gets bnigger than "BREAKTIMER_MAX_WORK_TIME" minutes, a screen appears reminding user to take a break. This screan appears on top of all the others and cannot be clicked away unless a button on its screen is pressed.
+Break timer funciton actively monitors keyboard key presses and mouse movements and clicks. The application maintains a timer (from now on called INTERACTION_TIMER) for how long the user is interacting with the PC. If this "INTERACTION_TIMER" gets bnigger than "breaktimer.maxWorkMinutes" minutes, a screen appears reminding user to take a break. This screan appears on top of all the others and cannot be clicked away unless a button on its screen is pressed.
 - On the Break Timer tab, user can change parameters: 
-    - BREAKTIMER_IDLE_RESET: how many minutes of inactivity is needed to reset the "interaction timer"
-    - BREAKTIMER_MAX_WORK_TIME: how many minutes of active work until the break screen reminder is shown.
-    - BREAKTIMER_BREAK_TIME: for how many minutes the break window is shown before automatically closing.
+    - breaktimer.idleResetMinutes: how many minutes of inactivity is needed to reset the "interaction timer"
+    - breaktimer.maxWorkMinutes: how many minutes of active work until the break screen reminder is shown.
+    - breaktimer.breakMinutes: for how many minutes the break window is shown before automatically closing.
 - Display actively working minutes on the bottom of the "break timer" tab.
 - Buttons on "Break Timer" tab: Dismiss, postpone
     - Dismiss: instantly closes the berak window and resets the INTERACTION_TIMER starting a new cycle.

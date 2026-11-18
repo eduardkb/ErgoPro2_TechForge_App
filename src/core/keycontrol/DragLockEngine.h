@@ -42,7 +42,7 @@ public:
     enum class State { Idle, Holding };
     enum class ReleaseReason {
         Hotkey,         // the drag-lock hotkey was pressed again
-        Timeout,        // DRAGLOCK_TIMEOUT without mouse movement (D-02)
+        Timeout,        // draglock.timeoutSeconds without mouse movement (D-02)
         KeyPressed,     // a non-modifier key (or another hotkey) was pressed
         MouseClick,     // a mouse button was pressed (the click is consumed, D-03)
         BreakWindow,    // the break window appeared (D-06)

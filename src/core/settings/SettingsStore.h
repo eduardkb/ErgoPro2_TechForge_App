@@ -21,6 +21,7 @@ struct SettingsLoadResult {
     };
     Status status = Status::Loaded;
     int invalidValues = 0;  // number of values replaced by their default
+    int migratedKeys = 0;   // old key names converted (1.8.2)
     QString backupPath;     // RecoveredCorrupt only (empty if the backup failed)
     QString message;        // human-readable description for the user (empty when all is fine)
 };
@@ -34,7 +35,7 @@ struct SettingsLoadResult {
 class SettingsStore : public QObject {
     Q_OBJECT
 public:
-    static constexpr int kSchemaVersion = 1;
+    static constexpr int kSchemaVersion = 2; // 2 since 1.8.2: camelCase key names (SettingsMigration)
     static constexpr int kDefaultSaveDelayMs = 300;
 
     SettingsStore(const SettingsSchema &schema, const QString &filePath, QObject *parent = nullptr);

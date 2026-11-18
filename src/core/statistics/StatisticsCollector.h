@@ -35,9 +35,9 @@ namespace ergo {
 class StatisticsCollector {
 public:
     struct Config {
-        qint64 maxWorkMs = 50 * 60000;   // BREAKTIMER_MAX_WORK_TIME
-        qint64 resetAfterMs = 4 * 60000; // BREAKTIMER_BREAK_TIME
-        qint64 pauseAfterMs = 20000;     // BREAKTIMER_ACTIVITY_PAUSE
+        qint64 maxWorkMs = 50 * 60000;   // breaktimer.maxWorkMinutes
+        qint64 resetAfterMs = 4 * 60000; // breaktimer.breakMinutes
+        qint64 pauseAfterMs = 20000;     // breaktimer.activityPauseSeconds
     };
 
     // Above this the usage is set back to 0 % (1.7.8, owner request).

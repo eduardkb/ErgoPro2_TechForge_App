@@ -5,6 +5,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.8.2] - 2026-11-18
+
+Owner-requested change (specification B.2 updated).
+
+### Changed
+- **settings.json: all keys now use the same style** (camelCase with the unit at the end, like
+  `general.logRetentionDays`). The eight upper-case keys were renamed:
+
+  | Old key (≤ 1.8.1) | New key |
+  |---|---|
+  | `autoclick.AUTOCLICK_TRIGGER_TIMER` | `autoclick.triggerTimeMs` |
+  | `autoclick.AUTOCLICK_TRIGGER_DISTANCE` | `autoclick.triggerDistancePx` |
+  | `draglock.DRAGLOCK_TIMEOUT` | `draglock.timeoutSeconds` |
+  | `breaktimer.BREAKTIMER_IDLE_RESET` | `breaktimer.idleResetMinutes` |
+  | `breaktimer.BREAKTIMER_MAX_WORK_TIME` | `breaktimer.maxWorkMinutes` |
+  | `breaktimer.BREAKTIMER_BREAK_TIME` | `breaktimer.breakMinutes` |
+  | `breaktimer.BREAKTIMER_POSTPONE_TIME` | `breaktimer.postponeMinutes` |
+  | `breaktimer.BREAKTIMER_ACTIVITY_PAUSE` | `breaktimer.activityPauseSeconds` |
+
+  **Your settings are kept:** at the first start an existing file is converted automatically (`schemaVersion`
+  1 → 2; each value moves to its new name, the old name is removed; logged as INFO). If both names exist, the
+  new one wins.
+- The documentation (including the original description, the questions, older changelog entries and manual
+  tests) uses the new names.
+- 2 new settings unit tests (conversion, no upper-case key in the schema).
+
 ## [1.8.1] - 2026-11-18
 
 Owner-requested change (specification B.8.3 updated).
@@ -272,7 +298,7 @@ Bug fixes and owner-requested changes (specification Part B updated).
 
 ### Changed
 - Key Control: "Every action already has a hotkey…" is shown **above** the list, in the warning color.
-- Key Control: the **Drag lock** card is removed from the tab. `draglock.DRAGLOCK_TIMEOUT` stays in
+- Key Control: the **Drag lock** card is removed from the tab. `draglock.timeoutSeconds` stays in
   `settings.json` as a system-only setting.
 - Break Timer: the **Status** panel is now right below the on/off switch, above the settings.
 - Break Timer: **Break length** default is now **4 min** (was 5). Only new installations and "Reset all
@@ -280,7 +306,7 @@ Bug fixes and owner-requested changes (specification Part B updated).
 - Break Timer: **Active work time** now counts only while you use the computer: after 20 s without any mouse or
   keyboard input it stops (those 20 s still count) and continues with the next input. The break appears when
   this active time reaches *Break after working*. The 20 s are the system-only setting
-  `breaktimer.BREAKTIMER_ACTIVITY_PAUSE` (5–60 s) in `settings.json`.
+  `breaktimer.activityPauseSeconds` (5–60 s) in `settings.json`.
 - 5 new / 3 adapted Break Timer unit tests (`tst_breaktimer`: 25).
 
 ## [1.6.0] - 2026-11-10
@@ -292,7 +318,7 @@ Stage 6 – Drag Lock (Key Control action) and its interaction with Auto Click a
   left mouse button down at the pointer, so you can drag files, select text or move windows without holding
   the button. The button is let go (at the current pointer position) when:
   - the drag-lock hotkey is pressed again (the key is not passed on),
-  - `DRAGLOCK_TIMEOUT` seconds pass **without mouse movement** (D-02),
+  - `draglock.timeoutSeconds` seconds pass **without mouse movement** (D-02),
   - any non-modifier key is pressed (the key reaches the application normally; Shift/Ctrl/Option/Cmd alone
     do not let go, D-01); another hotkey lets go first and then does its action,
   - any mouse button is pressed – that click only lets go and is **not passed on** (D-03),
@@ -300,12 +326,12 @@ Stage 6 – Drag Lock (Key Control action) and its interaction with Auto Click a
   - the hotkey is disabled, deleted, modified or reset, Key Control is paused (hotkey dialog open) or
     becomes unavailable, Auto Click is switched off, the input hook stops, or the application exits.
 - **Auto Click while drag-locked:** no auto-click while the button is held and none on release; the release
-  position becomes the reference point, so the pointer must move `AUTOCLICK_TRIGGER_DISTANCE` before the next
+  position becomes the reference point, so the pointer must move `autoclick.triggerDistancePx` before the next
   auto-click (B.4 rule 7, D-04).
 - **Indicators:** the tray icon shows the drag-lock variant while the button is held (D-05; takes priority
   over the Auto Click variant), and the hotkey's row in the Key Control list shows **HOLDING**.
 - **Drag lock timeout** parameter (1–60 s, default 10) on the Key Control tab; setting
-  `draglock.DRAGLOCK_TIMEOUT`.
+  `draglock.timeoutSeconds`.
 - Input layer: the hooks can now swallow the click that ends a drag lock (macOS event tap, Windows
   `WH_MOUSE_LL`). On macOS, pointer moves while the button is held are turned into left-mouse-dragged events,
   because a button pressed by ErgoPro2 does not make macOS report drags by itself.
@@ -326,16 +352,16 @@ Stage 5 – Function 3: Break Timer.
 
 ### Added
 - **Break reminders based on real activity:** the work time (INTERACTION_TIMER) starts with the first mouse or
-  keyboard use and counts wall-clock time; short pauses keep counting, a pause of `BREAKTIMER_IDLE_RESET`
-  (also sleep or a locked screen, including the time asleep) resets it. After `BREAKTIMER_MAX_WORK_TIME` the
+  keyboard use and counts wall-clock time; short pauses keep counting, a pause of `breaktimer.idleResetMinutes`
+  (also sleep or a locked screen, including the time asleep) resets it. After `breaktimer.maxWorkMinutes` the
   break window appears. Only real input counts – clicks from Auto Click and Key Control do not.
 - **Break window** on every screen (one per screen, also screens connected during the break): semi-transparent
   overlay, always on top (macOS: screen-saver level on all Spaces and over full-screen apps; Windows:
   topmost; Linux: stay-on-top + full-screen state). The main screen shows "Time to rest your wrists", an mm:ss
   countdown, five illustrated stretching tips and **Dismiss** / **Postpone N min**. It cannot be closed with
   Esc, Alt+F4 or Cmd+W; it closes when the countdown reaches zero. Auto Click and hotkeys work on it.
-- Rules: auto-close after `BREAKTIMER_BREAK_TIME` and reset; Dismiss resets immediately; Postpone brings the
-  window back after `BREAKTIMER_POSTPONE_TIME` while the work time keeps counting (unlimited); resting for the
+- Rules: auto-close after `breaktimer.breakMinutes` and reset; Dismiss resets immediately; Postpone brings the
+  window back after `breaktimer.postponeMinutes` while the work time keeps counting (unlimited); resting for the
   idle-reset time during a postpone cancels it; activity during a break changes nothing; no break starts
   while the screen is locked; parameter changes apply to the running work period; disabling ends a break.
 - Optional **"No breaks during full-screen apps"** (off by default): macOS and Windows detect full-screen
@@ -345,7 +371,7 @@ Stage 5 – Function 3: Break Timer.
   "reset" buttons (B-04).
 - Tray menu: **Break Timer on/off** and **Start break now**.
 - Signal `breakWindowShown()` for stage 6 (Drag Lock release).
-- Settings `breaktimer.enabled`, `breaktimer.BREAKTIMER_IDLE_RESET`, `…_MAX_WORK_TIME`, `…_BREAK_TIME`,
+- Settings `breaktimer.enabled`, `breaktimer.idleResetMinutes`, `…_MAX_WORK_TIME`, `…_BREAK_TIME`,
   `…_POSTPONE_TIME`, `breaktimer.suppressWhenFullscreen`.
 - Break Timer engine (pure state machine) with 21 unit tests driven by the fake clock.
 
@@ -413,8 +439,8 @@ Stage 4 – Function 2: Key Control (hotkeys; Drag Lock follows in stage 6).
 Stage 3 – Function 1: Auto Click.
 
 ### Added
-- **Auto Click** (dwell click): when the pointer has moved at least `AUTOCLICK_TRIGGER_DISTANCE` from the last
-  click and then rests for `AUTOCLICK_TRIGGER_TIMER`, one left click happens at the pointer. Resting the mouse
+- **Auto Click** (dwell click): when the pointer has moved at least `autoclick.triggerDistancePx` from the last
+  click and then rests for `autoclick.triggerTimeMs`, one left click happens at the pointer. Resting the mouse
   never produces repeated clicks.
   - Movements up to the tremor tolerance (1–10 px, default 3) do not restart the countdown.
   - A manual click (any button) cancels a pending auto-click and becomes the new reference point (on press
@@ -435,7 +461,7 @@ Stage 3 – Function 1: Auto Click.
 - Optional visual feedback: a click-through ring next to the pointer that fills during the countdown (off by
   default; not available on Wayland, with an explanation).
 - Tray menu entry **AutoClick on/off** and a tray icon variant while Auto Click is active.
-- Settings `autoclick.enabled`, `autoclick.AUTOCLICK_TRIGGER_TIMER`, `autoclick.AUTOCLICK_TRIGGER_DISTANCE`,
+- Settings `autoclick.enabled`, `autoclick.triggerTimeMs`, `autoclick.triggerDistancePx`,
   `autoclick.jitterTolerancePx`, `autoclick.showVisualFeedback`; changes apply immediately and persist.
 
 ### Changed

@@ -22,6 +22,7 @@ add_library(ergopro2_core STATIC
     core/LocationClassifier.cpp core/LocationClassifier.h
     core/StartupMode.cpp core/StartupMode.h
     core/WindowLimits.cpp core/WindowLimits.h
+    core/settings/SettingsMigration.cpp core/settings/SettingsMigration.h
     core/statistics/ChartAxis.cpp core/statistics/ChartAxis.h
     core/statistics/DateText.cpp core/statistics/DateText.h
     core/statistics/StatisticsCollector.cpp core/statistics/StatisticsCollector.h

@@ -161,7 +161,21 @@ ergoPro2/
 
 ## B.2 Settings (JSON)
 - File: `QStandardPaths::AppConfigLocation` / `settings.json` (organization `techforge`, application `ErgoPro2`, bundle id `com.techforge.ergopro2`).
-- Contains `schemaVersion`. Each value is validated (type + range); invalid values fall back to the default and a warning is logged. A file that cannot be parsed is renamed `settings.corrupt-<timestamp>.json`, defaults are used, and the user is notified.
+- Contains `schemaVersion` (2 since 1.8.2). **Key names** are camelCase with the unit at the end, like `general.logRetentionDays` (1.8.2, owner request). Until 1.8.1 eight keys used the owner's upper-case parameter names; a file with the old names (`schemaVersion` 1) is converted automatically at start (value kept, old key removed, logged as INFO; `src/core/settings/SettingsMigration`):
+
+  | Old key (≤ 1.8.1) | New key (1.8.2) |
+  |---|---|
+  | `autoclick.AUTOCLICK_TRIGGER_TIMER` | `autoclick.triggerTimeMs` |
+  | `autoclick.AUTOCLICK_TRIGGER_DISTANCE` | `autoclick.triggerDistancePx` |
+  | `draglock.DRAGLOCK_TIMEOUT` | `draglock.timeoutSeconds` |
+  | `breaktimer.BREAKTIMER_IDLE_RESET` | `breaktimer.idleResetMinutes` |
+  | `breaktimer.BREAKTIMER_MAX_WORK_TIME` | `breaktimer.maxWorkMinutes` |
+  | `breaktimer.BREAKTIMER_BREAK_TIME` | `breaktimer.breakMinutes` |
+  | `breaktimer.BREAKTIMER_POSTPONE_TIME` | `breaktimer.postponeMinutes` |
+  | `breaktimer.BREAKTIMER_ACTIVITY_PAUSE` | `breaktimer.activityPauseSeconds` |
+
+  The rest of this document uses the new names also for the owner's original parameters.
+- Each value is validated (type + range); invalid values fall back to the default and a warning is logged. A file that cannot be parsed is renamed `settings.corrupt-<timestamp>.json`, defaults are used, and the user is notified.
 - Atomic write (`QSaveFile`), debounced 300 ms.
 - All states persist (enabled/disabled of features, hotkey list, window options).
 
@@ -173,20 +187,20 @@ ergoPro2/
 | `general.logRetentionDays` | 1–180 | 30 | 0 |
 | `general.trayHintShown` | bool | false | 0 |
 | `autoclick.enabled` | bool | false | 3 |
-| `AUTOCLICK_TRIGGER_TIMER` (ms) | 100–3000 | **200** | 3 |
-| `AUTOCLICK_TRIGGER_DISTANCE` (logical px) | 5–200 | 15 | 3 |
+| `autoclick.triggerTimeMs` (ms) | 100–3000 | **200** | 3 |
+| `autoclick.triggerDistancePx` (logical px) | 5–200 | 15 | 3 |
 | `autoclick.jitterTolerancePx` | 1–10 | 3 | 3 |
 | `autoclick.typingSuspendMs` | fixed 500 (constant) | 500 | 3 |
 | `autoclick.showVisualFeedback` | bool | false | 3 |
 | `keycontrol.actions` | list (see B.5) | empty | 4 |
-| `DRAGLOCK_TIMEOUT` (s) | 1–60 | 10 | 6 (system-only since 1.6.1: settings.json, not on the tab) |
+| `draglock.timeoutSeconds` (s) | 1–60 | 10 | 6 (system-only since 1.6.1: settings.json, not on the tab) |
 | `breaktimer.enabled` | bool | true | 5 |
-| `BREAKTIMER_IDLE_RESET` (min) | **2–15** (1–30 until 1.7.6) | 5 | 5 |
-| `BREAKTIMER_MAX_WORK_TIME` (min) | **20–120** (5–180 until 1.7.6) | 50 | 5 |
-| `BREAKTIMER_BREAK_TIME` (min) | **3–15** (1–30 until 1.7.5) | **4** (was 5 until 1.6.1) | 5 |
-| `BREAKTIMER_POSTPONE_TIME` (min) | **3–20** (1–60 until 1.7.6) | 10 | 5 |
+| `breaktimer.idleResetMinutes` (min) | **2–15** (1–30 until 1.7.6) | 5 | 5 |
+| `breaktimer.maxWorkMinutes` (min) | **20–120** (5–180 until 1.7.6) | 50 | 5 |
+| `breaktimer.breakMinutes` (min) | **3–15** (1–30 until 1.7.5) | **4** (was 5 until 1.6.1) | 5 |
+| `breaktimer.postponeMinutes` (min) | **3–20** (1–60 until 1.7.6) | 10 | 5 |
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
-| `BREAKTIMER_ACTIVITY_PAUSE` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
+| `breaktimer.activityPauseSeconds` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
 | `statistics.retentionDays` | 1–360 | 90 | 7 |
 
 Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `draglock`, `breaktimer`, `statistics`). Each stage adds only its own keys (and their schema/validation).
@@ -208,9 +222,9 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - Runs in its **own thread** and gets mouse/keyboard events from the shared input hook (B.6).
 - Tab: top **status badge** ("AutoClick is ACTIVE" / "INACTIVE") + **Activate/Deactivate** button; parameters below.
 - Algorithm (A-01 – A-05):
-  1. **Armed** when the pointer is at a straight-line distance ≥ `AUTOCLICK_TRIGGER_DISTANCE` (logical px) from the **last reference point** (position of the last click, manual or automatic, or the position where AutoClick was enabled).
+  1. **Armed** when the pointer is at a straight-line distance ≥ `autoclick.triggerDistancePx` (logical px) from the **last reference point** (position of the last click, manual or automatic, or the position where AutoClick was enabled).
   2. While armed, every movement greater than `jitterTolerancePx` restarts the stop timer. Smaller movements are ignored (tremor).
-  3. When there has been no movement (beyond the tolerance) for `AUTOCLICK_TRIGGER_TIMER` ms → **one left click** at the current position → reference point = click position → **disarmed**.
+  3. When there has been no movement (beyond the tolerance) for `autoclick.triggerTimeMs` ms → **one left click** at the current position → reference point = click position → **disarmed**.
   4. A **manual mouse click** (any button) while armed cancels the pending click, disarms, and sets the reference point to that position. A click produced by **Key Control** behaves the same as a manual click.
   5. No auto-click while any mouse button is held down (manual drag).
   6. No auto-click within 500 ms after any key press (typing).
@@ -256,14 +270,14 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - Press hotkey → left button **down** (held) at the current position.
 - Released (button **up** at the current position) when any of these happens:
   - the drag-lock hotkey is pressed again (swallowed),
-  - `DRAGLOCK_TIMEOUT` seconds pass **without mouse movement** (D-02),
+  - `draglock.timeoutSeconds` seconds pass **without mouse movement** (D-02),
   - any **non-modifier** keyboard key is pressed (modifiers alone do not release; the key press is passed on normally),
   - any mouse button is clicked (that click is **consumed**: it only releases the drag) (D-03),
   - the break window appears (D-06),
   - the app exits or AutoClick/Key Control is disabled (safety: never leave the button stuck down).
-- While active: AutoClick does not click. After release, AutoClick's reference point = release position, so the pointer must travel `AUTOCLICK_TRIGGER_DISTANCE` again before the next auto-click (D-04).
+- While active: AutoClick does not click. After release, AutoClick's reference point = release position, so the pointer must travel `autoclick.triggerDistancePx` again before the next auto-click (D-04).
 - Tray icon shows drag-lock active (D-05).
-- `DRAGLOCK_TIMEOUT` is a system-only setting since 1.6.1 (owner request): it is changed in `settings.json` only; the Key Control tab shows no Drag lock card.
+- `draglock.timeoutSeconds` is a system-only setting since 1.6.1 (owner request): it is changed in `settings.json` only; the Key Control tab shows no Drag lock card.
 
 ### B.5.4 Binding robustness (REVIEW 1.4)
 - One shared input hook (no thread per action). Keys stay exclusive over hours/days:
@@ -283,24 +297,24 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - **Power/session events**: sleep, resume, screen lock, unlock → signals (used by the watchdog and Break Timer).
 
 ## B.7 Function 3 – Break Timer
-- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; right below it (above the parameters, 1.6.1) a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), *Work started at* (1.7.5: local time HH:mm:ss, 24 h, when the current work cycle started, i.e. the first input after the last reset; "–" while no cycle runs: after a reset until the next input, and when disabled), time until next break, current state (*Working*, *Paused* – Working, but the work time stands still because there was no input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (1.7.1; a running postpone keeps showing *Postponed*) –, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
-- **INTERACTION_TIMER = active work time** of the current work cycle (changed in 1.6.1 at the owner's request; was wall-clock time, B-01 a). The cycle starts at the first real user activity after a reset. Time counts while input continues; when there is no mouse/keyboard input for `BREAKTIMER_ACTIVITY_PAUSE` seconds (default 20) the timer stops – those seconds still count – and it resumes with the next input. The break starts when this active time reaches `BREAKTIMER_MAX_WORK_TIME`. The idle reset (`BREAKTIMER_IDLE_RESET`) still uses the time since the last input. While the break window is shown nothing counts; after Postpone the time continues (the Postpone click counts as input).
+- Tab: top **toggle** Break Timer enabled/disabled (on by default) + status badge; right below it (above the parameters, 1.6.1) a live status panel updated **every second**: active work time (`INTERACTION_TIMER`, mm:ss), *Work started at* (1.7.5: local time HH:mm:ss, 24 h, when the current work cycle started, i.e. the first input after the last reset; "–" while no cycle runs: after a reset until the next input, and when disabled), time until next break, current state (*Working*, *Paused* – Working, but the work time stands still because there was no input for `breaktimer.activityPauseSeconds` seconds (1.7.1; a running postpone keeps showing *Postponed*) –, *Idle*, *On break*, *Postponed*, *Disabled*). No "break now"/"reset" buttons on the tab (B-04). (*Start break now* exists only in the tray menu.)
+- **INTERACTION_TIMER = active work time** of the current work cycle (changed in 1.6.1 at the owner's request; was wall-clock time, B-01 a). The cycle starts at the first real user activity after a reset. Time counts while input continues; when there is no mouse/keyboard input for `breaktimer.activityPauseSeconds` seconds (default 20) the timer stops – those seconds still count – and it resumes with the next input. The break starts when this active time reaches `breaktimer.maxWorkMinutes`. The idle reset (`breaktimer.idleResetMinutes`) still uses the time since the last input. While the break window is shown nothing counts; after Postpone the time continues (the Postpone click counts as input).
 - Activity = real mouse movement, clicks, wheel, key presses. Synthetic events excluded (B-02).
-- **Idle reset**: if there is no activity for ≥ `BREAKTIMER_IDLE_RESET` minutes, the timer resets (counts as a break taken) (B-03). Sleep and screen lock count as idle (B-16).
-- When INTERACTION_TIMER ≥ `BREAKTIMER_MAX_WORK_TIME` → show the **break window**. While the Statistics **computer usage percent is above 100 %** (B.8.2, e.g. after Dismiss), the break comes after **half** of `BREAKTIMER_MAX_WORK_TIME` instead (1.7.6, owner request); back to the full time once the usage is reset to 0. If the usage goes above 100 % while the work time is already past half, the break starts at once. The postpone time is not affected.
+- **Idle reset**: if there is no activity for ≥ `breaktimer.idleResetMinutes` minutes, the timer resets (counts as a break taken) (B-03). Sleep and screen lock count as idle (B-16).
+- When INTERACTION_TIMER ≥ `breaktimer.maxWorkMinutes` → show the **break window**. While the Statistics **computer usage percent is above 100 %** (B.8.2, e.g. after Dismiss), the break comes after **half** of `breaktimer.maxWorkMinutes` instead (1.7.6, owner request); back to the full time once the usage is reset to 0. If the usage goes above 100 % while the work time is already past half, the break starts at once. The postpone time is not affected.
 - The tabs show only descriptive texts for the parameters, no variable names in capital letters (1.7.6).
 - **Break window** (B-05, B-10):
   - Full-screen semi-transparent overlay on **all monitors**, always on top, not closable with Esc/Alt+F4/Cmd+W. The OS task switcher is not blocked.
-  - Shows: message (e.g. "Time to rest your wrists"), **countdown mm:ss** of `BREAKTIMER_BREAK_TIME`, **fixed stretching tips with images** (create 4–6 simple SVG illustrations in `resources/`, e.g. wrist flexor stretch, wrist extensor stretch, fist-open-fan, shoulder rolls, look away 20 s), and buttons **Dismiss** and **Postpone (N min)**.
+  - Shows: message (e.g. "Time to rest your wrists"), **countdown mm:ss** of `breaktimer.breakMinutes`, **fixed stretching tips with images** (create 4–6 simple SVG illustrations in `resources/`, e.g. wrist flexor stretch, wrist extensor stretch, fist-open-fan, shoulder rolls, look away 20 s), and buttons **Dismiss** and **Postpone (N min)**.
   - **Countdown reaches zero** → window closes automatically, INTERACTION_TIMER resets (B-06).
   - **Dismiss** → closes immediately and resets INTERACTION_TIMER (no confirmation, no limit) (B-07).
-  - **Postpone** → closes and reopens after `BREAKTIMER_POSTPONE_TIME` minutes. The timer keeps counting; unlimited postpones (B-08). If the user is idle ≥ `BREAKTIMER_IDLE_RESET` during the postpone, the postponed break is cancelled and INTERACTION_TIMER resets (B-09).
+  - **Postpone** → closes and reopens after `breaktimer.postponeMinutes` minutes. The timer keeps counting; unlimited postpones (B-08). If the user is idle ≥ `breaktimer.idleResetMinutes` during the postpone, the postponed break is cancelled and INTERACTION_TIMER resets (B-09).
   - Activity during the break does nothing (countdown continues) (B-13).
   - AutoClick and hotkeys keep working on the break window (A-06, K-13). An active Drag Lock is released when it appears (D-06).
   - No pre-warning, no sound (B-11, B-12).
 - **Suppress when a full-screen app is in the foreground** (B-17): optional setting, off by default. When on and a full-screen app is active, the break is delayed until it is no longer full-screen (best effort per OS; if detection is unsupported on an OS, disable the option with an explanation).
 - Disabling the Break Timer closes any break window and resets the timer.
-- Changing `BREAKTIMER_MAX_WORK_TIME` takes effect immediately on the current cycle.
+- Changing `breaktimer.maxWorkMinutes` takes effect immediately on the current cycle.
 
 ## B.9 Releases (1.7.4, owner request)
 - The CI (`.github/workflows/ci.yml`) creates a **GitHub release** named `ErgoPro2_v<version>` (tag `v<version>`) after a push to `main` whose version in `CMakeLists.txt` has no release yet; later pushes with the same version create nothing.
@@ -324,12 +338,12 @@ Owner description (stage 7 request) with the owner's answers to the clarificatio
 - Day boundary: **local midnight**. Counters start at zero each day; the usage percent (B.8.2) is **not** reset at midnight.
 
 ### B.8.2 Computer usage percent
-- `usage % = used time since the last usage reset ÷ BREAKTIMER_MAX_WORK_TIME × 100` (1.7.8, owner request): the used time is counted **exactly like the Break Timer's active work time** (B.7): a pause between inputs counts up to `BREAKTIMER_ACTIVITY_PAUSE` seconds, then the time stands still until the next input; nothing counts while the break window is shown; the *Postpone* click counts as input. So 0 % = no work time and 100 % = the active work time reached *Break after working*. (Before 1.7.8 only seconds with input counted, so the break came at e.g. 70 %.)
-- **Reset to 0 %** when there was **no input for `BREAKTIMER_BREAK_TIME` minutes** (owner's rule; this is intentionally the break length, not `BREAKTIMER_IDLE_RESET`; sleep / lock / app not running count as no input) **and when the break window closes by itself** (countdown over), even if there was input while it was shown (1.7.6, owner request).
+- `usage % = used time since the last usage reset ÷ breaktimer.maxWorkMinutes × 100` (1.7.8, owner request): the used time is counted **exactly like the Break Timer's active work time** (B.7): a pause between inputs counts up to `breaktimer.activityPauseSeconds` seconds, then the time stands still until the next input; nothing counts while the break window is shown; the *Postpone* click counts as input. So 0 % = no work time and 100 % = the active work time reached *Break after working*. (Before 1.7.8 only seconds with input counted, so the break came at e.g. 70 %.)
+- **Reset to 0 %** when there was **no input for `breaktimer.breakMinutes` minutes** (owner's rule; this is intentionally the break length, not `breaktimer.idleResetMinutes`; sleep / lock / app not running count as no input) **and when the break window closes by itself** (countdown over), even if there was input while it was shown (1.7.6, owner request).
 - Dismiss and Postpone do **not** reset it: the value keeps growing beyond 100 %. Postponing any number of times changes nothing.
 - **Maximum 500 %** (1.7.8, owner request): when the usage goes above 500 % (breaks ignored), it is set to **0 %** and a new usage cycle starts with the current setting, so the half-time rule of B.7 ends and the next break comes after the full *Break after working*. The Break Timer's active work time is not changed. Logged as INFO.
 - Calculated the same way when the Break Timer is disabled (with its current settings).
-- **Scale per work period** (1.7.6; changed in 1.7.8, owner request): a changed `BREAKTIMER_MAX_WORK_TIME` becomes the 100 % reference when a **new work period starts**, i.e. when the Break Timer's active work time is reset (idle reset, break completed, Dismiss, timer switched off), or **immediately** if the active work time is already 0 (or the usage is 0). The used time is kept, so the percent can change once at that moment (e.g. after a Dismiss above 0 %). The Break Timer itself applies the new value at once (B.7). `BREAKTIMER_BREAK_TIME` (reset pause) and `BREAKTIMER_ACTIVITY_PAUSE` apply at once. Recorded minutes are never recalculated.
+- **Scale per work period** (1.7.6; changed in 1.7.8, owner request): a changed `breaktimer.maxWorkMinutes` becomes the 100 % reference when a **new work period starts**, i.e. when the Break Timer's active work time is reset (idle reset, break completed, Dismiss, timer switched off), or **immediately** if the active work time is already 0 (or the usage is 0). The used time is kept, so the percent can change once at that moment (e.g. after a Dismiss above 0 %). The Break Timer itself applies the new value at once (B.7). `breaktimer.breakMinutes` (reset pause) and `breaktimer.activityPauseSeconds` apply at once. Recorded minutes are never recalculated.
 - Recorded **per minute**: the value at the end of each minute (minutes without data are empty, not 0).
 
 ### B.8.3 Statistics tab
@@ -546,7 +560,7 @@ GOAL: break reminders based on real user activity, with a full-screen break wind
 IMPLEMENT:
 1. Version 1.5.0 + CHANGELOG entry.
 2. Settings keys for the Break Timer (Part B.2) with validation.
-3. Break Timer engine in src/core as a pure state machine driven by activity events, power/lock events and the injectable clock: states Disabled, WaitingForActivity, Working, BreakShown, Postponed; INTERACTION_TIMER as wall-clock time since the first activity of the cycle; idle reset after BREAKTIMER_IDLE_RESET minutes without activity (sleep/lock count as idle, including time passed while the machine was asleep); break when INTERACTION_TIMER ≥ BREAKTIMER_MAX_WORK_TIME; auto-close after BREAKTIMER_BREAK_TIME with reset; Dismiss resets; Postpone reopens after BREAKTIMER_POSTPONE_TIME while the timer keeps counting; idle ≥ BREAKTIMER_IDLE_RESET during postpone cancels it and resets; activity during the break changes nothing; parameter changes apply immediately; disabling closes the window and resets.
+3. Break Timer engine in src/core as a pure state machine driven by activity events, power/lock events and the injectable clock: states Disabled, WaitingForActivity, Working, BreakShown, Postponed; INTERACTION_TIMER as wall-clock time since the first activity of the cycle; idle reset after breaktimer.idleResetMinutes minutes without activity (sleep/lock count as idle, including time passed while the machine was asleep); break when INTERACTION_TIMER ≥ breaktimer.maxWorkMinutes; auto-close after breaktimer.breakMinutes with reset; Dismiss resets; Postpone reopens after breaktimer.postponeMinutes while the timer keeps counting; idle ≥ breaktimer.idleResetMinutes during postpone cancels it and resets; activity during the break changes nothing; parameter changes apply immediately; disabling closes the window and resets.
 4. Activity monitor subscribing to the input dispatcher: only real (non-synthetic) mouse movement, clicks, wheel and key presses count.
 5. Break window (B.7): full-screen semi-transparent overlay on ALL screens (one window per screen, handle screens added/removed), always on top, cannot be closed with Esc/Alt+F4/Cmd+W/Cmd+Q-to-window, does not block the OS task switcher. Main screen shows message, mm:ss countdown, stretching tips with images, Dismiss and Postpone (N min) buttons. Create 4–6 clean SVG stretching illustrations in resources/ with a short caption each. Use platform code where needed to keep it above full-screen apps and other always-on-top windows (macOS window level + collection behavior to appear on all Spaces and over full-screen apps; Windows HWND_TOPMOST; X11 _NET_WM_STATE_ABOVE/fullscreen hints). Matches the app's modern look in light and dark mode. Clicks from AutoClick and Key Control work on it.
 6. Optional "Do not show breaks while a full-screen application is active" setting (off by default) with OS-specific best-effort detection; if not supported on an OS, the option is disabled with an explanation.
@@ -574,11 +588,11 @@ GOAL: a safe drag-lock that never leaves the mouse button stuck, fully integrate
 
 IMPLEMENT:
 1. Version 1.6.0 + CHANGELOG entry.
-2. Setting DRAGLOCK_TIMEOUT (1–60 s, default 10) with validation; parameter row on the Key Control tab ("Drag lock timeout").
+2. Setting draglock.timeoutSeconds (1–60 s, default 10) with validation; parameter row on the Key Control tab ("Drag lock timeout").
 3. Drag Lock state machine in src/core (Idle, Holding) with the injectable clock, implementing exactly B.5.3: press hotkey → left button down at the current position; release (left button up at the current position) on: hotkey pressed again (swallowed), timeout measured since the last mouse movement, any non-modifier key press (passed through to the OS), any mouse button click (consumed – swallowed by the hook, only releases), break window shown, app exit, Key Control disabled/binding disabled/deleted/modified, hook reinstall failure. Only one drag lock can be active at a time.
 4. Mouse-click consumption: extend the input layer's API so the drag-lock can swallow the next real mouse button down/up pair on every OS (macOS tap, Windows WH_MOUSE_LL, X11/evdev). Do this cleanly and only while Holding.
 5. While Holding, mouse movement must produce a proper drag on every OS (on macOS, moving with a synthetic held button may need left-mouse-dragged events to be posted instead of mouse-moved – handle it so drag-and-drop and text selection work).
-6. AutoClick integration (B.4 rule 7, D-04): no auto-click while Holding and none on release; on release the AutoClick reference point is set to the release position so the pointer must travel AUTOCLICK_TRIGGER_DISTANCE before the next auto-click.
+6. AutoClick integration (B.4 rule 7, D-04): no auto-click while Holding and none on release; on release the AutoClick reference point is set to the release position so the pointer must travel autoclick.triggerDistancePx before the next auto-click.
 7. Break Timer integration: release when the break window appears (D-06).
 8. Indicators: tray icon "drag-lock active" variant (D-05) and the status in the Key Control list row.
 9. Safety: on any unexpected error, crash handler or exit, send left button up if Holding (log it).
@@ -606,7 +620,7 @@ IMPLEMENT:
 1. Version 1.7.0 + CHANGELOG entry. Remove the "Coming soon" placeholder of the Statistics tab.
 2. Setting statistics.retentionDays (1–360, default 90) with validation (Part B.2).
 3. Statistics collector in src/core as pure logic driven by input events, break events and the injectable clock: per-second mouse/keyboard/active seconds, click counters (left/right/other, real only), "clicks done for you" (Auto Click and Key Control clicks, double click = 2, drag-lock press = 1), key presses (no auto-repeat, modifiers count), wheel events, mouse distance in logical pixels; per-minute records; local-midnight day change without resetting the usage percent. Privacy: never store key identities, positions or app names.
-4. Computer usage percent in src/core (B.8.2): active seconds since the last reset ÷ (BREAKTIMER_MAX_WORK_TIME × 60) × 100; reset only after BREAKTIMER_BREAK_TIME minutes without input (sleep/lock/app not running count as no input); Dismiss, Postpone and the end of the break countdown do not reset it; grows beyond 100 %; works with the Break Timer disabled; setting changes apply from then on.
+4. Computer usage percent in src/core (B.8.2): active seconds since the last reset ÷ (breaktimer.maxWorkMinutes × 60) × 100; reset only after breaktimer.breakMinutes minutes without input (sleep/lock/app not running count as no input); Dismiss, Postpone and the end of the break countdown do not reset it; grows beyond 100 %; works with the Break Timer disabled; setting changes apply from then on.
 5. Event sources: subscribe to the input dispatcher (real events only); get "clicks done for you" from the AutoClick worker and Key Control (add a clean signal/notification where missing, do not count synthetic events from the hook twice); get break events (shown, dismissed, postponed, completed) from the Break Timer controller (add signals where missing); sleep/lock from InputService. The collector must not slow down the input path (counting only, no I/O on the hook thread; per-second work on the GUI thread or a worker).
 6. CSV storage (B.8.4): folder AppDataLocation/statistics/, one file per day ergopro2-stats-YYYY-MM-DD.csv with the exact header and one row per minute that had data; append each finished minute and flush on exit; continue today's totals from an existing file after a restart; repair a partial last line; skip and log unreadable lines; retention cleanup at startup, at midnight and when the setting is lowered (reuse/extend the log-retention mechanism). Show the folder on the General tab with the other folders.
 7. Mouse distance display: convert pixels to cm/m with the DPI of the screen under the pointer (QScreen::physicalDotsPerInch, fallback 96 dpi), labelled as approximate.
@@ -617,12 +631,12 @@ IMPLEMENT:
    - navigation ‹ Previous day / Next day › / Today, skipping days without a file, buttons disabled when not possible; today updates live once per minute, past days read-only;
    - options card: "Open statistics folder" button and "Keep statistics for" (days) parameter row;
    - availability banner when the input hook is not running; good look in light and dark mode and at the minimum window size.
-9. Unit tests (fake clock) for the collector and the usage percent: per-second classification (mouse/keyboard/both), counters (repeat keys ignored, synthetic ignored, clicks done for you), distance, minute records, reset after BREAKTIMER_BREAK_TIME without input, no reset on dismiss/postpone/break end, growth beyond 100 %, sleep/lock counting as no input, midnight change keeps the percent, settings change mid-period. Unit tests for the CSV layer: write/read round trip, header, continue after restart, partial last line repair, invalid lines skipped, navigation finding previous/next existing day, retention cleanup. Unit tests for the chart axis logic (hour range, y scaling, 5-minute bucketing) kept in src/core.
-10. Add "Stage 7 – v1.7.0" to documentation/initial development docs/MANUAL_TESTS.md (tip: set BREAKTIMER_MAX_WORK_TIME 5 min and BREAKTIMER_BREAK_TIME 1 min to see 100 %, overflow after Dismiss and the reset within minutes; check the CSV in a spreadsheet; create files for older dates by copying/renaming a CSV to test navigation and retention).
+9. Unit tests (fake clock) for the collector and the usage percent: per-second classification (mouse/keyboard/both), counters (repeat keys ignored, synthetic ignored, clicks done for you), distance, minute records, reset after breaktimer.breakMinutes without input, no reset on dismiss/postpone/break end, growth beyond 100 %, sleep/lock counting as no input, midnight change keeps the percent, settings change mid-period. Unit tests for the CSV layer: write/read round trip, header, continue after restart, partial last line repair, invalid lines skipped, navigation finding previous/next existing day, retention cleanup. Unit tests for the chart axis logic (hour range, y scaling, 5-minute bucketing) kept in src/core.
+10. Add "Stage 7 – v1.7.0" to documentation/initial development docs/MANUAL_TESTS.md (tip: set breaktimer.maxWorkMinutes 5 min and breaktimer.breakMinutes 1 min to see 100 %, overflow after Dismiss and the reset within minutes; check the CSV in a spreadsheet; create files for older dates by copying/renaming a CSV to test navigation and retention).
 
 OUT OF SCOPE: hardening/packaging (stage 8), export or upload of statistics, statistics older than the retention, per-application statistics.
 
-ACCEPTANCE: the Statistics tab shows today's live data and older days from the CSV files; usage percent follows B.8.2 (100 % at BREAKTIMER_MAX_WORK_TIME of continuous use, keeps growing after Dismiss/Postpone, resets after BREAKTIMER_BREAK_TIME without input); counts match the user's activity; files are created, continued, navigated and cleaned up as specified; ctest passes; CI green.
+ACCEPTANCE: the Statistics tab shows today's live data and older days from the CSV files; usage percent follows B.8.2 (100 % at breaktimer.maxWorkMinutes of continuous use, keeps growing after Dismiss/Postpone, resets after breaktimer.breakMinutes without input); counts match the user's activity; files are created, continued, navigated and cleaned up as specified; ctest passes; CI green.
 
 Follow all workflow rules in Part A.7 (no git commits; final report format).
 ```

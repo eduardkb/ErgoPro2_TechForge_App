@@ -149,7 +149,7 @@ void StatisticsCollector::onInputEvent(const InputEvent &event)
     const qint64 t = now();
     advanceTo(t);
     if (m_lastInputMs != 0 && t - m_lastInputMs >= m_config.resetAfterMs)
-        resetUsage(); // B.8.2: a pause of BREAKTIMER_BREAK_TIME resets the usage
+        resetUsage(); // B.8.2: a pause of breaktimer.breakMinutes resets the usage
     m_lastInputMs = t;
     if (!m_onBreak) {
         // Like the Break Timer's work time: the gap since the last input counts
