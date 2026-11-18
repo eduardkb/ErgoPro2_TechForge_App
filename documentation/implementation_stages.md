@@ -25,6 +25,7 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 6 | 1.6.0 | Drag Lock action + AutoClick interaction rules |
 | 7 | 1.7.0 | Statistics (Function 4) – daily usage charts, totals, CSV history |
 | 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
+| 9 | 1.9.0 | Keep Screen Active (Function 5) – `documentation/stage9_keep_screen_active.md`, spec B.10 |
 
 > Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, documentation/initial development docs/baseDescription.md), so the final stage reviews and packages every feature.
 
@@ -202,8 +203,11 @@ ergoPro2/
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
 | `breaktimer.activityPauseSeconds` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
 | `statistics.retentionDays` | 1–360 | 90 | 7 |
+| `keepScreenActive.enabled` | bool | false | 9 (changed only by its hotkey; remembered) |
+| `keepScreenActive.startAfterIdleMinutes` (min) | 1–60 | 3 | 9 (system-only: settings.json, never in the UI) |
+| `keepScreenActive.intervalMinutes` (min) | 1–60 | 3 | 9 (system-only: settings.json, never in the UI) |
 
-Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `draglock`, `breaktimer`, `statistics`). Each stage adds only its own keys (and their schema/validation).
+Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `draglock`, `breaktimer`, `statistics`, `keepScreenActive`). Each stage adds only its own keys (and their schema/validation).
 
 ## B.3 Logging
 - Levels: DEBUG, INFO, WARNING, ERROR, CRITICAL.
@@ -263,6 +267,7 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   3. Double left mouse click (interval = OS double-click time)
   4. Drag lock (left button) – **Stage 6**
   5. Toggle AutoClick on/off (S-10 review)
+  6. Keep screen active on/off – **Stage 9** (B.10): toggles Function 5; disabling the hotkey in the list or deleting it also switches the feature off.
 - All clicks happen at the current pointer position.
 - Stored in settings as a list: `{ id (uuid), keyCombo (portable string, e.g. QKeySequence::PortableText), nativeInfo (optional), action (string id), enabled (bool) }`.
 
@@ -370,6 +375,17 @@ Layout from top to bottom (card style of B.1.1, light and dark mode). Redesigned
 - Written once per minute (the finished minute is appended) and on exit; at most the current minute is lost after a crash. A file that ends with a partial line is repaired on the next start (partial line dropped, logged as WARNING). Unreadable lines are skipped and logged.
 - When the app starts again the same day, the existing file is read so the day's totals continue.
 - **Retention:** files older than `statistics.retentionDays` are deleted at startup and once per day (midnight) – never when the setting is changed (1.7.1, owner request; same rule as the log retention, B.3).
+## B.10 Function 5 – Keep Screen Active (Stage 9, owner request)
+Full agreed description: `documentation/stage9_keep_screen_active.md`. Summary:
+- **Switched on/off only by its Key Control hotkey** (action "Keep screen active on/off", one hotkey at most). *Disable* in the hotkey list or deleting the hotkey switches the feature off. `keepScreenActive.enabled` is remembered across restarts (only honoured while an enabled hotkey exists).
+- **States:** *Disabled* (off or no hotkey), *Idle* (on, but the user is working or a pause applies), *Working* (on, no real input for `keepScreenActive.startAfterIdleMinutes`, no pause).
+- **Timing:** the first cycle runs **immediately** when the idle time reaches `startAfterIdleMinutes` (default 3), then every `intervalMinutes` (default 3). Any real input ends Working at once and restarts the idle time.
+- **One cycle** (first applicable step ends it): 1. Teams running → restore its main window (also minimized / tray or menu-bar only), raise it, **left-click an empty spot of its title bar** (`keepActiveTitleBarPoint`: 10 px below the top, about a quarter of the width, ≥ 140 px from the left), **move the pointer back**. 2. Otherwise Zoom, the same way. 3. Otherwise (or a step failed, or Wayland) a **harmless input**: pointer 1 px and back, no click, no window change.
+- **Pauses** (state Idle, no cycle): screen locked / sleep, break window shown, Drag Lock holding.
+- **Never counted as user input:** every injected move/click is tagged synthetic (B.6), so Statistics (incl. "clicks done for you"), Break Timer and Auto Click ignore it.
+- **Auto Click tab** › card **Keep screen active** at the bottom, shown only while the hotkey exists: Enabled/Disabled badge, the hotkey (with "(disabled in Key Control)"), Status *Idle / Working / Disabled*, and on Wayland the note "On Wayland only a small pointer movement is used." No other items; the minute values are never shown.
+- **Platforms** (`IAppWindows`): macOS (NSRunningApplication, Accessibility API, CGWindowList, CGEventPost), Windows (process name + `EnumWindows`, `ShowWindow`/`SetForegroundWindow`, `SendInput` tagged), Linux X11 (EWMH `_NET_CLIENT_LIST`/`WM_CLASS`/`_NET_ACTIVE_WINDOW`, XTest announced to the synthetic tracker; a Teams that is only in the tray has no listed window and counts as not running), Linux Wayland (pointer nudge only, uinput).
+
 ---
 
 # Part C – Stage prompts

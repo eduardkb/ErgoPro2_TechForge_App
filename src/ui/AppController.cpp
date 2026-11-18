@@ -12,6 +12,7 @@
 #include "ui/breaktimer/BreakTimerController.h"
 #include "ui/keycontrol/DragLockController.h"
 #include "ui/keycontrol/KeyControlController.h"
+#include "ui/keepactive/KeepScreenActiveController.h"
 #include "ui/statistics/StatisticsController.h"
 #include "ui/InstallController.h"
 #include "ui/MainWindow.h"
@@ -52,6 +53,8 @@ void AppController::shutdownAll(const char *reason)
         return;
     m_shutDown = true;
     qCInfo(lcApp) << "Shutting down:" << reason;
+    if (m_keepActive)
+        m_keepActive->shutdown(); // no further keep-active clicks
     if (m_statistics)
         m_statistics->shutdown(); // writes the current minute
     if (m_breaktimer)
@@ -94,9 +97,11 @@ void AppController::start(const SettingsLoadResult &loadResult)
     m_breaktimer = std::make_unique<BreakTimerController>(m_settings, *m_availability, *m_input, m_platform);
     m_statistics = std::make_unique<StatisticsController>(m_settings, *m_availability, *m_input, *m_autoclick,
                                                           *m_keycontrol, *m_breaktimer);
+    m_keepActive = std::make_unique<KeepScreenActiveController>(m_settings, *m_input, *m_keycontrol, *m_breaktimer,
+                                                                m_platform);
     m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install,
                                                         *m_input, *m_autoclick, *m_keycontrol, *m_breaktimer,
-                                                        *m_statistics});
+                                                        *m_statistics, *m_keepActive});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -164,6 +169,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     connect(m_statistics.get(), &StatisticsController::usageOverLimitChanged, m_breaktimer.get(),
             &BreakTimerController::setUsageOverLimit, Qt::QueuedConnection);
     m_statistics->start();
+    // Function 5 – Keep Screen Active (stage 9): follows its Key Control hotkey.
+    m_keepActive->start();
     reportSettingsLoad(loadResult);
 }
 

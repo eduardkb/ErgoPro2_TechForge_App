@@ -64,6 +64,8 @@ signals:
     // Clicks made by a hotkey (double click = 2, drag-lock press = 1) for the
     // Statistics ("clicks done for you").
     void clicksDoneForYou(int count);
+    // The "Keep screen active on/off" hotkey was pressed (stage 9).
+    void keepScreenActiveToggleRequested();
 
 private:
     class Registrar;

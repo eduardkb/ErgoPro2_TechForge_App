@@ -31,6 +31,8 @@ public:
     virtual OpResult toggleDragLock() = 0;
     // Any other hotkey press releases an active drag lock first ("any key releases").
     virtual void releaseDragLock() = 0;
+    // Keep Screen Active (stage 9, B.10): switch the feature on/off.
+    virtual OpResult toggleKeepScreenActive() = 0;
 };
 
 // One action type (B.5.2, pluggable). Stable ids are stored in settings.json.
@@ -47,7 +49,7 @@ public:
 class KeyActionRegistry {
 public:
     // Registers the built-in actions: left-click, right-click, double-left-click,
-    // toggle-autoclick and drag-lock (stage 6).
+    // toggle-autoclick, drag-lock (stage 6) and toggle-keep-screen-active (stage 9).
     KeyActionRegistry();
 
     void add(std::unique_ptr<IKeyAction> action);
@@ -60,6 +62,7 @@ public:
     static inline const QString DoubleLeftClick = QStringLiteral("double-left-click");
     static inline const QString ToggleAutoClick = QStringLiteral("toggle-autoclick");
     static inline const QString DragLock = QStringLiteral("drag-lock");
+    static inline const QString ToggleKeepScreenActive = QStringLiteral("toggle-keep-screen-active");
 
 private:
     QList<std::shared_ptr<IKeyAction>> m_actions;

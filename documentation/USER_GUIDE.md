@@ -18,7 +18,7 @@ and Debian 13. (Building ErgoPro2 from source is described in [BUILD.md](BUILD.m
 ## 1. What ErgoPro2 does
 
 ErgoPro2 helps reduce strain on your wrists and hands from mouse and keyboard work. It runs quietly in the
-background (system tray / menu bar) and offers four functions:
+background (system tray / menu bar) and offers five functions:
 
 | Function | What it does for you |
 |---|---|
@@ -26,6 +26,7 @@ background (system tray / menu bar) and offers four functions:
 | **Auto Click** | Clicks the left mouse button for you when you stop moving the pointer – no finger press needed. |
 | **Key Control** | Lets keyboard keys do mouse clicks (left, right, double click), hold the left button for dragging (**Drag lock**) or switch Auto Click on/off. |
 | **Statistics** | Shows how much you used the mouse and keyboard per day, with charts. Only counts and times are stored – never what you type. |
+| **Keep screen active** | While you are away, keeps the screen awake and Teams / Zoom showing you as active (switched with a Key Control hotkey). |
 
 ErgoPro2 never plays sounds.
 
@@ -404,6 +405,26 @@ can also be switched with the tray menu or a Key Control hotkey. Whether it is o
 | **Ignore tremor below** | Small hand tremor up to this distance does not restart the countdown. | 1–10 px | 3 px |
 | **Show countdown cross** | An orange X grows from the pointer tip until the click happens. It appears only after the pointer has been completely still for half of *Wait before clicking*. Not available on Linux Wayland. | on / off | off |
 
+**Keep screen active card** (only shown when a **Keep screen active on/off** hotkey exists in Key Control)
+
+| Item | Meaning |
+|---|---|
+| Badge | **Enabled** / **Disabled** – switch it with the hotkey. |
+| **Hotkey** | The key that switches it, with "(disabled in Key Control)" when that hotkey is disabled. |
+| **Status** | **Idle** – on, but you are working (or the screen is locked, the break window is shown or Drag lock holds the button); **Working** – on and you have been away long enough, so it is keeping the screen active; **Disabled** – off. |
+
+How it works: after **3 minutes** without mouse or keyboard input it acts at once, then every **3 minutes**
+until you touch the mouse or keyboard again:
+1. if **Microsoft Teams** runs, its window is brought back (also when minimized or only in the tray / menu
+   bar), its title bar is clicked once and the pointer is put back where it was;
+2. otherwise the same with **Zoom**;
+3. otherwise the pointer moves by 1 pixel and back (no click, no window changes).
+
+Its moves and clicks are not counted anywhere (Statistics, Break Timer, Auto Click). Switching the hotkey off
+in Key Control, or deleting it, also switches the feature off. The two times can be changed only in
+`settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)). On Linux Wayland only the pointer movement
+is used.
+
 ### 5.4 Key Control
 
 Key Control lets keyboard keys do mouse actions. While a hotkey is **enabled**, other applications do
@@ -420,6 +441,7 @@ Hotkeys also work on the ErgoPro2 window and on the break window.
 | **Double left click** | A double click (using your system's double-click speed). |
 | **Drag lock (left button)** | Holds the left button down until released (see below). |
 | **Turn Auto Click on/off** | Switches Auto Click on or off. |
+| **Keep screen active on/off** | Switches *Keep screen active* on or off (see below). |
 
 **Adding a hotkey**
 
@@ -570,6 +592,7 @@ restart ErgoPro2 the same day, the day continues.
 | Linux GNOME | No tray without the AppIndicator extension ([2.4](#24-debian-13)); ErgoPro2 then minimizes instead of hiding. |
 | macOS | Each new release may need the permissions to be granted again ([2.6](#26-updating)). |
 | All | Key Control works only with keyboard keys (not mouse buttons). Only one Drag lock at a time. |
+| Linux | *Keep screen active*: on X11 a Teams that is only in the tray is not found (the pointer movement is used instead); on Wayland only the pointer movement is used. |
 
 ### 6.2 A function shows "… is unavailable"
 
@@ -655,10 +678,12 @@ The General tab shows the exact folders and opens them with **Open settings fold
 
 ### 6.7 Advanced settings (only in settings.json)
 
-Two values are not on any tab. Change them only if you need to: **exit ErgoPro2 first**, edit
+Four values are not on any tab. Change them only if you need to: **exit ErgoPro2 first**, edit
 `settings.json` with a text editor, then start ErgoPro2. A value outside the range is replaced by the default.
 
 | Key | What it does | Range | Default |
 |---|---|---|---|
-| `draglock` → `draglock.timeoutSeconds` | Seconds without mouse movement before Drag lock lets go. | 1–60 s | 10 s |
-| `breaktimer` → `breaktimer.activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
+| `draglock` → `timeoutSeconds` | Seconds without mouse movement before Drag lock lets go. | 1–60 s | 10 s |
+| `breaktimer` → `activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
+| `keepScreenActive` → `startAfterIdleMinutes` | *Keep screen active*: minutes without input before it starts. | 1–60 min | 3 min |
+| `keepScreenActive` → `intervalMinutes` | *Keep screen active*: minutes between two actions while you stay away. | 1–60 min | 3 min |

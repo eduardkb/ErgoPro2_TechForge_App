@@ -698,6 +698,20 @@ and on the first tick of a new day ("new day") – never when the setting change
 
 ---
 
+## 8a. Keep Screen Active (stage 9, 1.9.0)
+
+| Layer | Piece | Role |
+|---|---|---|
+| core | `src/core/keepactive/KeepScreenActiveEngine` | Pure state machine (FakeClock-tested in `tests/tst_keepactive.cpp`): enabled flag, real-input time, pause reasons (`Locked`, `BreakWindow`, `DragLock`), `update()` → cycle due; states Disabled / Idle / Working. `keepActiveTitleBarPoint()` = the one place that defines the title-bar click spot. |
+| core | `src/core/settings/KeepScreenActiveSettings` | `keepScreenActive.enabled`, `startAfterIdleMinutes`, `intervalMinutes`. |
+| core | `KeyActionRegistry::ToggleKeepScreenActive` | Key Control action → `KeyActionContext::toggleKeepScreenActive()`; `KeyControlController` emits `keepScreenActiveToggleRequested()`. |
+| platform | `IAppWindows` (`PlatformInterfaces.h`), `Platform::appWindows` | `raise(app)`, `mainWindowFrame(app)`, `clickAt(point)` (pointer moved back), `nudgePointer()`, `unsupportedReason()`. macOS `MacAppWindows.mm`, Windows `WinAppWindows.cpp`, X11 `LinuxAppWindows.cpp` (XTest motions announced with `SyntheticTracker::expectMotion`), Wayland `WaylandAppWindows` in `LinuxEvdevInput.cpp` (nudge through a uinput device named like the click injector's, so the hook marks it as ours). |
+| ui | `src/ui/keepactive/KeepScreenActiveController` | GUI thread: real input from `InputDispatcher` (synthetic ignored), power events, `breakWindowShown/Closed`, `DragLockController::holdingChanged`, Key Control bindings (`changed()` → hotkey present / disabled / removed). Ticks every second; a cycle tries Teams, then Zoom (raise → 600 ms → frame → click), else the nudge. Any real input during the 600 ms cancels the click. |
+| ui | `AutoClickTab` › card "Keep screen active" | Badge, hotkey, status; visible only while the hotkey exists. |
+
+Every injected event is synthetic, so `StatisticsCollector`, `BreakTimerController` and `AutoClickEngine`
+ignore it (they already drop `event.synthetic`), and no "clicks done for you" is emitted.
+
 ## 9. Build, tests, packaging, CI and releases
 
 Details and per-OS commands are in `documentation/BUILD.md`; this is the overview.

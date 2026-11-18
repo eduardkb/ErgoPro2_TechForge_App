@@ -5,11 +5,13 @@
 #include "core/settings/SettingsStore.h"
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/autoclick/AutoClickController.h"
+#include "ui/keepactive/KeepScreenActiveController.h"
 #include "ui/widgets/CardWidget.h"
 #include "ui/widgets/ParameterRow.h"
 #include "ui/widgets/StatusBadge.h"
 #include "ui/widgets/ToggleSwitch.h"
 
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -23,11 +25,13 @@ namespace ergo {
 namespace AC = AutoClickSettings;
 
 AutoClickTab::AutoClickTab(AutoClickController &controller, SettingsStore &settings,
-                           FeatureAvailabilityService &availability, QWidget *parent)
+                           FeatureAvailabilityService &availability, KeepScreenActiveController &keepActive,
+                           QWidget *parent)
     : QWidget(parent)
     , m_controller(controller)
     , m_settings(settings)
     , m_availability(availability)
+    , m_keepActive(keepActive)
 {
     auto *outer = new QVBoxLayout(this);
     outer->setContentsMargins(0, 0, 0, 0);
@@ -102,7 +106,37 @@ AutoClickTab::AutoClickTab(AutoClickController &controller, SettingsStore &setti
     note->setWordWrap(true);
     params->contentLayout()->addWidget(note);
     layout->addWidget(params);
+
+    // --- Keep screen active (stage 9, B.10): status only --------------------
+    auto *keepCard = new CardWidget(tr("Keep screen active"), {}, content);
+    m_keepCard = keepCard;
+    m_keepBadge = new StatusBadge(keepCard);
+    keepCard->setHeaderWidget(m_keepBadge);
+    auto *keepGrid = new QGridLayout;
+    keepGrid->setHorizontalSpacing(16);
+    keepGrid->setVerticalSpacing(6);
+    auto *hotkeyName = new QLabel(tr("Hotkey"), keepCard);
+    hotkeyName->setObjectName(QStringLiteral("hint"));
+    m_keepHotkey = new QLabel(keepCard);
+    m_keepHotkey->setObjectName(QStringLiteral("valueLabel"));
+    auto *statusName = new QLabel(tr("Status"), keepCard);
+    statusName->setObjectName(QStringLiteral("hint"));
+    m_keepStatus = new QLabel(keepCard);
+    m_keepStatus->setObjectName(QStringLiteral("valueLabel"));
+    keepGrid->addWidget(hotkeyName, 0, 0);
+    keepGrid->addWidget(m_keepHotkey, 0, 1);
+    keepGrid->addWidget(statusName, 1, 0);
+    keepGrid->addWidget(m_keepStatus, 1, 1);
+    keepGrid->setColumnStretch(1, 1);
+    keepCard->contentLayout()->addLayout(keepGrid);
+    m_keepLimitation = new QLabel(keepCard);
+    m_keepLimitation->setObjectName(QStringLiteral("hint"));
+    m_keepLimitation->setWordWrap(true);
+    keepCard->contentLayout()->addWidget(m_keepLimitation);
+    layout->addWidget(keepCard);
     layout->addStretch(1);
+    connect(&m_keepActive, &KeepScreenActiveController::changed, this, &AutoClickTab::refreshKeepActive);
+    refreshKeepActive();
 
     // --- wiring --------------------------------------------------------------
     connect(m_toggle, &QPushButton::clicked, this, [this] { m_controller.toggle(); });
@@ -127,6 +161,26 @@ AutoClickTab::AutoClickTab(AutoClickController &controller, SettingsStore &setti
     });
     connect(&m_availability, &FeatureAvailabilityService::changed, this, &AutoClickTab::refresh);
     refresh();
+}
+
+void AutoClickTab::refreshKeepActive()
+{
+    m_keepCard->setVisible(m_keepActive.hasHotkey());
+    if (!m_keepActive.hasHotkey())
+        return;
+    const bool enabled = m_keepActive.isEnabled();
+    m_keepBadge->setState(enabled ? StatusBadge::State::Active : StatusBadge::State::Inactive,
+                          enabled ? tr("Enabled") : tr("Disabled"));
+    m_keepHotkey->setText(m_keepActive.isHotkeyEnabled()
+                              ? m_keepActive.hotkeyText()
+                              : tr("%1 (disabled in Key Control)").arg(m_keepActive.hotkeyText()));
+    switch (m_keepActive.state()) {
+    case KeepScreenActiveEngine::State::Disabled: m_keepStatus->setText(tr("Disabled")); break;
+    case KeepScreenActiveEngine::State::Idle: m_keepStatus->setText(tr("Idle")); break;
+    case KeepScreenActiveEngine::State::Working: m_keepStatus->setText(tr("Working")); break;
+    }
+    m_keepLimitation->setText(m_keepActive.limitation());
+    m_keepLimitation->setVisible(!m_keepActive.limitation().isEmpty());
 }
 
 void AutoClickTab::refresh()

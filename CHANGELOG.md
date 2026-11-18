@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.9.0] - 2026-11-18
+
+Stage 9 – **Keep Screen Active** (Function 5, owner request; specification B.10,
+`documentation/stage9_keep_screen_active.md`).
+
+### Added
+- **Keep screen active:** while you are away, ErgoPro2 keeps the screen awake and Microsoft Teams / Zoom
+  showing you as active. After **3 minutes** without mouse or keyboard input it acts at once, then every
+  **3 minutes**: if Teams runs, its window is brought back (also from minimized / tray / menu bar), its title
+  bar is clicked once and the pointer is put back; otherwise the same with Zoom; otherwise the pointer moves
+  1 pixel and back. Any real input stops it immediately. Nothing happens while the screen is locked, the break
+  window is shown or Drag lock holds the button. Its moves and clicks are never counted by Statistics, Break
+  Timer or Auto Click.
+- **Key Control:** new action **Keep screen active on/off** (one hotkey). Disabling or deleting the hotkey
+  switches the feature off. On/off is remembered across restarts.
+- **Auto Click tab:** card **Keep screen active** (only while its hotkey exists): Enabled/Disabled, the
+  hotkey and the status *Idle / Working / Disabled*.
+- **settings.json:** `keepScreenActive.enabled`, `keepScreenActive.startAfterIdleMinutes` (1–60, default 3)
+  and `keepScreenActive.intervalMinutes` (1–60, default 3); the two minute values are not shown in the app.
+- Linux: X11 fully supported (a Teams that is only in the tray counts as not running); on Wayland only the
+  pointer movement is used.
+- Tests: new `tst_keepactive` (11 tests), Key Control tests extended (20 test programs on macOS).
+
 ## [1.8.2] - 2026-11-18
 
 Owner-requested change (specification B.2 updated).

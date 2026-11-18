@@ -9,6 +9,7 @@ namespace ergo {
 
 class AutoClickController;
 class FeatureAvailabilityService;
+class KeepScreenActiveController;
 class ParameterRow;
 class SettingsStore;
 class StatusBadge;
@@ -20,11 +21,12 @@ class AutoClickTab : public QWidget {
     Q_OBJECT
 public:
     AutoClickTab(AutoClickController &controller, SettingsStore &settings, FeatureAvailabilityService &availability,
-                 QWidget *parent = nullptr);
+                 KeepScreenActiveController &keepActive, QWidget *parent = nullptr);
 
 private:
     void refresh();
     void showState(int state, int reason);
+    void refreshKeepActive();
 
     AutoClickController &m_controller;
     SettingsStore &m_settings;
@@ -38,6 +40,13 @@ private:
     ParameterRow *m_jitter = nullptr;
     ToggleSwitch *m_feedback = nullptr;
     QLabel *m_feedbackHint = nullptr;
+    // Keep Screen Active card (stage 9): only while its hotkey exists.
+    KeepScreenActiveController &m_keepActive;
+    QWidget *m_keepCard = nullptr;
+    StatusBadge *m_keepBadge = nullptr;
+    QLabel *m_keepHotkey = nullptr;
+    QLabel *m_keepStatus = nullptr;
+    QLabel *m_keepLimitation = nullptr;
 };
 
 } // namespace ergo

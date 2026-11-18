@@ -3,6 +3,7 @@
 #include "core/settings/AutoClickSettings.h"
 #include "core/settings/BreakTimerSettings.h"
 #include "core/settings/GeneralSettings.h"
+#include "core/settings/KeepScreenActiveSettings.h"
 #include "core/settings/KeyControlSettings.h"
 #include "core/settings/SettingsSchema.h"
 #include "core/settings/StatisticsSettings.h"
@@ -16,6 +17,7 @@ void registerAllSettings(SettingsSchema &schema)
     KeyControlSettings::registerSettings(schema);       // stage 4
     BreakTimerSettings::registerSettings(schema);       // stage 5 (draglock: KeyControlSettings, stage 6)
     StatisticsSettings::registerSettings(schema);       // stage 7
+    KeepScreenActiveSettings::registerSettings(schema); // stage 9
 }
 
 } // namespace ergo

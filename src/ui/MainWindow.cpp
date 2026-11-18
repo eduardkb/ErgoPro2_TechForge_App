@@ -49,7 +49,8 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
                                    new BreakTimerTab(context.breaktimer, context.settings)),
                    tr("Break Timer"));
     m_tabs->addTab(new FeaturePage(Feature::AutoClick, context.availability,
-                                   new AutoClickTab(context.autoclick, context.settings, context.availability)),
+                                   new AutoClickTab(context.autoclick, context.settings, context.availability,
+                                                                    context.keepActive)),
                    tr("Auto Click"));
     m_tabs->addTab(new FeaturePage(Feature::KeyControl, context.availability,
                                    new KeyControlTab(context.keycontrol, context.input)),

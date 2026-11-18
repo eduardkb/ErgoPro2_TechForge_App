@@ -37,9 +37,30 @@ public:
         return m_pending.fetch_sub(1) > 0;
     }
 
+    // Pointer motions injected with XTest (Keep Screen Active, 1.9.0): counted
+    // separately from the button events.
+    void expectMotion(int count, qint64 nowMs)
+    {
+        m_pendingMotion.fetch_add(count);
+        m_motionDeadlineMs.store(nowMs + kWindowMs);
+    }
+
+    bool consumeMotion(qint64 nowMs)
+    {
+        if (m_pendingMotion.load() <= 0)
+            return false;
+        if (nowMs > m_motionDeadlineMs.load()) {
+            m_pendingMotion.store(0);
+            return false;
+        }
+        return m_pendingMotion.fetch_sub(1) > 0;
+    }
+
 private:
     std::atomic<int> m_pending{0};
     std::atomic<qint64> m_deadlineMs{0};
+    std::atomic<int> m_pendingMotion{0};
+    std::atomic<qint64> m_motionDeadlineMs{0};
 };
 
 } // namespace ergo

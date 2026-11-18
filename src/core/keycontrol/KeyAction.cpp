@@ -65,6 +65,14 @@ public:
     OpResult execute(KeyActionContext &c) override { return c.toggleDragLock(); }
 };
 
+// Keep Screen Active (B.10): the hotkey switches the feature on and off.
+class ToggleKeepScreenActiveAction final : public IKeyAction {
+public:
+    QString id() const override { return KeyActionRegistry::ToggleKeepScreenActive; }
+    QString displayName() const override { return tr("Keep screen active on/off"); }
+    OpResult execute(KeyActionContext &c) override { return c.toggleKeepScreenActive(); }
+};
+
 } // namespace
 
 KeyActionRegistry::KeyActionRegistry()
@@ -74,6 +82,7 @@ KeyActionRegistry::KeyActionRegistry()
     add(std::make_unique<DoubleLeftClickAction>());
     add(std::make_unique<ToggleAutoClickAction>());
     add(std::make_unique<DragLockAction>());
+    add(std::make_unique<ToggleKeepScreenActiveAction>());
 }
 
 void KeyActionRegistry::add(std::unique_ptr<IKeyAction> action)

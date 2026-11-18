@@ -16,6 +16,7 @@ struct Platform {
     std::unique_ptr<IPermissions> permissions;
     std::unique_ptr<IPowerEvents> powerEvents;
     std::unique_ptr<IDesktopIntegration> desktop;
+    std::unique_ptr<IAppWindows> appWindows; // stage 9 (Keep Screen Active)
 };
 
 // Creates the implementations for the OS this binary was compiled for.

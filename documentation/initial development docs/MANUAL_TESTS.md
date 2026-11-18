@@ -857,3 +857,27 @@ X11 / Wayland) for every block.
 | 4 | Change a Break Timer and an Auto Click slider, exit and start again. | The new values are kept (saved under the new names). |
 | 5 | Exit, edit `settings.json`: set `breaktimer.maxWorkMinutes` to 30; start. | Break after working shows 30 – the new name is read. |
 | 6 | Restart once more and check the log. | No "renamed" lines any more (nothing left to convert). |
+
+## Stage 9 – v1.9.0
+
+Goal: Keep Screen Active (B.10, `documentation/stage9_keep_screen_active.md`). For quicker tests set, with
+ErgoPro2 closed, `keepScreenActive.startAfterIdleMinutes` and `intervalMinutes` to **1** in `settings.json`
+(restore 3 / 3 afterwards). Log level *Debug* shows every cycle ("Keep screen active: …").
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (20 on macOS, 19 on Windows/Linux). |
+| 2 | Auto Click tab without a Keep-screen-active hotkey. | No "Keep screen active" card. |
+| 3 | Key Control › Add Hotkey › e.g. F7 › action **Keep screen active on/off**. Try to add a second hotkey for it. | The action is offered once; afterwards it is no longer in the list. The Auto Click tab shows the card: **Disabled**, Hotkey **F7**, Status **Disabled**. |
+| 4 | Press F7, then F7 again. | Badge **Enabled**, Status **Idle**; second press: **Disabled**. Log INFO "Keep screen active enabled (hotkey pressed)" / "disabled". |
+| 5 | Enable it, then *Disable* the hotkey in Key Control; enable the hotkey again; then delete it. | Disabling the hotkey switches the feature **off** ("F7 (disabled in Key Control)"); enabling the hotkey keeps it off until F7 is pressed; deleting the hotkey switches it off and the card disappears. |
+| 6 | Enable it and leave mouse and keyboard alone. | After the idle time the status is **Working** and the first action happens at once; then one action per interval. |
+| 7 | While Working, move the mouse. | Status **Idle** at once; no further action until you are idle again for the full time. |
+| 8 | Teams running with its window visible. | Teams comes to the front, its **title bar** is clicked once (nothing in Teams opens: no search, no menu), the pointer is back where it was. Teams stays "Available". |
+| 9 | Check the click spot: watch the click on Teams and on Zoom at different window widths (narrow, normal, maximized), on each OS. | It always lands on an empty part of the top bar. If not, note the OS, app version and window width (the spot is set in `keepActiveTitleBarPoint`). |
+| 10 | Teams minimized; then Teams closed to the tray / menu bar (window closed, app running). | The window is restored and clicked. Linux X11: a tray-only Teams is not found – the pointer movement is used. |
+| 11 | Quit Teams; Zoom running → then quit Zoom too. | Zoom's window is restored and clicked; with neither: the pointer moves 1 px and back, no click, no window changes, the screen does not dim or lock. |
+| 12 | While Working: lock the screen / let the break window appear / hold a Drag lock. | Nothing happens during each of them (status **Idle**); after unlock / end of the break / release, if still idle, an action happens at once. |
+| 13 | After several cycles, compare Statistics (clicks, mouse time, "Clicks done for you") and the Break Timer's active work time with before. | Unchanged by the feature's moves and clicks; the Break Timer still resets after the idle time. Auto Click does not click because of them. |
+| 14 | Linux Wayland: enable it. | The card shows "On Wayland only a small pointer movement is used."; cycles only nudge the pointer. |
+| 15 | Exit and start ErgoPro2 while enabled; set `startAfterIdleMinutes` to 0 or 61 in `settings.json`. | Still enabled after the restart; the invalid value is replaced by 3 (WARNING in the log). |

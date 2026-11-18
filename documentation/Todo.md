@@ -1,7 +1,13 @@
 # Todo Items
 
 ## Open:
-- Implement new hidden feature - keep screen active. Description:
+-
+
+
+## Completed to verify:
+- statystics tab - Day text. when today format "Today - <date>" is ok. But any other date should display format "<day of the week> - <date>"
+- standardize all variable names on the .json config file. all upper case variables there should be modified to match the standard used on all other variables. Make sure to not introduce any problems on the app itself by changing the variables. make sure they have changed everywhere.
+- Ipmlement new feature - keep screen active. Description:
     - New function description: If enabled and active it waits for the inputs to get still (ammount of time configured on variable explained below) then immediatelly after this time runs out and after each cycle do this in order:
         1. verify if teams is a open process. if yes, left click on its title bar and finish interaction.
         2. verify if zoom is a open process. if yes, left click on its title bar and finish interaction.
@@ -11,13 +17,6 @@
     - create a new variable on the .json config file. it will control how many minutes the app leaves betwen left clicks to maintain the screen active. This variable will only be changeable on the .json file itself if needed. the interface will not mention it.
     - create a new variable on the .json config file. it will control how many minutes after the inputs went still before starting clicking to maintain the screen active. This variable will only be changeable on the .json file itself if needed. the interface will not mention it.
     - the mouse clicks and movements of this feature should not count as mouse movement or clicks for statistics or break timer functions
-
-
-
-
-## Completed to verify:
-- statystics tab - Day text. when today format "Today - <date>" is ok. But any other date should display format "<day of the week> - <date>"
-- standardize all variable names on the .json config file. all upper case variables there should be modified to match the standard used on all other variables. Make sure to not introduce any problems on the app itself by changing the variables. make sure they have changed everywhere.
 
 ## Improvement and new features suggestions
 

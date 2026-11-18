@@ -76,6 +76,11 @@ public:
         return r;
     }
     void releaseDragLock() override { m_dragLock.release(DragLockController::Reason::KeyPressed); }
+    OpResult toggleKeepScreenActive() override
+    {
+        emit m_owner.keepScreenActiveToggleRequested();
+        return OpResult::success();
+    }
 
 private:
     OpResult counted(const PlatformResult &r, int clicks)

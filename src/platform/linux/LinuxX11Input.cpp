@@ -245,6 +245,7 @@ void X11InputHook::Impl::handleRecorded(const xEvent *event)
     switch (type) {
     case MotionNotify:
         e.type = InputEventType::MouseMove;
+        e.synthetic = tracker && tracker->consumeMotion(e.timestampMs);
         break;
     case ButtonPress:
     case ButtonRelease: {
@@ -554,6 +555,13 @@ std::unique_ptr<IInputHook> createEvdevInputHook()
 std::unique_ptr<IClickInjector> createUinputClickInjector()
 {
     return nullptr;
+}
+
+std::unique_ptr<IAppWindows> createWaylandAppWindows()
+{
+    return std::make_unique<UnsupportedAppWindows>(QCoreApplication::translate(
+        "ergo::PlatformFactory", "This ErgoPro2 was built without libevdev: Keep screen active is not available on "
+                                 "Wayland."));
 }
 
 int evdevKeyToQtKey(unsigned int, bool *keypad)

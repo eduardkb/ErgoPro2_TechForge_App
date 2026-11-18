@@ -543,11 +543,66 @@ private:
     QMutex m_mutex;
 };
 
+// Keep Screen Active on Wayland (B.10): other applications' windows cannot be
+// targeted; the pointer nudge is a relative move of a virtual mouse with the
+// same name as the click injector's, so the hook reports it as synthetic.
+class WaylandAppWindows final : public IAppWindows {
+    Q_DECLARE_TR_FUNCTIONS(ergo::WaylandAppWindows)
+public:
+    ~WaylandAppWindows() override
+    {
+        if (m_device)
+            libevdev_uinput_destroy(m_device);
+    }
+
+    QString unsupportedReason() const override
+    {
+        return tr("On Wayland only a small pointer movement is used.");
+    }
+    Raise raise(KeepActiveApp, QString *) override { return Raise::NotRunning; }
+    std::optional<QRectF> mainWindowFrame(KeepActiveApp) const override { return std::nullopt; }
+    PlatformResult clickAt(const QPointF &) override { return PlatformResult::notSupported(unsupportedReason()); }
+
+    PlatformResult nudgePointer() override
+    {
+        if (!m_device) {
+            libevdev *proto = libevdev_new();
+            libevdev_set_name(proto, kVirtualMouseName);
+            libevdev_enable_event_type(proto, EV_KEY);
+            libevdev_enable_event_code(proto, EV_KEY, BTN_LEFT, nullptr); // needed to be seen as a mouse
+            libevdev_enable_event_type(proto, EV_REL);
+            libevdev_enable_event_code(proto, EV_REL, REL_X, nullptr);
+            libevdev_enable_event_code(proto, EV_REL, REL_Y, nullptr);
+            libevdev_enable_event_type(proto, EV_SYN);
+            const int rc = libevdev_uinput_create_from_device(proto, LIBEVDEV_UINPUT_OPEN_MANAGED, &m_device);
+            libevdev_free(proto);
+            if (rc < 0) {
+                m_device = nullptr;
+                return PlatformResult::permissionDenied(
+                    tr("Cannot create the virtual mouse: no write access to /dev/uinput."));
+            }
+        }
+        for (int dx : {1, -1}) {
+            libevdev_uinput_write_event(m_device, EV_REL, REL_X, dx);
+            libevdev_uinput_write_event(m_device, EV_SYN, SYN_REPORT, 0);
+        }
+        return PlatformResult::success();
+    }
+
+private:
+    libevdev_uinput *m_device = nullptr;
+};
+
 } // namespace
 
 std::unique_ptr<IInputHook> createEvdevInputHook()
 {
     return std::make_unique<EvdevInputHook>();
+}
+
+std::unique_ptr<IAppWindows> createWaylandAppWindows()
+{
+    return std::make_unique<WaylandAppWindows>();
 }
 
 std::unique_ptr<IClickInjector> createUinputClickInjector()

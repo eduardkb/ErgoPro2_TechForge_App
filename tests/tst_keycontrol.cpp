@@ -50,13 +50,15 @@ struct FakeRegistrar : IKeyRegistrar {
 };
 
 struct FakeContext : KeyActionContext {
-    int left = 0, right = 0, doubles = 0, notified = 0, toggles = 0, dragToggles = 0, dragReleases = 0;
+    int left = 0, right = 0, doubles = 0, notified = 0, toggles = 0, dragToggles = 0, dragReleases = 0,
+        keepActiveToggles = 0;
     QStringList calls; // order of the context calls
     OpResult leftClick() override { ++left; calls << QStringLiteral("left"); return {}; }
     OpResult rightClick() override { ++right; return {}; }
     OpResult doubleLeftClick() override { ++doubles; return {}; }
     void notifyKeyControlClick() override { ++notified; }
     OpResult toggleAutoClick() override { ++toggles; return {}; }
+    OpResult toggleKeepScreenActive() override { ++keepActiveToggles; return {}; }
     OpResult toggleDragLock() override { ++dragToggles; calls << QStringLiteral("toggleDrag"); return {}; }
     void releaseDragLock() override { ++dragReleases; calls << QStringLiteral("releaseDrag"); }
 };
@@ -194,12 +196,16 @@ private slots:
         QVERIFY(r.find(KeyActionRegistry::DoubleLeftClick));
         QVERIFY(r.find(KeyActionRegistry::ToggleAutoClick));
         QVERIFY(r.find(KeyActionRegistry::DragLock));
-        QCOMPARE(r.visibleActions().size(), 5); // drag lock is offered since stage 6
+        QVERIFY(r.find(KeyActionRegistry::ToggleKeepScreenActive));
+        QCOMPARE(r.visibleActions().size(), 6); // drag lock since stage 6, keep screen active since stage 9
         QVERIFY(!r.find(QStringLiteral("nope")));
         FakeContext c;
         QVERIFY(r.find(KeyActionRegistry::DragLock)->execute(c).ok);
         QCOMPARE(c.dragToggles, 1);
         QCOMPARE(c.left, 0);
+        QVERIFY(r.find(KeyActionRegistry::ToggleKeepScreenActive)->execute(c).ok);
+        QCOMPARE(c.keepActiveToggles, 1);
+        QCOMPARE(c.left + c.right + c.doubles, 0); // no click counted for the statistics
     }
 
     // ---------------------------------------------------------------- store
@@ -317,11 +323,11 @@ private slots:
     void availableActionsExcludeAssignedOnes()
     {
         EngineFixture f;
-        QCOMPARE(f.engine.availableActionIds().size(), 5); // all visible actions
+        QCOMPARE(f.engine.availableActionIds().size(), 6); // all visible actions (stage 9: + keep screen active)
         QString id;
         f.engine.add(combo(Qt::Key_F9), KeyActionRegistry::LeftClick, &id);
         QStringList free = f.engine.availableActionIds();
-        QCOMPARE(free.size(), 4);
+        QCOMPARE(free.size(), 5);
         QVERIFY(!free.contains(KeyActionRegistry::LeftClick));
         // When modifying that hotkey, its own action stays selectable.
         QVERIFY(f.engine.availableActionIds(id).contains(KeyActionRegistry::LeftClick));
@@ -358,8 +364,18 @@ private slots:
         int key = Qt::Key_F1;
         for (const QString &id : f.engine.availableActionIds())
             QVERIFY(f.engine.add(combo(key++), id).ok);
-        QCOMPARE(f.engine.bindings().size(), 5);
+        QCOMPARE(f.engine.bindings().size(), 6);
         QVERIFY(f.engine.availableActionIds().isEmpty());
+    }
+
+    // Stage 9 (B.10): only one hotkey may switch Keep screen active.
+    void keepScreenActiveHasOnlyOneHotkey()
+    {
+        EngineFixture f;
+        QVERIFY(f.engine.add(combo(Qt::Key_F7), KeyActionRegistry::ToggleKeepScreenActive).ok);
+        QVERIFY(!f.engine.add(combo(Qt::Key_F6), KeyActionRegistry::ToggleKeepScreenActive).ok);
+        f.engine.onKeyEvent(keyEvent(InputEventType::KeyDown, combo(Qt::Key_F7)));
+        QCOMPARE(f.context.keepActiveToggles, 1);
     }
 
     void disabledHotkeyStillOccupiesItsAction()

@@ -6,12 +6,14 @@
 #include <QtGlobal>
 
 #if defined(Q_OS_MACOS)
+#include "platform/mac/MacAppWindows.h"
 #include "platform/mac/MacAutostart.h"
 #include "platform/mac/MacDesktopIntegration.h"
 #include "platform/mac/MacInput.h"
 #include "platform/mac/MacInstaller.h"
 #include "platform/mac/MacPermissions.h"
 #elif defined(Q_OS_WIN)
+#include "platform/win/WinAppWindows.h"
 #include "platform/win/WinInput.h"
 #include "platform/win/WinPlatform.h"
 #elif defined(Q_OS_LINUX)
@@ -36,6 +38,7 @@ Platform createPlatform()
     p.inputHook = std::make_unique<MacInputHook>();
     p.clickInjector = std::make_unique<MacClickInjector>();
     p.powerEvents = std::make_unique<MacPowerEvents>();
+    p.appWindows = std::make_unique<MacAppWindows>();
 #elif defined(Q_OS_WIN)
     p.osName = QStringLiteral("Windows");
     p.desktop = std::make_unique<WinDesktopIntegration>();
@@ -45,6 +48,7 @@ Platform createPlatform()
     p.inputHook = std::make_unique<WinInputHook>();
     p.clickInjector = std::make_unique<WinClickInjector>();
     p.powerEvents = std::make_unique<WinPowerEvents>();
+    p.appWindows = std::make_unique<WinAppWindows>();
 #elif defined(Q_OS_LINUX)
     p.osName = QStringLiteral("Linux");
     p.desktop = std::make_unique<GenericDesktopIntegration>();
@@ -58,10 +62,12 @@ Platform createPlatform()
     case LinuxPermissions::Session::X11:
         p.inputHook = std::make_unique<X11InputHook>(&tracker);
         p.clickInjector = std::make_unique<X11ClickInjector>(&tracker);
+        p.appWindows = createX11AppWindows(&tracker);
         break;
     case LinuxPermissions::Session::Wayland:
         p.inputHook = createEvdevInputHook();
         p.clickInjector = createUinputClickInjector();
+        p.appWindows = createWaylandAppWindows();
         if (!p.inputHook) {
             const QString reason = QCoreApplication::translate(
                 "ergo::PlatformFactory", "This ErgoPro2 was built without libevdev, so mouse and keyboard features "
@@ -75,6 +81,7 @@ Platform createPlatform()
                                                            "No X11 or Wayland desktop session was detected.");
         p.inputHook = std::make_unique<UnsupportedInputHook>(reason);
         p.clickInjector = std::make_unique<UnsupportedClickInjector>(reason);
+        p.appWindows = std::make_unique<UnsupportedAppWindows>(reason);
         break;
     }
     }

@@ -11,9 +11,12 @@
 #include "core/FeatureAvailability.h"
 #include "core/input/InputEvent.h"
 #include "core/input/KeyCombo.h"
+#include "core/keepactive/KeepScreenActiveEngine.h"
 #include "platform/PlatformResult.h"
 
 #include <QList>
+#include <QPointF>
+#include <QRectF>
 #include <QString>
 #include <QStringList>
 
@@ -194,6 +197,28 @@ public:
     // Best-effort detection of a full-screen application in the foreground
     // (B.17); std::nullopt when this OS is not supported.
     virtual std::optional<bool> isFullscreenAppActive() const = 0;
+};
+
+// Keep Screen Active (B.10, stage 9): other applications' windows and pointer
+// input. Every injected event is tagged synthetic (B.6), so no feature counts
+// it as user input. All coordinates are logical pixels.
+class IAppWindows {
+public:
+    enum class Raise { NotRunning, Raised, Failed };
+
+    virtual ~IAppWindows() = default;
+    // Empty when windows of other applications can be targeted; otherwise why
+    // not (e.g. Wayland) – then only nudgePointer() is used.
+    virtual QString unsupportedReason() const = 0;
+    // If the application runs: restore its main window (also when minimized or
+    // only in the tray / menu bar) and bring it to the front.
+    virtual Raise raise(KeepActiveApp app, QString *detail) = 0;
+    // Frame of the application's main window on screen, if visible.
+    virtual std::optional<QRectF> mainWindowFrame(KeepActiveApp app) const = 0;
+    // Left click at 'point'; the pointer is moved back to where it was afterwards.
+    virtual PlatformResult clickAt(const QPointF &point) = 0;
+    // Moves the pointer by 1 pixel and back (keeps the screen awake, no click).
+    virtual PlatformResult nudgePointer() = 0;
 };
 
 } // namespace ergo

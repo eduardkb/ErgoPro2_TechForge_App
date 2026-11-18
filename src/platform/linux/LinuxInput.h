@@ -111,6 +111,30 @@ private:
     QString m_reason;
 };
 
+// ------------------------------------------------------------------ Keep Screen Active (B.10)
+
+// X11: Teams / Zoom windows via EWMH (_NET_CLIENT_LIST, WM_CLASS,
+// _NET_ACTIVE_WINDOW); click and pointer moves with XTest, announced to the
+// tracker so the hook reports them as synthetic.
+std::unique_ptr<IAppWindows> createX11AppWindows(SyntheticTracker *tracker);
+// Wayland: other applications' windows cannot be targeted; only the pointer
+// nudge (relative uinput move of ErgoPro2's virtual mouse). Without libevdev
+// nothing is possible (reason given).
+std::unique_ptr<IAppWindows> createWaylandAppWindows();
+
+class UnsupportedAppWindows final : public IAppWindows {
+public:
+    explicit UnsupportedAppWindows(QString reason) : m_reason(std::move(reason)) {}
+    QString unsupportedReason() const override { return m_reason; }
+    Raise raise(KeepActiveApp, QString *) override { return Raise::NotRunning; }
+    std::optional<QRectF> mainWindowFrame(KeepActiveApp) const override { return std::nullopt; }
+    PlatformResult clickAt(const QPointF &) override { return PlatformResult::notSupported(m_reason); }
+    PlatformResult nudgePointer() override { return PlatformResult::notSupported(m_reason); }
+
+private:
+    QString m_reason;
+};
+
 // ------------------------------------------------------------------ power
 
 std::unique_ptr<IPowerEvents> createLinuxPowerEvents();

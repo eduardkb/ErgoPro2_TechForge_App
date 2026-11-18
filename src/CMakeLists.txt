@@ -23,6 +23,7 @@ add_library(ergopro2_core STATIC
     core/StartupMode.cpp core/StartupMode.h
     core/WindowLimits.cpp core/WindowLimits.h
     core/settings/SettingsMigration.cpp core/settings/SettingsMigration.h
+    core/keepactive/KeepScreenActiveEngine.cpp core/keepactive/KeepScreenActiveEngine.h
     core/statistics/ChartAxis.cpp core/statistics/ChartAxis.h
     core/statistics/DateText.cpp core/statistics/DateText.h
     core/statistics/StatisticsCollector.cpp core/statistics/StatisticsCollector.h
@@ -39,6 +40,7 @@ add_library(ergopro2_core STATIC
     core/settings/SettingsSchema.cpp core/settings/SettingsSchema.h
     core/settings/SettingsStore.cpp core/settings/SettingsStore.h
     core/settings/StatisticsSettings.cpp core/settings/StatisticsSettings.h
+    core/settings/KeepScreenActiveSettings.cpp core/settings/KeepScreenActiveSettings.h
 )
 target_include_directories(ergopro2_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -59,6 +61,7 @@ add_library(ergopro2_platform STATIC
 )
 if(APPLE)
     target_sources(ergopro2_platform PRIVATE
+        platform/mac/MacAppWindows.mm platform/mac/MacAppWindows.h
         platform/mac/MacAutostart.cpp platform/mac/MacAutostart.h
         platform/mac/MacDesktopIntegration.mm platform/mac/MacDesktopIntegration.h
         platform/mac/MacInput.mm platform/mac/MacInput.h
@@ -71,12 +74,14 @@ if(APPLE)
         "-framework Security")
 elseif(WIN32)
     target_sources(ergopro2_platform PRIVATE
+        platform/win/WinAppWindows.cpp platform/win/WinAppWindows.h
         platform/win/WinInput.cpp platform/win/WinInput.h
         platform/win/WinPlatform.cpp platform/win/WinPlatform.h)
-    target_link_libraries(ergopro2_platform PRIVATE user32 shell32 shcore wtsapi32)
+    target_link_libraries(ergopro2_platform PRIVATE user32 shell32 shcore wtsapi32 dwmapi)
     target_compile_definitions(ergopro2_platform PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN)
 elseif(UNIX)
     target_sources(ergopro2_platform PRIVATE
+        platform/linux/LinuxAppWindows.cpp
         platform/linux/LinuxInput.h
         platform/linux/LinuxPlatform.cpp platform/linux/LinuxPlatform.h
         platform/linux/LinuxPowerEvents.cpp
@@ -125,6 +130,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/FeatureAvailabilityService.cpp ui/FeatureAvailabilityService.h
     ui/InputService.cpp ui/InputService.h
     ui/autoclick/AutoClickController.cpp ui/autoclick/AutoClickController.h
+    ui/keepactive/KeepScreenActiveController.cpp ui/keepactive/KeepScreenActiveController.h
     ui/autoclick/AutoClickOverlay.cpp ui/autoclick/AutoClickOverlay.h
     ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
     ui/breaktimer/BreakTimerController.cpp ui/breaktimer/BreakTimerController.h

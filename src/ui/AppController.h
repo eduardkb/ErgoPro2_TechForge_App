@@ -19,6 +19,7 @@ class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
 class InstallController;
+class KeepScreenActiveController;
 class Logger;
 class MainWindow;
 class PermissionsDialog;
@@ -73,6 +74,7 @@ private:
     std::unique_ptr<KeyControlController> m_keycontrol;
     std::unique_ptr<BreakTimerController> m_breaktimer;
     std::unique_ptr<StatisticsController> m_statistics;
+    std::unique_ptr<KeepScreenActiveController> m_keepActive;
     QDate m_lastLogCleanup; // log files are deleted at most once per day (and at startup)
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;

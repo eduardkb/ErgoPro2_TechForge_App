@@ -10,6 +10,7 @@ class KeyControlController;
 class FeatureAvailabilityService;
 class InputService;
 class InstallController;
+class KeepScreenActiveController;
 class Logger;
 class SettingsStore;
 class StatisticsController;
@@ -27,6 +28,7 @@ struct AppContext {
     KeyControlController &keycontrol;
     BreakTimerController &breaktimer;
     StatisticsController &statistics;
+    KeepScreenActiveController &keepActive; // stage 9
 };
 
 } // namespace ergo
