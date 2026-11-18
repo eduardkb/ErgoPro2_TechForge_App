@@ -140,14 +140,28 @@ private slots:
         QCOMPARE(e.state(), E::State::Disabled);
     }
 
-    void titleBarPoint()
+    void clickPointIsTheTopLeftCorner()
     {
+        // 1.9.1 (owner request): exactly the window's top-left corner (the
+        // resize corner), whatever the app and the window size.
         QPointF p;
-        QVERIFY(keepActiveTitleBarPoint(QRectF(100, 50, 1200, 800), KeepActiveApp::Teams, &p));
-        QCOMPARE(p, QPointF(100 + 1200 * 0.22, 60));
-        QVERIFY(keepActiveTitleBarPoint(QRectF(0, 0, 400, 300), KeepActiveApp::Zoom, &p));
-        QCOMPARE(p, QPointF(140, 10)); // at least 140 px from the left edge
-        QVERIFY(!keepActiveTitleBarPoint(QRectF(0, 0, 300, 300), KeepActiveApp::Teams, &p)); // too small
+        QVERIFY(keepActiveClickPoint(QRectF(100, 50, 1200, 800), &p));
+        QCOMPARE(p, QPointF(100, 50));
+        QVERIFY(keepActiveClickPoint(QRectF(-755, 132, 300, 120), &p));
+        QCOMPARE(p, QPointF(-755, 132));
+        QVERIFY(!keepActiveClickPoint(QRectF(10, 10, 0, 0), &p)); // no visible window
+    }
+
+    void addingOrReEnablingTheHotkeyEnables()
+    {
+        const QString id = QStringLiteral("b1");
+        QVERIFY(keepActiveHotkeyBecameActive({}, false, id, true));       // added
+        QVERIFY(keepActiveHotkeyBecameActive(id, false, id, true));       // re-enabled in the table
+        QVERIFY(keepActiveHotkeyBecameActive(QStringLiteral("b0"), true, id, true)); // replaced by another
+        QVERIFY(!keepActiveHotkeyBecameActive(id, true, id, true));       // unchanged / combo changed
+        QVERIFY(!keepActiveHotkeyBecameActive({}, false, id, false));     // added disabled
+        QVERIFY(!keepActiveHotkeyBecameActive(id, true, id, false));      // disabled
+        QVERIFY(!keepActiveHotkeyBecameActive(id, true, {}, false));      // removed
     }
 
     void settings()

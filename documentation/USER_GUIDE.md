@@ -416,12 +416,13 @@ can also be switched with the tray menu or a Key Control hotkey. Whether it is o
 How it works: after **3 minutes** without mouse or keyboard input it acts at once, then every **3 minutes**
 until you touch the mouse or keyboard again:
 1. if **Microsoft Teams** runs, its window is brought back (also when minimized or only in the tray / menu
-   bar), its title bar is clicked once and the pointer is put back where it was;
+   bar), the top-left corner of its window is clicked once and the pointer is put back where it was;
 2. otherwise the same with **Zoom**;
 3. otherwise the pointer moves by 1 pixel and back (no click, no window changes).
 
-Its moves and clicks are not counted anywhere (Statistics, Break Timer, Auto Click). Switching the hotkey off
-in Key Control, or deleting it, also switches the feature off. The two times can be changed only in
+Its moves and clicks are not counted anywhere (Statistics, Break Timer, Auto Click). Adding its hotkey in Key Control,
+or switching that hotkey on again there, switches the feature on. Switching the hotkey off in Key Control, or
+deleting it, also switches the feature off. The two times can be changed only in
 `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)). On Linux Wayland only the pointer movement
 is used.
 

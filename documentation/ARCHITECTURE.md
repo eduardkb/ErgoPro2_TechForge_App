@@ -702,7 +702,7 @@ and on the first tick of a new day ("new day") – never when the setting change
 
 | Layer | Piece | Role |
 |---|---|---|
-| core | `src/core/keepactive/KeepScreenActiveEngine` | Pure state machine (FakeClock-tested in `tests/tst_keepactive.cpp`): enabled flag, real-input time, pause reasons (`Locked`, `BreakWindow`, `DragLock`), `update()` → cycle due; states Disabled / Idle / Working. `keepActiveTitleBarPoint()` = the one place that defines the title-bar click spot. |
+| core | `src/core/keepactive/KeepScreenActiveEngine` | Pure state machine (FakeClock-tested in `tests/tst_keepactive.cpp`): enabled flag, real-input time, pause reasons (`Locked`, `BreakWindow`, `DragLock`), `update()` → cycle due; states Disabled / Idle / Working. `keepActiveClickPoint()` = the one place that defines the click spot (window top-left corner, 1.9.1); `keepActiveHotkeyBecameActive()` = when a Key Control change switches the feature on. |
 | core | `src/core/settings/KeepScreenActiveSettings` | `keepScreenActive.enabled`, `startAfterIdleMinutes`, `intervalMinutes`. |
 | core | `KeyActionRegistry::ToggleKeepScreenActive` | Key Control action → `KeyActionContext::toggleKeepScreenActive()`; `KeyControlController` emits `keepScreenActiveToggleRequested()`. |
 | platform | `IAppWindows` (`PlatformInterfaces.h`), `Platform::appWindows` | `raise(app)`, `mainWindowFrame(app)`, `clickAt(point)` (pointer moved back), `nudgePointer()`, `unsupportedReason()`. macOS `MacAppWindows.mm`, Windows `WinAppWindows.cpp`, X11 `LinuxAppWindows.cpp` (XTest motions announced with `SyntheticTracker::expectMotion`), Wayland `WaylandAppWindows` in `LinuxEvdevInput.cpp` (nudge through a uinput device named like the click injector's, so the hook marks it as ours). |

@@ -1,5 +1,9 @@
 # Stage 9 – Keep Screen Active (v1.9.0)
 
+> **Changed in 1.9.1 (owner request):** the Teams / Zoom click goes exactly to the window's top-left corner
+> (replaces 4.5), and adding the hotkey or enabling it again in the hotkey list switches the feature on
+> (replaces the "stays Disabled" rule in section 5). See Part B.10.
+>
 > **Status:** implemented in 1.9.0 (see CHANGELOG and Part B.10). Implementation notes: on Linux X11 a Teams that is
 > only in the tray cannot be found through the window list and counts as not running.
 

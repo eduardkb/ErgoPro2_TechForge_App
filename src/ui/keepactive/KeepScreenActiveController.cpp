@@ -101,6 +101,7 @@ void KeepScreenActiveController::shutdown()
     m_tick.stop();
     ++m_cycleSerial; // a pending delayed step does nothing
     m_started = false;
+    m_hotkeySynced = false;
 }
 
 QString KeepScreenActiveController::limitation() const
@@ -149,10 +150,19 @@ void KeepScreenActiveController::syncHotkey()
         }
     }
     const bool hotkeyChanged = id != m_bindingId || bindingEnabled != m_bindingEnabled || text != m_hotkeyText;
+    // 1.9.1 (owner request): adding the hotkey or turning it back on in the
+    // table switches the feature on. Not at start: there the remembered
+    // setting decides.
+    const bool becameActive =
+        m_hotkeySynced && keepActiveHotkeyBecameActive(m_bindingId, m_bindingEnabled, id, bindingEnabled);
+    const bool added = id != m_bindingId;
     m_bindingId = id;
     m_bindingEnabled = bindingEnabled;
     m_hotkeyText = text;
-    if (m_engine.isEnabled() && id.isEmpty())
+    m_hotkeySynced = true;
+    if (becameActive && !m_engine.isEnabled())
+        setEnabled(true, added ? "hotkey added in Key Control" : "hotkey enabled in Key Control");
+    else if (m_engine.isEnabled() && id.isEmpty())
         setEnabled(false, "hotkey removed in Key Control");
     else if (m_engine.isEnabled() && !bindingEnabled)
         setEnabled(false, "hotkey disabled in Key Control");
@@ -219,7 +229,7 @@ void KeepScreenActiveController::runCycle()
 }
 
 // Step 1 / 2 of a cycle (B.10): restore + raise the app window, wait until it
-// is on screen, click its title bar and put the pointer back.
+// is on screen, click its top-left corner once and put the pointer back.
 void KeepScreenActiveController::tryApp(int index)
 {
     if (index >= int(kApps.size())) {
@@ -249,8 +259,8 @@ void KeepScreenActiveController::tryApp(int index)
         }
         const std::optional<QRectF> frame = m_platform.appWindows->mainWindowFrame(app);
         QPointF point;
-        if (!frame || !keepActiveTitleBarPoint(*frame, app, &point)) {
-            qCWarning(lcApp) << "Keep screen active:" << appName(app) << "window not visible or too small"
+        if (!frame || !keepActiveClickPoint(*frame, &point)) {
+            qCWarning(lcApp) << "Keep screen active:" << appName(app) << "window not visible"
                              << (frame ? *frame : QRectF());
             tryApp(index + 1);
             return;
@@ -258,11 +268,11 @@ void KeepScreenActiveController::tryApp(int index)
         const PlatformResult r = m_platform.appWindows->clickAt(point);
         if (!r.ok()) {
             qCWarning(lcApp).noquote() << "Keep screen active: click on the" << appName(app)
-                                       << "title bar failed:" << r.message;
+                                       << "window corner failed:" << r.message;
             tryApp(index + 1);
             return;
         }
-        qCDebug(lcApp) << "Keep screen active: clicked the" << appName(app) << "title bar at" << point << "frame"
+        qCDebug(lcApp) << "Keep screen active: clicked the" << appName(app) << "window corner at" << point << "frame"
                        << *frame;
         m_cycleRunning = false;
     });

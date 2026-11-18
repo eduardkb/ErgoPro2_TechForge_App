@@ -65,6 +65,7 @@ private:
     QString m_bindingId;
     bool m_bindingEnabled = false;
     QString m_hotkeyText;
+    bool m_hotkeySynced = false; // the first sync (start) never switches the feature on
     bool m_cycleRunning = false;
     int m_cycleSerial = 0;
     KeepScreenActiveEngine::State m_lastState = KeepScreenActiveEngine::State::Disabled;

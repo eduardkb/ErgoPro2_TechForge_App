@@ -881,3 +881,19 @@ ErgoPro2 closed, `keepScreenActive.startAfterIdleMinutes` and `intervalMinutes` 
 | 13 | After several cycles, compare Statistics (clicks, mouse time, "Clicks done for you") and the Break Timer's active work time with before. | Unchanged by the feature's moves and clicks; the Break Timer still resets after the idle time. Auto Click does not click because of them. |
 | 14 | Linux Wayland: enable it. | The card shows "On Wayland only a small pointer movement is used."; cycles only nudge the pointer. |
 | 15 | Exit and start ErgoPro2 while enabled; set `startAfterIdleMinutes` to 0 or 61 in `settings.json`. | Still enabled after the restart; the invalid value is replaced by 3 (WARNING in the log). |
+
+## Bug fix – v1.9.1
+
+Keep screen active: corner click and switching on when the hotkey is added (B.10). Replaces Stage 9 rows 5, 8
+and 9. Use the 1-minute times from Stage 9 for quicker tests.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (`tst_keepactive`: 14 tests). |
+| 2 | Key Control › Add Hotkey › e.g. F7 › action **Keep screen active on/off** › Save. | The feature is **on at once**: Auto Click card badge **Enabled**, Status **Idle**. Log INFO "Keep screen active enabled ( hotkey added in Key Control )". |
+| 3 | *Disable* the F7 hotkey in Key Control, then *Enable* it again. | Disable: feature **off** ("F7 (disabled in Key Control)"). Enable: feature **on** again (log "hotkey enabled in Key Control"). |
+| 4 | Press F7 (off), modify the F7 hotkey to F9 (same action). | The feature stays **off**: only adding or enabling the hotkey switches it on, not a key change. |
+| 5 | Exit and start ErgoPro2 once while off, once while on. | The remembered state is kept (starting does not switch it on). |
+| 6 | macOS, Windows, Linux X11: Teams running (visible, then minimized), idle until a cycle. | Teams comes to the front, **exactly its top-left window corner** is clicked once with the left button (the spot where the resize arrows appear), nothing in Teams opens (no search, no menu, no button), the window keeps its size and position, the pointer is put back. |
+| 7 | Same with only Zoom running. | Same as row 6 for Zoom's window. |
+| 8 | Neither Teams nor Zoom running. | Only the 1-pixel pointer movement and back – **no click** anywhere (not on the desktop, not in the middle of the screen). |

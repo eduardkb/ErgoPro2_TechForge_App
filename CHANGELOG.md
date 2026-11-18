@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [1.9.1] - 2026-11-18
+
+### Fixed
+- **Keep screen active – clicks hit Teams buttons (macOS):** the click on the Teams / Zoom window now goes
+  exactly to the window's **top-left corner** (where the pointer shows the resize arrows), once, with the left
+  button, and the pointer is put back. Root cause: the 1.9.0 spot "a quarter of the window width in the title
+  bar" lands on Teams controls (e.g. the search box) in narrow or rearranged windows. When neither Teams nor
+  Zoom runs, the 1-pixel pointer movement stays (no click).
+- **Keep screen active – not on after adding its hotkey:** adding a "Keep screen active on/off" hotkey in Key
+  Control (or turning a disabled one back on in the hotkey list) now switches the feature on at once. Root
+  cause: 1.9.0 only switched it on when the hotkey was pressed (owner change request).
+- Tests: `tst_keepactive` now checks the corner click spot and when a hotkey change switches the feature on.
+
 ## [1.9.0] - 2026-11-18
 
 Stage 9 – **Keep Screen Active** (Function 5, owner request; specification B.10,

@@ -4,6 +4,7 @@
 
 #include <QPointF>
 #include <QRectF>
+#include <QString>
 #include <QtGlobal>
 
 namespace ergo {
@@ -12,7 +13,7 @@ namespace ergo {
 // Pure: driven by real-input notifications, pause conditions, the enabled flag
 // and the injectable clock (wall clock, so sleep counts as idle time). The
 // caller calls update() about once per second and runs a cycle whenever it
-// returns true; WHAT a cycle does (Teams / Zoom title bar, harmless input) is
+// returns true; WHAT a cycle does (Teams / Zoom corner click, harmless input) is
 // done by the UI controller with the platform layer.
 //
 // Rules:
@@ -71,10 +72,14 @@ private:
 // Which application window a cycle targets.
 enum class KeepActiveApp { Teams, Zoom };
 
-// Point of an app window's title bar that is clicked (logical pixels): 10 px
-// below the top edge, in the free area between the controls on the left and
-// the centre (search box / tabs). Kept here so the position can be adjusted in
-// one place. Returns false when the window is too small for a safe spot.
-bool keepActiveTitleBarPoint(const QRectF &frame, KeepActiveApp app, QPointF *point);
+// Point of an app window that is clicked (logical pixels): exactly its
+// top-left corner, the resize corner (1.9.1). Kept here so the position can be
+// adjusted in one place. Returns false when there is no visible frame.
+bool keepActiveClickPoint(const QRectF &frame, QPointF *point);
+
+// True when the Key Control hotkey for this feature became usable: it was
+// added (or another binding took its place) or its binding was turned back on
+// in the hotkey table. The feature is then switched on (1.9.1, owner request).
+bool keepActiveHotkeyBecameActive(const QString &oldId, bool oldEnabled, const QString &newId, bool newEnabled);
 
 } // namespace ergo

@@ -74,21 +74,23 @@ qint64 KeepScreenActiveEngine::idleMs() const
     return std::max<qint64>(0, now() - m_lastInputMs);
 }
 
-bool keepActiveTitleBarPoint(const QRectF &frame, KeepActiveApp app, QPointF *point)
+bool keepActiveClickPoint(const QRectF &frame, QPointF *point)
 {
-    // Free area of the top bar: Teams has the window/navigation controls on the
-    // left and the search box in the middle; Zoom has its tabs in the middle.
-    // A spot at about a quarter of the width, at least 140 px from the left
-    // edge, is empty in both on Windows and macOS (to be confirmed by the
-    // manual tests; adjust here if an app changes its layout).
-    constexpr double kMinLeft = 140.0;
-    constexpr double kTopOffset = 10.0;
-    const double fraction = app == KeepActiveApp::Teams ? 0.22 : 0.25;
-    if (frame.width() < 2 * kMinLeft + 80 || frame.height() < 100)
+    // 1.9.1 (owner request): the click goes exactly to the window's top-left
+    // corner, where the pointer shows the resize arrows. A click without a drag
+    // there changes nothing (no resize, no control is pressed). The previous
+    // spot in the title bar (1.9.0) hit Teams controls on macOS.
+    if (frame.isEmpty())
         return false;
-    const double x = frame.left() + std::max(kMinLeft, frame.width() * fraction);
-    *point = QPointF(x, frame.top() + kTopOffset);
+    *point = frame.topLeft();
     return true;
+}
+
+bool keepActiveHotkeyBecameActive(const QString &oldId, bool oldEnabled, const QString &newId, bool newEnabled)
+{
+    if (newId.isEmpty() || !newEnabled)
+        return false;
+    return newId != oldId || !oldEnabled;
 }
 
 } // namespace ergo
