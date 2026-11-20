@@ -60,18 +60,21 @@ The General tab then shows "Installed at … Installed with the ErgoPro2 setup p
 
 ### 2.3 macOS
 
-1. Double-click `ErgoPro2-<version>-macos.dmg`. A window opens with **ErgoPro2**, an arrow and the
-   **Applications** folder.
+1. Double-click `ErgoPro2-<version>-macos.dmg`. A window opens with **ErgoPro2**, an arrow, the
+   **Applications** folder and the steps "1. Drag the ErgoPro2 icon onto the Applications folder" /
+   "2. Open ErgoPro2 from Applications".
 2. **Drag ErgoPro2 onto Applications.** (If macOS asks for an administrator password, enter it, or see the
    note below.)
-3. Eject the disk image (in Finder, click the eject symbol next to "ErgoPro2 <version>").
-4. Open **Applications** and double-click **ErgoPro2**.
-5. **Gatekeeper:** ErgoPro2 is not notarized by Apple, so macOS may say it cannot verify the app.
+3. Open **Applications** and double-click **ErgoPro2**.
+4. **Gatekeeper:** ErgoPro2 is not notarized by Apple, so macOS may say it cannot verify the app.
    Click **Done** (not "Move to Trash"), then open **System Settings → Privacy & Security**, scroll down to
    *Security* and click **Open Anyway** next to the message about ErgoPro2. Confirm with **Open Anyway** and
    your password / Touch ID. Start ErgoPro2 again.
-6. ErgoPro2 starts, sets itself to **start when you log in** and asks for two permissions (see
-   [3.1](#31-macos)). The General tab shows "Installed at /Applications/ErgoPro2.app, starts at login".
+5. ErgoPro2 starts, sets itself to **start when you log in** and confirms: "ErgoPro2 is installed at
+   /Applications/ErgoPro2.app and starts automatically when you log in." In the same message it offers to
+   **eject the disk image and move the `.dmg` to the Trash** – click **Yes** (you can still restore it from
+   the Trash). The General tab shows "Installed at /Applications/ErgoPro2.app, starts at login".
+6. ErgoPro2 asks for two permissions (see [3.1](#31-macos)).
 7. Only when you had a 1.x version: ErgoPro2 asks once whether to remove the older copy in
    `~/Applications` (the Applications folder in your home folder). **Yes** is recommended. Your settings,
    statistics and logs are kept.

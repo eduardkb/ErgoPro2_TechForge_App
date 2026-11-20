@@ -2,6 +2,7 @@
 
 #include <QList>
 #include <QString>
+#include <QStringList>
 
 namespace ergo {
 
@@ -37,14 +38,34 @@ struct InstallStartupFacts {
     bool startAtLoginPointsToInstalledCopy = false;
     bool olderCopyExists = false;
     bool olderCopyKept = false; // the user answered "keep" before
+    // 2.1.0: the ErgoPro2 installer disk image is still mounted / a
+    // downloaded ErgoPro2-<version>-macos.dmg was found (mounted or not).
+    bool installerImageMounted = false;
+    bool installerImageFound = false;
 };
 
 struct InstallStartupActions {
     bool registerStartAtLogin = false;
     bool askToRemoveOlderCopy = false;
+    // 2.1.0 (owner request): "ErgoPro2 is installed" on the first start of the
+    // dragged copy, and the offer to eject the .dmg and move it to the Trash.
+    bool confirmInstalled = false;
+    bool offerToDeleteInstaller = false;
 };
 
 InstallStartupActions decideInstallStartupActions(const InstallStartupFacts &facts);
+
+// True for the name of a downloaded macOS installer disk image:
+// "ErgoPro2-<x.y.z>-macos.dmg", also with a browser suffix like " (1)".
+bool isInstallerDiskImageName(const QString &fileName);
+
+// Disk images listed by "hdiutil info -plist" with their mount points (empty
+// when attached but not mounted). Empty list for unreadable output.
+struct MountedImage {
+    QString imagePath;
+    QStringList mountPoints;
+};
+QList<MountedImage> parseMountedImages(const QString &hdiutilInfoPlist);
 
 // First program argument (the executable) of a macOS LaunchAgent plist
 // (ProgramArguments array); empty when it cannot be found.

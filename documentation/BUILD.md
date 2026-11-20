@@ -144,8 +144,9 @@ certificate, 1.6.3) and creates a compressed, verified `.dmg`. Options: `MACDEPL
 `DMGBUILD=/path/to/dmgbuild`.
 
 **Drag-and-drop window (2.0.0).** The `.dmg` is made with [dmgbuild](https://pypi.org/project/dmgbuild/)
-(version pinned in the script; installed with `pip` into a temporary Python environment unless `dmgbuild` is
-on the `PATH` or `DMGBUILD` is set – this needs `python3` and internet access). Its window shows
+(version **1.6.7** pinned in the script – older versions show no background on macOS Tahoe 26.2+; installed
+with `pip` into a temporary Python environment unless `dmgbuild` is on the `PATH` or `DMGBUILD` is set – this
+needs **Python 3.10 or newer** (`brew install python`; the macOS `python3` 3.9 is too old) and internet access). Its window shows
 `ErgoPro2.app`, a link to `/Applications` and a background with an arrow:
 
 | File | Purpose |
@@ -160,8 +161,8 @@ The CI builds the same `.dmg` as a **universal** app (Apple silicon + Intel) on 
 (GitHub › Actions › the run › *Artifacts* › `ErgoPro2-<version>-macos.dmg`).
 
 To install from the `.dmg`: double-click it, drag **ErgoPro2** onto **Applications** in the window that opens,
-eject the disk image and start ErgoPro2 from Applications (it then registers start at login itself, see
-section 5). Starting it from the disk image and clicking **Install** on the General tab still works too. A downloaded `.dmg` is quarantined: see 1.6.5 if macOS refuses to open it.
+and start ErgoPro2 from Applications (it then registers start at login itself, confirms the installation and
+offers to eject the disk image and move the `.dmg` to the Trash, see section 5). Starting it from the disk image and clicking **Install** on the General tab still works too. A downloaded `.dmg` is quarantined: see 1.6.5 if macOS refuses to open it.
 
 ### 1.6 Code signing (important for permissions)
 

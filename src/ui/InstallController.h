@@ -47,6 +47,9 @@ signals:
     void exitRequested();
 
 private:
+    void confirmInstallation(QWidget *parent, bool confirm, const QString &location,
+                             const QList<IInstaller::InstallerImage> &images);
+
     Platform &m_platform;
     SettingsStore &m_settings;
 };

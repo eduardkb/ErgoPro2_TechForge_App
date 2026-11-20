@@ -17,6 +17,8 @@ public:
     PlatformResult uninstall(bool *deferred) override;
     PlatformResult launchInstalledCopy() override;
     PlatformResult removeOlderCopy() override;
+    QList<InstallerImage> installerImages() const override;
+    PlatformResult removeInstallerImage(const InstallerImage &image) override;
 
     static QString systemBundlePath(); // /Applications/ErgoPro2.app
     static QString userBundlePath();   // ~/Applications/ErgoPro2.app

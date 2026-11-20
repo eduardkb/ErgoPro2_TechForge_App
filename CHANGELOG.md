@@ -5,6 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.1.0] - 2026-11-20
+
+### Fixed
+- **macOS `.dmg` window showed only two icons** (no arrow, no instructions) on macOS Tahoe. Root cause:
+  dmgbuild 1.6.5 stored the background as a bookmark that Finder on macOS 26.2+ no longer follows
+  (dmgbuild issue #273); the package script now uses dmgbuild **1.6.7** (needs Python 3.10+).
+- The background explains both steps more clearly: "1. Drag the ErgoPro2 icon onto the Applications folder",
+  "2. Open ErgoPro2 from Applications".
+
+### Added
+- **Installation confirmation (macOS):** on the first start of a copy dragged into Applications, ErgoPro2
+  shows "ErgoPro2 is installed at … and starts automatically when you log in." (owner request).
+- **Remove the installer `.dmg`:** together with that confirmation (and whenever the ErgoPro2 disk image is
+  still mounted) ErgoPro2 offers to eject the disk image and move the `.dmg` to the Trash. When it is no
+  longer mounted, downloaded `ErgoPro2-<version>-macos.dmg` files in Downloads / Desktop are offered.
+- Tests: `tst_installpolicy` 13 tests (confirmation and `.dmg` offer rules, installer file names, reading
+  `hdiutil info`). CI warns if the `.dmg` layout contains the old background bookmark again.
+
 ## [2.0.0] - 2026-11-20
 
 Major version (owner decision): macOS installs like other Mac apps.

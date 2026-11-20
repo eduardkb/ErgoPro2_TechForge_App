@@ -1,6 +1,7 @@
 #include "core/InstallPolicy.h"
 
 #include <QDir>
+#include <QRegularExpression>
 #include <QXmlStreamReader>
 
 namespace ergo {
@@ -41,6 +42,14 @@ InstallStartupActions decideInstallStartupActions(const InstallStartupFacts &fac
     a.registerStartAtLogin =
         facts.registerStartAtLoginOnStart && (!facts.startsAtLogin || !facts.startAtLoginPointsToInstalledCopy);
     a.askToRemoveOlderCopy = facts.olderCopyExists && !facts.olderCopyKept;
+    // 2.1.0: the first start of a copy dragged into Applications is the moment
+    // it became installed (start at login is registered for it now).
+    a.confirmInstalled = a.registerStartAtLogin;
+    // The .dmg is offered right after installing (mounted or found in a
+    // download folder), or whenever it is still mounted (update / Install +
+    // restart) - not on every start because of an old download.
+    a.offerToDeleteInstaller = facts.registerStartAtLoginOnStart
+                               && (facts.installerImageMounted || (a.confirmInstalled && facts.installerImageFound));
     return a;
 }
 
@@ -67,6 +76,62 @@ QString launchAgentExecutable(const QString &plistXml)
         }
     }
     return {};
+}
+
+bool isInstallerDiskImageName(const QString &fileName)
+{
+    static const QRegularExpression pattern(
+        QStringLiteral(R"(^ErgoPro2-\d+\.\d+\.\d+-macos( \(\d+\))?\.dmg$)"));
+    return pattern.match(fileName).hasMatch();
+}
+
+QList<MountedImage> parseMountedImages(const QString &hdiutilInfoPlist)
+{
+    // <key>images</key><array> <dict> image-path, system-entities[ {mount-point} ] </dict> ... </array>
+    QList<MountedImage> images;
+    QXmlStreamReader xml(hdiutilInfoPlist);
+    int depth = 0;       // element depth
+    int imageDepth = -1; // depth of the current image <dict>
+    int arrayDepth = -1; // depth of the "images" <array>
+    QString lastKey;
+    while (!xml.atEnd()) {
+        xml.readNext();
+        if (xml.isEndElement()) {
+            if (depth == imageDepth)
+                imageDepth = -1;
+            else if (depth == arrayDepth)
+                arrayDepth = -1;
+            --depth;
+            continue;
+        }
+        if (!xml.isStartElement())
+            continue;
+        ++depth;
+        const QStringView name = xml.name();
+        if (name == QLatin1String("key")) {
+            lastKey = xml.readElementText();
+            --depth; // readElementText consumed the end element
+            continue;
+        }
+        if (name == QLatin1String("array") && arrayDepth < 0 && lastKey == QLatin1String("images")) {
+            arrayDepth = depth;
+        } else if (name == QLatin1String("dict") && arrayDepth >= 0 && depth == arrayDepth + 1) {
+            imageDepth = depth;
+            images.append(MountedImage{});
+        } else if (name == QLatin1String("string") && imageDepth >= 0) {
+            const QString value = xml.readElementText();
+            --depth;
+            if (lastKey == QLatin1String("image-path") && depth == imageDepth)
+                images.last().imagePath = value;
+            else if (lastKey == QLatin1String("mount-point"))
+                images.last().mountPoints << value;
+            continue;
+        }
+        lastKey.clear();
+    }
+    if (xml.hasError())
+        return {};
+    return images;
 }
 
 } // namespace ergo

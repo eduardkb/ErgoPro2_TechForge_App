@@ -3,10 +3,10 @@
 ## Open:
 
 ## Completed to verify:
-- 
+
 
 ## Improvement and new features suggestions
-
+- when installing the .dmg file double clicking it. There was no clear indication I should drag the app's icon to the application folder and no message on the install screen to do so. also, although the app moved to the application folder when I drag and dropped it there was no indication that it got installed. there must be some sort of confirmation. and, when successfully installed display a message offering to delete the .dmg (it should delete it and un-mount the .dmg if the user confirms deletion.). this is also currently not happneing. make a new minor version
 
 | # | Feature | Need | Effort | Why / how it fits ErgoPro2 |
 |---|---|---|---|---|

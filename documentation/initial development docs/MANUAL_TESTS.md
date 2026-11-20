@@ -915,3 +915,21 @@ exit ErgoPro2 (tray → **Exit**).
 | 7 | Start ErgoPro2 from the mounted `.dmg` (not dragged), click **Install**. | Copies to `/Applications` (admin account) and offers to restart from it. On a standard account: copies to `~/Applications`. |
 | 8 | In the installed copy: General tab › **Uninstall**. | ErgoPro2 exits; `/Applications/ErgoPro2.app`, a kept `~/Applications/ErgoPro2.app` and the LaunchAgent plist are gone. Settings/logs/statistics remain. |
 | 9 | Windows and Debian: General tab › Installation. | Unchanged: same status and buttons as in 1.9.1 (the startup check does nothing there). |
+
+## Bug fix – v2.1.0
+
+macOS: visible drag-and-drop instructions, installation confirmation and removal of the `.dmg` (B.1.3).
+Use the 2.1.0 `.dmg` from CI / the release, downloaded to **Downloads**. Start with no ErgoPro2 in
+`/Applications` or `~/Applications` and no `~/Library/LaunchAgents/com.techforge.ergopro2.plist`
+(or exit ErgoPro2 and delete them).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (`tst_installpolicy`: 13 tests). CI step *Check the package* shows no "pBBk" warning. |
+| 2 | macOS 26 (Tahoe): double-click the `.dmg`. | The window shows the **background**: "Install ErgoPro2", "1. Drag the ErgoPro2 icon onto the Applications folder", the arrow between the two icons, and "2. Open ErgoPro2 from Applications" below – nothing cut off, sharp on Retina. |
+| 3 | Drag ErgoPro2 onto Applications, open it from Applications (Gatekeeper: *Open Anyway*). | One dialog "ErgoPro2 installed": "ErgoPro2 is installed at /Applications/ErgoPro2.app and starts automatically when you log in." plus "Eject it and move it to the Trash?" listing the `.dmg` in Downloads. |
+| 4 | Click **Yes**. | The "ErgoPro2 2.1.0" disk disappears from the Finder sidebar/desktop; the `.dmg` is in the Trash (Put Back works). Log INFO "Ejected …" and "Moved to the Trash: …". |
+| 5 | Exit and start ErgoPro2 again. | No dialog (installed already, no image mounted). |
+| 6 | Repeat rows 3 with the disk image **ejected first** (by hand) before starting ErgoPro2 the first time. | The same dialog lists the `.dmg` found in Downloads; **Yes** moves it to the Trash. |
+| 7 | Repeat row 3 and click **No**. | The disk image stays mounted and the file stays. On the next start the offer appears again only while the disk image is still mounted. |
+| 8 | Update: with 2.1.0 installed, open a newer `.dmg`, drag and **Replace**, start ErgoPro2. | No "installed" text (already installed), but "Installer disk image … Eject it and move it to the Trash?" because the image is mounted. |

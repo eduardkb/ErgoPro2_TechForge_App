@@ -9,14 +9,16 @@
     </linearGradient>
   </defs>
   <rect width="660" height="400" fill="url(#bg)"/>
-  <text x="330" y="62" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-size="22" font-weight="600" fill="#1f2a37">Install ErgoPro2</text>
+  <text x="330" y="58" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="700" fill="#1f2a37">Install ErgoPro2</text>
   <text x="330" y="92" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-size="15" fill="#4a5868">Drag ErgoPro2 to the Applications folder</text>
+        font-size="17" font-weight="600" fill="#2f7de1">1. Drag the ErgoPro2 icon onto the Applications folder</text>
   <g fill="none" stroke="#2f7de1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
     <path d="M 262 200 L 392 200"/>
     <path d="M 372 180 L 394 200 L 372 220"/>
   </g>
+  <text x="330" y="330" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="15" font-weight="600" fill="#2f7de1">2. Open ErgoPro2 from Applications</text>
   <text x="330" y="352" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-size="12" fill="#6b7785">Then open ErgoPro2 from Applications.</text>
+        font-size="12" fill="#4a5868">It confirms the installation and offers to remove this disk image.</text>
 </svg>

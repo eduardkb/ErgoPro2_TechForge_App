@@ -129,7 +129,15 @@ void InstallController::checkAtStartup(QWidget *parent)
         !registered.isEmpty() && QDir::cleanPath(registered) == QDir::cleanPath(s.install.installedExecutable);
     facts.olderCopyExists = !s.install.olderCopy.isEmpty();
     facts.olderCopyKept = m_settings.boolValue(GeneralSettings::OlderCopyKept);
+    // 2.1.0: the installer .dmg (only looked for where it can matter).
+    QList<IInstaller::InstallerImage> images;
+    if (facts.runningFromInstalledCopy && facts.registerStartAtLoginOnStart)
+        images = m_platform.installer->installerImages();
+    for (const IInstaller::InstallerImage &image : std::as_const(images))
+        facts.installerImageMounted = facts.installerImageMounted || !image.mountPoint.isEmpty();
+    facts.installerImageFound = !images.isEmpty();
     const InstallStartupActions actions = decideInstallStartupActions(facts);
+    bool registeredOk = true;
 
     if (actions.registerStartAtLogin) {
         qCInfo(lcApp).noquote() << "Running from the installed copy" << s.install.installLocation
@@ -138,6 +146,7 @@ void InstallController::checkAtStartup(QWidget *parent)
         const PlatformResult r =
             m_platform.autostart->enable(s.install.installedExecutable, {QStringLiteral("--autostart")});
         emit changed();
+        registeredOk = r.ok();
         if (!r.ok()) {
             QMessageBox::warning(parent, tr("Start at login not enabled"),
                                  tr("ErgoPro2 is installed at %1, but it could not be registered to start at "
@@ -145,6 +154,9 @@ void InstallController::checkAtStartup(QWidget *parent)
                                      .arg(QDir::toNativeSeparators(s.install.installLocation), r.message));
         }
     }
+
+    confirmInstallation(parent, actions.confirmInstalled && registeredOk, s.install.installLocation,
+                        actions.offerToDeleteInstaller ? images : QList<IInstaller::InstallerImage>{});
 
     if (!actions.askToRemoveOlderCopy)
         return;
@@ -168,6 +180,42 @@ void InstallController::checkAtStartup(QWidget *parent)
                                 "Finder.")
                                  .arg(QDir::toNativeSeparators(s.install.olderCopy), removed.message));
     }
+}
+
+// 2.1.0 (owner request): "installed" confirmation for a copy dragged into
+// Applications, combined with the offer to eject the installer .dmg and move it
+// to the Trash.
+void InstallController::confirmInstallation(QWidget *parent, bool confirm, const QString &location,
+                                            const QList<IInstaller::InstallerImage> &images)
+{
+    if (!confirm && images.isEmpty())
+        return;
+    const QString installed =
+        tr("ErgoPro2 is installed at %1 and starts automatically when you log in.").arg(QDir::toNativeSeparators(location));
+    if (images.isEmpty()) {
+        qCInfo(lcApp) << "Installation confirmed to the user";
+        QMessageBox::information(parent, tr("ErgoPro2 installed"), installed);
+        return;
+    }
+    QStringList files;
+    for (const IInstaller::InstallerImage &image : images)
+        files << QStringLiteral("• %1").arg(QDir::toNativeSeparators(image.imagePath));
+    const QString offer = tr("The installer disk image is no longer needed. Eject it and move it to the Trash?\n\n%1")
+                              .arg(files.join(QLatin1Char('\n')));
+    const auto answer = QMessageBox::question(parent, confirm ? tr("ErgoPro2 installed") : tr("Installer disk image"),
+                                              confirm ? installed + QStringLiteral("\n\n") + offer : offer,
+                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if (answer != QMessageBox::Yes) {
+        qCInfo(lcApp) << "Installer disk image kept";
+        return;
+    }
+    QStringList errors;
+    for (const IInstaller::InstallerImage &image : images) {
+        if (const PlatformResult r = m_platform.installer->removeInstallerImage(image); !r.ok())
+            errors << r.message;
+    }
+    if (!errors.isEmpty())
+        QMessageBox::warning(parent, tr("Installer disk image not removed"), errors.join(QLatin1Char('\n')));
 }
 
 } // namespace ergo

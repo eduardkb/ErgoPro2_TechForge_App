@@ -61,6 +61,9 @@ jobs:
           # Drag-and-drop window (2.0.0): Applications link, layout and background.
           test "$(readlink "$MNT/Applications")" = /Applications
           test -f "$MNT/.DS_Store"
+          # dmgbuild < 1.6.7 wrote a background bookmark (pBBk) that makes Finder on
+          # macOS Tahoe 26.2+ show no background (2.1.0). Warn if it is back.
+          if grep -q pBBk "$MNT/.DS_Store"; then echo "::warning::.DS_Store contains a pBBk background bookmark (old dmgbuild?)"; fi
           ls -a "$MNT"
           codesign --verify --deep --strict "$APP"
           lipo -archs "$APP/Contents/MacOS/ErgoPro2"

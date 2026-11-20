@@ -20,7 +20,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD="${1:-build-release}"
 OUT="${2:-dist}"
 IDENTITY="${CODESIGN_IDENTITY:--}"
-DMGBUILD_VERSION="1.6.5" # pinned: same layout on every build
+# Pinned: same layout on every build. 1.6.7 is needed for macOS Tahoe 26.2+:
+# with older versions Finder shows no background (dmgbuild issue #273, 2.1.0).
+DMGBUILD_VERSION="1.6.7"
 
 fail() { echo "package-macos: $*" >&2; exit 1; }
 
@@ -94,8 +96,18 @@ echo "== Creating the disk image (drag-and-drop window)"
 # environment unless DMGBUILD points to an existing dmgbuild.
 DMGBUILD="${DMGBUILD:-$(command -v dmgbuild || true)}"
 if [[ -z "$DMGBUILD" ]]; then
-    command -v python3 >/dev/null || fail "python3 not found (needed for dmgbuild)"
-    python3 -m venv "$STAGE/venv" || fail "cannot create a Python environment for dmgbuild"
+    # dmgbuild 1.6.7 needs Python 3.10 or newer (the macOS python3 is 3.9).
+    PYTHON=""
+    for candidate in python3.13 python3.12 python3.11 python3.10 python3 /opt/homebrew/bin/python3; do
+        if command -v "$candidate" >/dev/null \
+            && "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null; then
+            PYTHON="$(command -v "$candidate")"
+            break
+        fi
+    done
+    [[ -n "$PYTHON" ]] || fail "Python 3.10 or newer not found (needed for dmgbuild $DMGBUILD_VERSION; brew install python)"
+    echo "Python for dmgbuild: $PYTHON ($("$PYTHON" --version))"
+    "$PYTHON" -m venv "$STAGE/venv" || fail "cannot create a Python environment for dmgbuild"
     "$STAGE/venv/bin/python" -m pip install --quiet "dmgbuild==$DMGBUILD_VERSION" \
         || fail "cannot install dmgbuild $DMGBUILD_VERSION"
     DMGBUILD="$STAGE/venv/bin/dmgbuild"

@@ -139,6 +139,16 @@ public:
 
     // Deletes InstallState::olderCopy (macOS only; nothing to do elsewhere).
     virtual PlatformResult removeOlderCopy() { return PlatformResult::success(); }
+
+    // macOS (2.1.0): the ErgoPro2 installer disk images - mounted ones first,
+    // then downloaded ErgoPro2-<version>-macos.dmg files in Downloads / Desktop.
+    struct InstallerImage {
+        QString imagePath;
+        QString mountPoint; // empty: not mounted
+    };
+    virtual QList<InstallerImage> installerImages() const { return {}; }
+    // Ejects the image (when mounted) and moves the .dmg file to the Trash.
+    virtual PlatformResult removeInstallerImage(const InstallerImage &) { return PlatformResult::success(); }
 };
 
 // OS permissions / requirements needed by the input features (stage 1).
