@@ -47,6 +47,19 @@ struct LogProblemScan {
 // Reads the log files of the last 'days' days in 'directory' (worker thread).
 LogProblemScan scanLogProblems(const QString &directory, const QDate &today, int days, int maxEntries);
 
+// 2.2.1 (owner request): filters of the card. Default: everything.
+struct LogProblemFilter {
+    QList<LogLevel> hiddenLevels; // unticked level boxes
+    std::optional<QDate> date;    // nullopt = all dates
+};
+
+// Levels present in the list (WARNING, ERROR, CRITICAL order).
+QList<LogLevel> logProblemLevels(const QList<LogProblem> &problems);
+// Dates that have entries, newest first.
+QList<QDate> logProblemDates(const QList<LogProblem> &problems);
+// The entries that pass the filter, in the original (newest first) order.
+QList<LogProblem> filterLogProblems(const QList<LogProblem> &problems, const LogProblemFilter &filter);
+
 // When the card searches: only while the General tab is shown, at once when
 // it is shown and the last search is older than the interval (or there was
 // none), then every interval; never two searches at the same time.

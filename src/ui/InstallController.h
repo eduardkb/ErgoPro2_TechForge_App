@@ -3,6 +3,7 @@
 #include "core/LocationClassifier.h"
 #include "platform/PlatformInterfaces.h"
 
+#include <QMessageBox>
 #include <QObject>
 
 class QWidget;
@@ -47,11 +48,16 @@ signals:
     void exitRequested();
 
 private:
+    void runStartupChecks(QWidget *parent);
+    int showOnTop(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text,
+                  QMessageBox::StandardButtons buttons = QMessageBox::Ok,
+                  QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
     void confirmInstallation(QWidget *parent, bool confirm, const QString &location,
                              const QList<IInstaller::InstallerImage> &images);
 
     Platform &m_platform;
     SettingsStore &m_settings;
+    bool m_dockShownForDialog = false;
 };
 
 } // namespace ergo

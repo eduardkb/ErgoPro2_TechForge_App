@@ -160,6 +160,29 @@ private slots:
         QVERIFY(images[1].mountPoints.isEmpty()); // attached, not mounted
         QVERIFY(parseMountedImages(QStringLiteral("garbage")).isEmpty());
     }
+
+    // 2.2.1 (owner request): an update dragged over the installed copy is
+    // confirmed too - once per new version.
+    void eachNewVersionIsConfirmedOnce()
+    {
+        InstallStartupFacts f;
+        f.runningFromInstalledCopy = true;
+        f.registerStartAtLoginOnStart = true;
+        f.startsAtLogin = true;
+        f.startAtLoginPointsToInstalledCopy = true; // installed before (e.g. 2.1.0 -> 2.2.1)
+        f.currentVersion = versionNumber(2, 2, 1);
+        f.confirmedVersion = versionNumber(2, 1, 0);
+        QVERIFY(decideInstallStartupActions(f).confirmInstalled);
+        f.installerImageFound = true; // .dmg in Downloads, already ejected
+        QVERIFY(decideInstallStartupActions(f).offerToDeleteInstaller);
+        f.confirmedVersion = f.currentVersion; // confirmed at the previous start
+        QVERIFY(!decideInstallStartupActions(f).confirmInstalled);
+        QVERIFY(!decideInstallStartupActions(f).offerToDeleteInstaller);
+        f.runningFromInstalledCopy = false; // started from the .dmg
+        f.confirmedVersion = 0;
+        QVERIFY(!decideInstallStartupActions(f).confirmInstalled);
+        QCOMPARE(versionNumber(2, 2, 1), 20201);
+    }
 };
 
 QTEST_GUILESS_MAIN(TestInstallPolicy)

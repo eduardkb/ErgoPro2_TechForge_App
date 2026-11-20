@@ -14,6 +14,7 @@ void registerSettings(SettingsSchema &schema)
                                           Logger::kMaxRetentionDays));
     schema.add(SettingDefinition::boolean(TrayHintShown, false));
     schema.add(SettingDefinition::boolean(OlderCopyKept, false)); // 2.0.0, macOS
+    schema.add(SettingDefinition::integer(InstallConfirmedVersion, 0, 0, 999999)); // 2.2.1, macOS
     // 2.2.0: log problems card (system-only; out of range -> nearest limit).
     schema.add(SettingDefinition::clampedInteger(LogViewerDays, 7, kLogViewerDaysMin, kLogViewerDaysMax));
     schema.add(SettingDefinition::clampedInteger(LogViewerRefreshMinutes, 5, kLogViewerRefreshMin,

@@ -44,7 +44,10 @@ InstallStartupActions decideInstallStartupActions(const InstallStartupFacts &fac
     a.askToRemoveOlderCopy = facts.olderCopyExists && !facts.olderCopyKept;
     // 2.1.0: the first start of a copy dragged into Applications is the moment
     // it became installed (start at login is registered for it now).
-    a.confirmInstalled = a.registerStartAtLogin;
+    // 2.2.1: also the first start of each new version (an update dragged over
+    // the installed copy), remembered in general.installConfirmedVersion.
+    a.confirmInstalled = facts.registerStartAtLoginOnStart
+                         && (a.registerStartAtLogin || facts.currentVersion != facts.confirmedVersion);
     // The .dmg is offered right after installing (mounted or found in a
     // download folder), or whenever it is still mounted (update / Install +
     // restart) - not on every start because of an old download.
@@ -76,6 +79,11 @@ QString launchAgentExecutable(const QString &plistXml)
         }
     }
     return {};
+}
+
+int versionNumber(int major, int minor, int patch)
+{
+    return major * 10000 + minor * 100 + patch;
 }
 
 bool isInstallerDiskImageName(const QString &fileName)

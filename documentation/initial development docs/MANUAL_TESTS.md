@@ -953,3 +953,20 @@ Goal: General tab card "Warnings and errors in the log" (B.3, B.2). To create en
 | 8 | With ErgoPro2 closed set `logViewerDays` to 50 and `logViewerRefreshMinutes` to 1, start it. | WARNING in the log "… using the nearest limit"; settings.json now holds 30 and 3. Entries from 30 days are searched. |
 | 9 | An entry older than `logViewerDays` days only. | Not shown (card disappears if nothing newer). |
 | 10 | More than 500 entries in the searched days. | "Showing the newest 500 of N entries from the last 7 days." |
+
+## Bug fix – v2.2.1
+
+macOS install confirmation / `.dmg` offer (B.1.3) and filters of the warnings/errors card (B.3).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (`tst_installpolicy` 14, `tst_logproblems` 8). |
+| 2 | Update: with 2.2.0 (or older) running from Applications, **Exit** it, open the 2.2.1 `.dmg` (from Downloads), drag ErgoPro2 onto Applications › **Replace**, open ErgoPro2 from Applications, then do nothing else. | Within a few seconds a dialog **in front of all windows** (ErgoPro2 icon in the Dock while it is open): "ErgoPro2 2.2.1 is installed at /Applications/ErgoPro2.app and starts automatically when you log in." + "Eject it and move it to the Trash?" listing the `.dmg`. Log: "Dialog shown: ErgoPro2 installed". |
+| 3 | Click **Yes**. | Disk image ejected, `.dmg` in the Trash; the Dock icon disappears again (started hidden in the tray). Log "Dialog answered: … -> Yes", "Ejected …", "Moved to the Trash: …". |
+| 4 | Exit and start ErgoPro2 again. | No dialog (`general.installConfirmedVersion` = 20201). |
+| 5 | First installation (no ErgoPro2 in Applications, no LaunchAgent): drag, start from Applications. | The same dialog appears in front; start at login is registered. With **Install** from the disk image instead: only Install's own messages, no second "installed" message after the restart. |
+| 6 | General tab with WARNING, ERROR and CRITICAL entries on two or more days. | Above the list: "Show:" with WARNING / ERROR / CRITICAL boxes (only levels found), all ticked; "Date: All dates". All entries, newest first. |
+| 7 | Untick WARNING. | WARNING entries disappear; order unchanged; summary ends with "Filter: N shown." |
+| 8 | Choose one date in the Date list. | Only that day's entries (of the ticked levels), newest first. |
+| 9 | Wait for the next refresh (or switch tabs and come back after the interval). | "Refreshing..." above the filtered list; afterwards the same filter choices are kept. |
+| 10 | A level with no entries in the result (e.g. no CRITICAL). | Its box is not shown. |

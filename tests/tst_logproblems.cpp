@@ -119,6 +119,40 @@ private slots:
         QVERIFY(logProblemsCardEnabled(LogLevelSelection::InfoWarningErrorCritical));
         QVERIFY(logProblemsCardEnabled(LogLevelSelection::All));
     }
+
+    // 2.2.1 (owner request): level and date filters of the card.
+    void filtersByLevelAndDate()
+    {
+        const auto entry = [](int day, int hour, LogLevel level) {
+            LogProblem p;
+            p.time = QDateTime(QDate(2026, 11, day), QTime(hour, 0));
+            p.level = level;
+            p.text = QStringLiteral("%1-%2").arg(day).arg(hour);
+            return p;
+        };
+        const QList<LogProblem> all = {entry(20, 11, LogLevel::Critical), entry(20, 9, LogLevel::Warning),
+                                       entry(18, 15, LogLevel::Error), entry(18, 8, LogLevel::Warning)};
+
+        QCOMPARE(logProblemLevels(all),
+                 (QList<LogLevel>{LogLevel::Warning, LogLevel::Error, LogLevel::Critical}));
+        QCOMPARE(logProblemDates(all), (QList<QDate>{QDate(2026, 11, 20), QDate(2026, 11, 18)})); // newest first
+
+        LogProblemFilter filter; // default: everything
+        QCOMPARE(filterLogProblems(all, filter).size(), 4);
+        filter.hiddenLevels = {LogLevel::Warning};
+        QList<LogProblem> shown = filterLogProblems(all, filter);
+        QCOMPARE(shown.size(), 2);
+        QCOMPARE(shown[0].text, QStringLiteral("20-11")); // order kept: newest first
+        QCOMPARE(shown[1].text, QStringLiteral("18-15"));
+        filter.date = QDate(2026, 11, 18);
+        shown = filterLogProblems(all, filter);
+        QCOMPARE(shown.size(), 1);
+        QCOMPARE(shown[0].level, LogLevel::Error);
+        filter.hiddenLevels.clear();
+        QCOMPARE(filterLogProblems(all, filter).size(), 2);
+        filter.date = QDate(2026, 11, 1); // no entries that day
+        QVERIFY(filterLogProblems(all, filter).isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(TestLogProblems)

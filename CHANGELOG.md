@@ -5,6 +5,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.2.1] - 2026-11-20
+
+### Fixed
+- **macOS: no "installed" confirmation and no offer to remove the `.dmg` were seen** after dragging
+  ErgoPro2 into Applications. Root causes: (1) ErgoPro2 starts hidden in the tray without a Dock icon, so its
+  start-up dialogs opened behind the other windows; (2) after an update (dragging a new version over an
+  installed one) start at login was already set up, so the "installed" text was skipped. The dialogs are now
+  brought to the front (Dock icon shown while they are open), and the confirmation
+  "ErgoPro2 <version> is installed at … and starts automatically when you log in." appears on the first start
+  of **every new version**, together with the offer to eject the disk image and move the `.dmg` to the Trash.
+  New system-only setting `general.installConfirmedVersion`. (ErgoPro2 cannot react while only the disk image
+  window is open – it acts when you start it from Applications.)
+
+### Changed
+- **General tab › Warnings and errors in the log:** filters above the list (owner request) – a check box per
+  level found (WARNING / ERROR / CRITICAL, all ticked by default) and a date list ("All dates" or one day with
+  entries). The list stays newest first; the line below the filters says how many entries the filter shows.
+- Tests: `tst_installpolicy` (14) – confirmation once per new version; `tst_logproblems` (8) – level and date
+  filters.
+
 ## [2.2.0] - 2026-11-20
 
 ### Added

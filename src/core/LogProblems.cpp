@@ -111,6 +111,41 @@ LogProblemScan scanLogProblems(const QString &directory, const QDate &today, int
     return scan;
 }
 
+QList<LogLevel> logProblemLevels(const QList<LogProblem> &problems)
+{
+    QList<LogLevel> levels;
+    for (LogLevel level : {LogLevel::Warning, LogLevel::Error, LogLevel::Critical}) {
+        if (std::any_of(problems.begin(), problems.end(), [level](const LogProblem &p) { return p.level == level; }))
+            levels << level;
+    }
+    return levels;
+}
+
+QList<QDate> logProblemDates(const QList<LogProblem> &problems)
+{
+    QList<QDate> dates;
+    for (const LogProblem &p : problems) {
+        const QDate d = p.time.date();
+        if (d.isValid() && !dates.contains(d))
+            dates << d;
+    }
+    std::sort(dates.begin(), dates.end(), std::greater<QDate>());
+    return dates;
+}
+
+QList<LogProblem> filterLogProblems(const QList<LogProblem> &problems, const LogProblemFilter &filter)
+{
+    QList<LogProblem> shown;
+    for (const LogProblem &p : problems) {
+        if (filter.hiddenLevels.contains(p.level))
+            continue;
+        if (filter.date && p.time.date() != *filter.date)
+            continue;
+        shown << p;
+    }
+    return shown;
+}
+
 bool LogProblemSchedule::searchDue(qint64 nowMs, bool tabShown, bool searching) const
 {
     if (!tabShown || searching)

@@ -42,6 +42,10 @@ struct InstallStartupFacts {
     // downloaded ErgoPro2-<version>-macos.dmg was found (mounted or not).
     bool installerImageMounted = false;
     bool installerImageFound = false;
+    // 2.2.1: versionNumber() of this build and of the last confirmed one
+    // (general.installConfirmedVersion; 0 = never).
+    int currentVersion = 0;
+    int confirmedVersion = 0;
 };
 
 struct InstallStartupActions {
@@ -54,6 +58,9 @@ struct InstallStartupActions {
 };
 
 InstallStartupActions decideInstallStartupActions(const InstallStartupFacts &facts);
+
+// MAJOR * 10000 + MINOR * 100 + PATCH (e.g. 2.2.1 -> 20201).
+int versionNumber(int major, int minor, int patch);
 
 // True for the name of a downloaded macOS installer disk image:
 // "ErgoPro2-<x.y.z>-macos.dmg", also with a browser suffix like " (1)".

@@ -1,6 +1,7 @@
 #include "ui/InstallController.h"
 
 #include "core/InstallPolicy.h"
+#include "ergopro2/Version.h"
 #include "core/LogCategories.h"
 #include "core/settings/GeneralSettings.h"
 #include "core/settings/SettingsStore.h"
@@ -51,6 +52,9 @@ void InstallController::install(QWidget *parent)
         return;
     }
     qCInfo(lcApp).noquote() << "Installed at" << s.install.installLocation << "- starts at login";
+    // Install already confirmed this version: no second "installed" message after the restart (2.2.1).
+    m_settings.setValue(GeneralSettings::InstallConfirmedVersion,
+                        versionNumber(ERGOPRO2_VERSION_MAJOR, ERGOPRO2_VERSION_MINOR, ERGOPRO2_VERSION_PATCH));
 
     if (s.install.runningFromInstalledCopy) {
         QMessageBox::information(parent, tr("Installed"),
@@ -119,6 +123,15 @@ void InstallController::uninstall(QWidget *parent)
 
 void InstallController::checkAtStartup(QWidget *parent)
 {
+    runStartupChecks(parent);
+    if (m_dockShownForDialog) {
+        m_dockShownForDialog = false;
+        m_platform.desktop->setDockIconVisible(false); // started hidden in the tray: back to the tray only
+    }
+}
+
+void InstallController::runStartupChecks(QWidget *parent)
+{
     const Status s = status();
     InstallStartupFacts facts;
     facts.runningFromInstalledCopy = s.install.runningFromInstalledCopy;
@@ -136,7 +149,12 @@ void InstallController::checkAtStartup(QWidget *parent)
     for (const IInstaller::InstallerImage &image : std::as_const(images))
         facts.installerImageMounted = facts.installerImageMounted || !image.mountPoint.isEmpty();
     facts.installerImageFound = !images.isEmpty();
+    facts.currentVersion = versionNumber(ERGOPRO2_VERSION_MAJOR, ERGOPRO2_VERSION_MINOR, ERGOPRO2_VERSION_PATCH);
+    facts.confirmedVersion = m_settings.intValue(GeneralSettings::InstallConfirmedVersion);
     const InstallStartupActions actions = decideInstallStartupActions(facts);
+    qCDebug(lcApp) << "Install check at start: running from installed copy" << facts.runningFromInstalledCopy
+                   << "- confirmed version" << facts.confirmedVersion << "this" << facts.currentVersion
+                   << "- installer images" << images.size() << "(mounted:" << facts.installerImageMounted << ")";
     bool registeredOk = true;
 
     if (actions.registerStartAtLogin) {
@@ -148,7 +166,7 @@ void InstallController::checkAtStartup(QWidget *parent)
         emit changed();
         registeredOk = r.ok();
         if (!r.ok()) {
-            QMessageBox::warning(parent, tr("Start at login not enabled"),
+            showOnTop(parent, QMessageBox::Warning, tr("Start at login not enabled"),
                                  tr("ErgoPro2 is installed at %1, but it could not be registered to start at "
                                     "login:\n%2")
                                      .arg(QDir::toNativeSeparators(s.install.installLocation), r.message));
@@ -157,12 +175,14 @@ void InstallController::checkAtStartup(QWidget *parent)
 
     confirmInstallation(parent, actions.confirmInstalled && registeredOk, s.install.installLocation,
                         actions.offerToDeleteInstaller ? images : QList<IInstaller::InstallerImage>{});
+    if (actions.confirmInstalled && registeredOk)
+        m_settings.setValue(GeneralSettings::InstallConfirmedVersion, facts.currentVersion);
 
     if (!actions.askToRemoveOlderCopy)
         return;
     qCInfo(lcApp).noquote() << "An older copy exists at" << s.install.olderCopy;
-    const auto answer = QMessageBox::question(
-        parent, tr("Older copy of ErgoPro2"),
+    const auto answer = showOnTop(
+        parent, QMessageBox::Question, tr("Older copy of ErgoPro2"),
         tr("ErgoPro2 now runs from %1.\n\nAn older copy is still at %2. Remove it?\n\nYour settings, statistics "
            "and log files are kept.")
             .arg(QDir::toNativeSeparators(s.install.installLocation), QDir::toNativeSeparators(s.install.olderCopy)),
@@ -175,7 +195,7 @@ void InstallController::checkAtStartup(QWidget *parent)
     const PlatformResult removed = m_platform.installer->removeOlderCopy();
     emit changed();
     if (!removed.ok()) {
-        QMessageBox::warning(parent, tr("Older copy not removed"),
+        showOnTop(parent, QMessageBox::Warning, tr("Older copy not removed"),
                              tr("The older copy at %1 could not be removed:\n%2\n\nYou can delete it in the "
                                 "Finder.")
                                  .arg(QDir::toNativeSeparators(s.install.olderCopy), removed.message));
@@ -190,11 +210,11 @@ void InstallController::confirmInstallation(QWidget *parent, bool confirm, const
 {
     if (!confirm && images.isEmpty())
         return;
-    const QString installed =
-        tr("ErgoPro2 is installed at %1 and starts automatically when you log in.").arg(QDir::toNativeSeparators(location));
+    const QString installed = tr("ErgoPro2 %1 is installed at %2 and starts automatically when you log in.")
+                                  .arg(QStringLiteral(ERGOPRO2_VERSION_STRING), QDir::toNativeSeparators(location));
     if (images.isEmpty()) {
         qCInfo(lcApp) << "Installation confirmed to the user";
-        QMessageBox::information(parent, tr("ErgoPro2 installed"), installed);
+        showOnTop(parent, QMessageBox::Information, tr("ErgoPro2 installed"), installed);
         return;
     }
     QStringList files;
@@ -202,7 +222,7 @@ void InstallController::confirmInstallation(QWidget *parent, bool confirm, const
         files << QStringLiteral("• %1").arg(QDir::toNativeSeparators(image.imagePath));
     const QString offer = tr("The installer disk image is no longer needed. Eject it and move it to the Trash?\n\n%1")
                               .arg(files.join(QLatin1Char('\n')));
-    const auto answer = QMessageBox::question(parent, confirm ? tr("ErgoPro2 installed") : tr("Installer disk image"),
+    const auto answer = showOnTop(parent, QMessageBox::Question, confirm ? tr("ErgoPro2 installed") : tr("Installer disk image"),
                                               confirm ? installed + QStringLiteral("\n\n") + offer : offer,
                                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
     if (answer != QMessageBox::Yes) {
@@ -215,7 +235,31 @@ void InstallController::confirmInstallation(QWidget *parent, bool confirm, const
             errors << r.message;
     }
     if (!errors.isEmpty())
-        QMessageBox::warning(parent, tr("Installer disk image not removed"), errors.join(QLatin1Char('\n')));
+        showOnTop(parent, QMessageBox::Warning, tr("Installer disk image not removed"), errors.join(QLatin1Char('\n')));
+}
+
+// 2.2.1: the start-up dialogs of a hidden (tray-only) app opened behind the
+// other windows (the app had no Dock icon and was not active), so they were
+// not seen. Show the Dock icon, activate the app and keep the box on top.
+int InstallController::showOnTop(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text,
+                                 QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
+{
+    if (!parent && !m_dockShownForDialog) {
+        m_dockShownForDialog = true;
+        m_platform.desktop->setDockIconVisible(true);
+    }
+    QMessageBox box(icon, title, text, buttons, parent);
+    box.setDefaultButton(defaultButton);
+    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    box.show();
+    box.raise();
+    box.activateWindow();
+    m_platform.desktop->activateApplication();
+    qCInfo(lcApp).noquote() << "Dialog shown:" << title;
+    const int answer = box.exec();
+    qCInfo(lcApp).noquote() << "Dialog answered:" << title << "->"
+                            << (answer == QMessageBox::Yes ? "Yes" : answer == QMessageBox::No ? "No" : "OK");
+    return answer;
 }
 
 } // namespace ergo

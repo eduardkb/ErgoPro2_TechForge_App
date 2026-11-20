@@ -25,6 +25,10 @@ inline constexpr int kLogViewerDaysMax = 30;
 inline constexpr int kLogViewerRefreshMin = 3;
 inline constexpr int kLogViewerRefreshMax = 120;
 
+// macOS (2.2.1): versionNumber() of the last version whose installation was
+// confirmed ("ErgoPro2 x.y.z is installed ..."); 0 = never. System-only.
+inline const QString InstallConfirmedVersion = QStringLiteral("general.installConfirmedVersion");
+
 // macOS (2.0.0): the user chose to keep an older copy in ~/Applications; not asked again.
 inline const QString OlderCopyKept = QStringLiteral("general.olderCopyKept");
 inline const QString StartupAutoMode = QStringLiteral("general.startupAutoMode");     // stage 1

@@ -5,7 +5,11 @@
 #include "core/settings/GeneralSettings.h"
 #include "core/settings/SettingsStore.h"
 
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDate>
+#include <QHBoxLayout>
+#include <QLocale>
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QThread>
@@ -28,6 +32,32 @@ LogProblemsCard::LogProblemsCard(SettingsStore &settings, Logger &logger, QWidge
     m_refreshing = new QLabel(tr("Refreshing..."), this);
     m_refreshing->setObjectName(QStringLiteral("warningText"));
     contentLayout()->addWidget(m_refreshing);
+
+    // Filters (2.2.1): level boxes and the date list; default shows everything.
+    m_filters = new QWidget(this);
+    auto *filterRow = new QHBoxLayout(m_filters);
+    filterRow->setContentsMargins(0, 0, 0, 0);
+    filterRow->setSpacing(12);
+    auto *show = new QLabel(tr("Show:"), m_filters);
+    show->setObjectName(QStringLiteral("hint"));
+    filterRow->addWidget(show);
+    for (LogLevel level : {LogLevel::Warning, LogLevel::Error, LogLevel::Critical}) {
+        auto *box = new QCheckBox(logLevelName(level), m_filters);
+        box->setChecked(true);
+        box->setCursor(Qt::PointingHandCursor);
+        connect(box, &QCheckBox::toggled, this, &LogProblemsCard::render);
+        filterRow->addWidget(box);
+        m_levelBoxes.append({level, box});
+    }
+    filterRow->addStretch(1);
+    auto *dateLabel = new QLabel(tr("Date:"), m_filters);
+    dateLabel->setObjectName(QStringLiteral("hint"));
+    filterRow->addWidget(dateLabel);
+    m_date = new QComboBox(m_filters);
+    m_date->setCursor(Qt::PointingHandCursor);
+    connect(m_date, &QComboBox::currentIndexChanged, this, &LogProblemsCard::render);
+    filterRow->addWidget(m_date);
+    contentLayout()->addWidget(m_filters);
 
     m_summary = new QLabel(this);
     m_summary->setObjectName(QStringLiteral("hint"));
@@ -105,6 +135,7 @@ void LogProblemsCard::startSearch()
 
     // Previous result stays visible below "Refreshing..." (or only "Refreshing..." the first time).
     m_refreshing->setVisible(true);
+    m_filters->setVisible(m_hasData);
     m_summary->setVisible(m_hasData);
     m_list->setVisible(m_hasData);
     setVisible(true);
@@ -135,31 +166,76 @@ void LogProblemsCard::showResult(const LogProblemScan &scan, int days)
         clearAndHide(); // no warnings / errors: the whole card disappears
         return;
     }
-    QStringList lines;
-    lines.reserve(scan.problems.size());
-    for (const LogProblem &p : scan.problems)
-        lines << p.text;
-    m_list->setPlainText(lines.join(QLatin1Char('\n')));
-    m_list->moveCursor(QTextCursor::Start); // newest entry on top
-    m_summary->setText(scan.totalFound > scan.problems.size()
-                           ? tr("Showing the newest %1 of %2 entries from the last %3 days.")
-                                 .arg(scan.problems.size())
-                                 .arg(scan.totalFound)
-                                 .arg(days)
-                       : scan.totalFound == 1 ? tr("1 entry from the last %1 days.").arg(days)
-                                              : tr("%1 entries from the last %2 days, newest first.")
-                                                    .arg(scan.totalFound)
-                                                    .arg(days));
+    m_problems = scan.problems;
+    m_totalFound = scan.totalFound;
+    m_days = days;
+    rebuildFilters();
+    render();
     m_hasData = true;
     m_refreshing->setVisible(false);
+    m_filters->setVisible(true);
     m_summary->setVisible(true);
     m_list->setVisible(true);
     setVisible(true);
 }
 
+// Level boxes only for the levels found; the date list keeps the chosen date
+// while it still has entries, otherwise "All dates".
+void LogProblemsCard::rebuildFilters()
+{
+    const QList<LogLevel> levels = logProblemLevels(m_problems);
+    for (const auto &[level, box] : std::as_const(m_levelBoxes))
+        box->setVisible(levels.contains(level));
+
+    const QDate previous = m_date->currentData().toDate();
+    const QSignalBlocker blocker(m_date);
+    m_date->clear();
+    m_date->addItem(tr("All dates"), QDate());
+    const QLocale locale;
+    for (const QDate &date : logProblemDates(m_problems))
+        m_date->addItem(locale.toString(date, QLocale::ShortFormat), date);
+    const int index = previous.isValid() ? m_date->findData(previous) : 0;
+    m_date->setCurrentIndex(index < 0 ? 0 : index);
+}
+
+void LogProblemsCard::render()
+{
+    LogProblemFilter filter;
+    for (const auto &[level, box] : std::as_const(m_levelBoxes)) {
+        if (!box->isChecked())
+            filter.hiddenLevels << level;
+    }
+    if (const QDate date = m_date->currentData().toDate(); date.isValid())
+        filter.date = date;
+    const QList<LogProblem> shown = filterLogProblems(m_problems, filter);
+
+    QStringList lines;
+    lines.reserve(shown.size());
+    for (const LogProblem &p : shown)
+        lines << p.text;
+    m_list->setPlainText(lines.join(QLatin1Char('\n')));
+    m_list->moveCursor(QTextCursor::Start); // newest entry on top
+
+    QString summary = m_totalFound > m_problems.size()
+                          ? tr("Showing the newest %1 of %2 entries from the last %3 days.")
+                                .arg(m_problems.size())
+                                .arg(m_totalFound)
+                                .arg(m_days)
+                      : m_totalFound == 1 ? tr("1 entry from the last %1 days.").arg(m_days)
+                                          : tr("%1 entries from the last %2 days, newest first.")
+                                                .arg(m_totalFound)
+                                                .arg(m_days);
+    if (shown.size() != m_problems.size())
+        summary += QLatin1Char(' ') + tr("Filter: %1 shown.").arg(shown.size());
+    m_summary->setText(summary);
+    qCDebug(lcUi) << "Log check: filter shows" << shown.size() << "of" << m_problems.size() << "entries";
+}
+
 void LogProblemsCard::clearAndHide()
 {
     m_hasData = false;
+    m_problems.clear();
+    m_totalFound = 0;
     m_list->clear();
     m_summary->clear();
     m_refreshing->setVisible(false);

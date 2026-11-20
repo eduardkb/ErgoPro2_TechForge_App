@@ -70,8 +70,8 @@ The General tab then shows "Installed at … Installed with the ErgoPro2 setup p
    Click **Done** (not "Move to Trash"), then open **System Settings → Privacy & Security**, scroll down to
    *Security* and click **Open Anyway** next to the message about ErgoPro2. Confirm with **Open Anyway** and
    your password / Touch ID. Start ErgoPro2 again.
-5. ErgoPro2 starts, sets itself to **start when you log in** and confirms: "ErgoPro2 is installed at
-   /Applications/ErgoPro2.app and starts automatically when you log in." In the same message it offers to
+5. ErgoPro2 starts, sets itself to **start when you log in** and confirms: "ErgoPro2 <version> is installed
+   at /Applications/ErgoPro2.app and starts automatically when you log in." (also after each update) In the same message it offers to
    **eject the disk image and move the `.dmg` to the Trash** – click **Yes** (you can still restore it from
    the Trash). The General tab shows "Installed at /Applications/ErgoPro2.app, starts at login".
 6. ErgoPro2 asks for two permissions (see [3.1](#31-macos)).
@@ -309,7 +309,8 @@ The card also shows the log and statistics folders and has the buttons **Open se
 or errors in the last **7 days**. It lists every WARNING, ERROR and CRITICAL entry, newest first (at most the
 newest 500), in a box with a scroll bar. It is checked when you open the General tab and then every
 **5 minutes** while the tab stays open; while it checks, **Refreshing...** is shown above the last result.
-When no warnings or errors are found the card disappears. With the log level *Info only* there is no card.
+When no warnings or errors are found the card disappears. Above the list, **Show:** has a check box for each
+level found (untick one to hide it) and **Date:** shows *All dates* or a single day. With the log level *Info only* there is no card.
 Both numbers can be changed in `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)).
 
 **Permissions & diagnostics card** – operating system, desktop session (e.g. X11 / Wayland), where ErgoPro2
