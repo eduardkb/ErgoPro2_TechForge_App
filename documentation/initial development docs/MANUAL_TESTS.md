@@ -970,3 +970,15 @@ macOS install confirmation / `.dmg` offer (B.1.3) and filters of the warnings/er
 | 8 | Choose one date in the Date list. | Only that day's entries (of the ticked levels), newest first. |
 | 9 | Wait for the next refresh (or switch tabs and come back after the interval). | "Refreshing..." above the filtered list; afterwards the same filter choices are kept. |
 | 10 | A level with no entries in the result (e.g. no CRITICAL). | Its box is not shown. |
+
+## Bug fix – v2.2.2
+
+The General tab log card shows errors only (B.3). Replaces the WARNING parts of "Stage – v2.2.0" and
+"Bug fix – v2.2.1" rows 6–10.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (`tst_logproblems`: 8 tests). |
+| 2 | Log files of the last 7 days with WARNING, ERROR and CRITICAL entries; open the General tab. | Card **"Errors in the log"**: only ERROR and CRITICAL entries, newest first; "Show:" has only ERROR and CRITICAL boxes. No WARNING line anywhere in the list. |
+| 3 | Only WARNING entries in the searched days. | No card (after "Refreshing..." it disappears). |
+| 4 | Log level *Info + Warning*. | No card. *Info + Warning + Error* or higher: the card appears again. |

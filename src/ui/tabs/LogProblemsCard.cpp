@@ -25,7 +25,7 @@ constexpr int kListHeight = 220; // fixed height; more entries scroll (owner req
 } // namespace
 
 LogProblemsCard::LogProblemsCard(SettingsStore &settings, Logger &logger, QWidget *parent)
-    : CardWidget(tr("Warnings and errors in the log"), {}, parent)
+    : CardWidget(tr("Errors in the log"), {}, parent)
     , m_settings(settings)
     , m_logger(logger)
 {
@@ -41,7 +41,7 @@ LogProblemsCard::LogProblemsCard(SettingsStore &settings, Logger &logger, QWidge
     auto *show = new QLabel(tr("Show:"), m_filters);
     show->setObjectName(QStringLiteral("hint"));
     filterRow->addWidget(show);
-    for (LogLevel level : {LogLevel::Warning, LogLevel::Error, LogLevel::Critical}) {
+    for (LogLevel level : {LogLevel::Error, LogLevel::Critical}) { // 2.2.2: no warnings
         auto *box = new QCheckBox(logLevelName(level), m_filters);
         box->setChecked(true);
         box->setCursor(Qt::PointingHandCursor);
@@ -117,7 +117,7 @@ void LogProblemsCard::check()
     const auto selection = logLevelSelectionFromId(m_settings.stringValue(GeneralSettings::LogLevel));
     if (!selection || !logProblemsCardEnabled(*selection)) {
         if (isVisibleTo(parentWidget()) || m_hasData)
-            qCDebug(lcUi) << "Log check: the log level writes no warnings or errors - card removed";
+            qCDebug(lcUi) << "Log check: the log level writes no errors - card removed";
         clearAndHide();
         return;
     }
@@ -161,7 +161,7 @@ void LogProblemsCard::showResult(const LogProblemScan &scan, int days)
     }
     for (const QString &file : scan.unreadableFiles)
         qCWarning(lcUi).noquote() << "Log check: cannot read" << file;
-    qCDebug(lcUi) << "Log check:" << scan.totalFound << "warning/error entries in" << scan.filesSearched << "file(s)";
+    qCDebug(lcUi) << "Log check:" << scan.totalFound << "error entries in" << scan.filesSearched << "file(s)";
     if (scan.totalFound == 0) {
         clearAndHide(); // no warnings / errors: the whole card disappears
         return;

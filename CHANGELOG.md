@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.2.2] - 2026-11-20
+
+### Changed
+- **General tab › log card shows errors only** (owner request): the card is now called **"Errors in the
+  log"** and lists only ERROR and CRITICAL entries – WARNING entries are no longer shown (and have no filter
+  box). The card appears only when the log level writes errors (*Info + Warning + Error* or higher). Reason:
+  2.2.0 listed all three levels by the agreed design; the owner changed that decision.
+- Tests: `tst_logproblems` updated (WARNING lines ignored, card condition, filters with ERROR / CRITICAL).
+
 ## [2.2.1] - 2026-11-20
 
 ### Fixed

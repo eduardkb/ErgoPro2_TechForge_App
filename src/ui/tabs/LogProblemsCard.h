@@ -18,13 +18,13 @@ namespace ergo {
 class Logger;
 class SettingsStore;
 
-// General tab card "Warnings and errors in the log" (2.2.0, owner request,
-// spec B.3): lists the WARNING / ERROR / CRITICAL entries of the last
+// General tab card "Errors in the log" (2.2.0, owner request, spec B.3;
+// warnings removed in 2.2.2): lists the ERROR / CRITICAL entries of the last
 // general.logViewerDays days, newest first. It searches in a worker thread,
 // only while the General tab is shown, at most every
 // general.logViewerRefreshMinutes minutes. While searching it shows
 // "Refreshing..." above the previous result; a search without entries removes
-// the card. Not shown when the log level writes no warnings/errors.
+// the card. Not shown when the log level writes no errors.
 // Filters (2.2.1): a check box per level found (all ticked by default) and a
 // date list ("All dates" + each date with entries, newest first).
 class LogProblemsCard : public CardWidget {

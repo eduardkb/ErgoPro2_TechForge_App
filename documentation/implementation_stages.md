@@ -27,7 +27,7 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
 | 9 | 1.9.0 | Keep Screen Active (Function 5) – `documentation/stage9_keep_screen_active.md`, spec B.10 |
 | – | 2.0.0 | macOS drag-and-drop install (owner request; MAJOR bump, A.4) – spec B.1.3 |
-| – | 2.2.0 | General tab card "Warnings and errors in the log" (owner request) – spec B.3, B.2 |
+| – | 2.2.0 | General tab card "Errors in the log" (owner request; warnings removed in 2.2.2) – spec B.3, B.2 |
 
 > Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, documentation/initial development docs/baseDescription.md), so the final stage reviews and packages every feature.
 
@@ -228,13 +228,13 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - Line format: `2026-11-09 14:33:01.123 [LEVEL] [thread] [module] message`.
 - Qt messages (`qDebug`/`qWarning`/…) are redirected through `qInstallMessageHandler`.
 - Thread-safe. In debug builds, also print to the console.
-- **Card "Warnings and errors in the log"** on the General tab, directly below the Logging card (2.2.0, owner request; `core/LogProblems`, `ui/tabs/LogProblemsCard`):
-  - Exists only while the log level writes warnings or errors (every selection except *Info only*); it then lists all **WARNING, ERROR and CRITICAL** entries found (with their continuation lines), **newest first**, at most the newest **500** ("Showing the newest 500 of N entries from the last D days.").
+- **Card "Errors in the log"** on the General tab, directly below the Logging card (2.2.0, owner request; `core/LogProblems`, `ui/tabs/LogProblemsCard`; until 2.2.1 "Warnings and errors in the log"):
+  - **2.2.2 (owner request): only ERROR and CRITICAL entries – WARNING entries are not shown.** Exists only while the log level writes errors (*Info + Warning + Error* or higher; not with *Info only* or *Info + Warning*); it then lists all **ERROR and CRITICAL** entries found (with their continuation lines), **newest first**, at most the newest **500** ("Showing the newest 500 of N entries from the last D days.").
   - Searches only log files of the last `general.logViewerDays` days (today and the days before it; 3–30, default 7), in a worker thread.
   - Searches only **while the General tab is shown**: when it is shown and the last search is older than `general.logViewerRefreshMinutes` (3–120, default 5) or there was none, and then every interval while it stays shown. Hidden tab / window: no refresh.
   - While searching it shows **"Refreshing..."** on top of the previous entries (first search: only "Refreshing..."). A search with no entries removes the whole card.
   - The list has a fixed height (220 px) with a vertical scroll bar when needed; read-only, text selectable.
-  - **Filters (2.2.1, owner request)** above the list: a check box per level present in the result (WARNING / ERROR / CRITICAL; all ticked by default – untick to hide that level) and a date list ("All dates" by default, then each date with entries, newest first). The order stays newest first. The choices are kept across refreshes (a date without entries any more falls back to "All dates"); the summary line adds "Filter: N shown." when the filter hides entries.
+  - **Filters (2.2.1, owner request)** above the list: a check box per level present in the result (ERROR / CRITICAL; all ticked by default – untick to hide that level) and a date list ("All dates" by default, then each date with entries, newest first). The order stays newest first. The choices are kept across refreshes (a date without entries any more falls back to "All dates"); the summary line adds "Filter: N shown." when the filter hides entries.
 
 ## B.4 Function 1 – AutoClick
 - Runs in its **own thread** and gets mouse/keyboard events from the shared input hook (B.6).

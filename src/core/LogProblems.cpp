@@ -27,8 +27,6 @@ const QRegularExpression &linePattern()
 
 std::optional<LogLevel> problemLevel(QStringView name)
 {
-    if (name == u"WARNING")
-        return LogLevel::Warning;
     if (name == u"ERROR")
         return LogLevel::Error;
     if (name == u"CRITICAL")
@@ -40,8 +38,8 @@ std::optional<LogLevel> problemLevel(QStringView name)
 
 bool logProblemsCardEnabled(LogLevelSelection selection)
 {
-    return isLevelEnabled(selection, LogLevel::Warning) || isLevelEnabled(selection, LogLevel::Error)
-           || isLevelEnabled(selection, LogLevel::Critical);
+    // 2.2.2 (owner request): errors only - the card needs a level that writes them.
+    return isLevelEnabled(selection, LogLevel::Error) || isLevelEnabled(selection, LogLevel::Critical);
 }
 
 QStringList logFilesForDays(const QStringList &fileNames, const QDate &today, int days)
@@ -114,7 +112,7 @@ LogProblemScan scanLogProblems(const QString &directory, const QDate &today, int
 QList<LogLevel> logProblemLevels(const QList<LogProblem> &problems)
 {
     QList<LogLevel> levels;
-    for (LogLevel level : {LogLevel::Warning, LogLevel::Error, LogLevel::Critical}) {
+    for (LogLevel level : {LogLevel::Error, LogLevel::Critical}) {
         if (std::any_of(problems.begin(), problems.end(), [level](const LogProblem &p) { return p.level == level; }))
             levels << level;
     }

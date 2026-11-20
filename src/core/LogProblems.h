@@ -12,22 +12,23 @@
 
 namespace ergo {
 
-// 2.2.0 (owner request): WARNING / ERROR / CRITICAL entries of the recent log
+// 2.2.0 (owner request): ERROR / CRITICAL entries (WARNING removed in 2.2.2,
+// owner request) of the recent log
 // files, shown in a card on the General tab (spec B.3). Pure functions and a
 // small schedule, unit-tested in tests/tst_logproblems.cpp.
 
-// One WARNING / ERROR / CRITICAL entry: the log line and its continuation
+// One ERROR / CRITICAL entry: the log line and its continuation
 // lines (a message that contained line breaks).
 struct LogProblem {
     QDateTime time;
-    LogLevel level = LogLevel::Warning;
+    LogLevel level = LogLevel::Error;
     QString text;
 };
 
 // Most entries the card shows (newest first).
 inline constexpr int kMaxShownLogProblems = 500;
 
-// The card exists only when the log level writes warnings / errors.
+// The card exists only when the log level writes errors (2.2.2).
 bool logProblemsCardEnabled(LogLevelSelection selection);
 
 // Log file names (Logger::fileNameFor) of the last 'days' days: today and the
@@ -53,7 +54,7 @@ struct LogProblemFilter {
     std::optional<QDate> date;    // nullopt = all dates
 };
 
-// Levels present in the list (WARNING, ERROR, CRITICAL order).
+// Levels present in the list (ERROR, CRITICAL order).
 QList<LogLevel> logProblemLevels(const QList<LogProblem> &problems);
 // Dates that have entries, newest first.
 QList<QDate> logProblemDates(const QList<LogProblem> &problems);

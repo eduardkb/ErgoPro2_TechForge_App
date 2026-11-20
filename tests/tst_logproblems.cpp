@@ -21,8 +21,8 @@ const QDate kToday(2026, 11, 20);
 
 } // namespace
 
-// 2.2.0 (owner request): the General tab card with the WARNING / ERROR /
-// CRITICAL entries of the last days' log files.
+// 2.2.0 (owner request): the General tab card with the ERROR / CRITICAL
+// entries (WARNING removed in 2.2.2, owner request) of the last days' log files.
 class TestLogProblems : public QObject {
     Q_OBJECT
 
@@ -53,13 +53,13 @@ private slots:
             "2026-11-20 08:00:05.000 [CRITICAL] [hook] [input] Hook failed\n");
         QList<LogProblem> problems;
         collectLogProblems(text, &problems);
-        QCOMPARE(problems.size(), 3);
-        QCOMPARE(problems[0].level, LogLevel::Warning);
-        QCOMPARE(problems[0].time, QDateTime(kToday, QTime(8, 0, 1)));
-        QCOMPARE(problems[1].level, LogLevel::Error);
-        QCOMPARE(problems[1].text, QStringLiteral("2026-11-20 08:00:03.000 [ERROR] [main] [ui] Cannot open folder\n"
+        // 2.2.2: WARNING lines are not collected (and their continuation lines neither).
+        QCOMPARE(problems.size(), 2);
+        QCOMPARE(problems[0].level, LogLevel::Error);
+        QCOMPARE(problems[0].time, QDateTime(kToday, QTime(8, 0, 3)));
+        QCOMPARE(problems[0].text, QStringLiteral("2026-11-20 08:00:03.000 [ERROR] [main] [ui] Cannot open folder\n"
                                                   "second line of the error"));
-        QCOMPARE(problems[2].level, LogLevel::Critical);
+        QCOMPARE(problems[1].level, LogLevel::Critical);
     }
 
     void directoryScanIsNewestFirstAndLimited()
@@ -70,7 +70,8 @@ private slots:
         writeFile(d.filePath(Logger::fileNameFor(kToday.addDays(-1), 0)),
                   "2026-11-19 10:00:00.000 [ERROR] [main] [a] yesterday\n");
         writeFile(d.filePath(Logger::fileNameFor(kToday, 0)),
-                  "2026-11-20 09:00:00.000 [WARNING] [main] [a] early\n"
+                  "2026-11-20 08:00:00.000 [WARNING] [main] [a] a warning\n"
+                  "2026-11-20 09:00:00.000 [ERROR] [main] [a] early\n"
                   "2026-11-20 11:00:00.000 [CRITICAL] [main] [a] late\n");
         writeFile(d.filePath(Logger::fileNameFor(kToday, 1)), "2026-11-20 10:00:00.000 [ERROR] [main] [a] middle\n");
         writeFile(d.filePath(Logger::fileNameFor(kToday.addDays(-10), 0)),
@@ -111,10 +112,10 @@ private slots:
         QVERIFY(s.searchDue(10 * 60000 + 5 * 60000 + 1, true, false));
     }
 
-    void cardOnlyForLevelsThatIncludeWarningsOrErrors()
+    void cardOnlyForLevelsThatIncludeErrors()
     {
         QVERIFY(!logProblemsCardEnabled(LogLevelSelection::InfoOnly));
-        QVERIFY(logProblemsCardEnabled(LogLevelSelection::InfoWarning));
+        QVERIFY(!logProblemsCardEnabled(LogLevelSelection::InfoWarning)); // 2.2.2: no errors written
         QVERIFY(logProblemsCardEnabled(LogLevelSelection::InfoWarningError));
         QVERIFY(logProblemsCardEnabled(LogLevelSelection::InfoWarningErrorCritical));
         QVERIFY(logProblemsCardEnabled(LogLevelSelection::All));
@@ -130,24 +131,24 @@ private slots:
             p.text = QStringLiteral("%1-%2").arg(day).arg(hour);
             return p;
         };
-        const QList<LogProblem> all = {entry(20, 11, LogLevel::Critical), entry(20, 9, LogLevel::Warning),
-                                       entry(18, 15, LogLevel::Error), entry(18, 8, LogLevel::Warning)};
+        const QList<LogProblem> all = {entry(20, 11, LogLevel::Critical), entry(20, 9, LogLevel::Error),
+                                       entry(18, 15, LogLevel::Error), entry(18, 8, LogLevel::Critical)};
 
         QCOMPARE(logProblemLevels(all),
-                 (QList<LogLevel>{LogLevel::Warning, LogLevel::Error, LogLevel::Critical}));
+                 (QList<LogLevel>{LogLevel::Error, LogLevel::Critical}));
         QCOMPARE(logProblemDates(all), (QList<QDate>{QDate(2026, 11, 20), QDate(2026, 11, 18)})); // newest first
 
         LogProblemFilter filter; // default: everything
         QCOMPARE(filterLogProblems(all, filter).size(), 4);
-        filter.hiddenLevels = {LogLevel::Warning};
+        filter.hiddenLevels = {LogLevel::Error};
         QList<LogProblem> shown = filterLogProblems(all, filter);
         QCOMPARE(shown.size(), 2);
         QCOMPARE(shown[0].text, QStringLiteral("20-11")); // order kept: newest first
-        QCOMPARE(shown[1].text, QStringLiteral("18-15"));
+        QCOMPARE(shown[1].text, QStringLiteral("18-8"));
         filter.date = QDate(2026, 11, 18);
         shown = filterLogProblems(all, filter);
         QCOMPARE(shown.size(), 1);
-        QCOMPARE(shown[0].level, LogLevel::Error);
+        QCOMPARE(shown[0].level, LogLevel::Critical);
         filter.hiddenLevels.clear();
         QCOMPARE(filterLogProblems(all, filter).size(), 2);
         filter.date = QDate(2026, 11, 1); // no entries that day

@@ -305,12 +305,12 @@ The tabs are, from left to right: **General**, **Break Timer**, **Auto Click**, 
 The card also shows the log and statistics folders and has the buttons **Open settings folder**,
 **Open log folder** and **Open statistics folder**.
 
-**Warnings and errors in the log card** (below the Logging card) – appears only when ErgoPro2 wrote warnings
-or errors in the last **7 days**. It lists every WARNING, ERROR and CRITICAL entry, newest first (at most the
+**Errors in the log card** (below the Logging card) – appears only when ErgoPro2 wrote errors in the last
+**7 days**. It lists every ERROR and CRITICAL entry (warnings are not shown), newest first (at most the
 newest 500), in a box with a scroll bar. It is checked when you open the General tab and then every
 **5 minutes** while the tab stays open; while it checks, **Refreshing...** is shown above the last result.
-When no warnings or errors are found the card disappears. Above the list, **Show:** has a check box for each
-level found (untick one to hide it) and **Date:** shows *All dates* or a single day. With the log level *Info only* there is no card.
+When no errors are found the card disappears. Above the list, **Show:** has a check box for each
+level found (untick one to hide it) and **Date:** shows *All dates* or a single day. With the log levels *Info only* and *Info + Warning* there is no card.
 Both numbers can be changed in `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)).
 
 **Permissions & diagnostics card** – operating system, desktop session (e.g. X11 / Wayland), where ErgoPro2
@@ -707,5 +707,5 @@ except the two `general` values below, which use the nearest limit (e.g. 50 days
 | `breaktimer` → `activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
 | `keepScreenActive` → `startAfterIdleMinutes` | *Keep screen active*: minutes without input before it starts. | 1–60 min | 3 min |
 | `keepScreenActive` → `intervalMinutes` | *Keep screen active*: minutes between two actions while you stay away. | 1–60 min | 3 min |
-| `general` → `logViewerDays` | *Warnings and errors in the log* card: how many days of log files are searched (today included). | 3–30 days | 7 days |
-| `general` → `logViewerRefreshMinutes` | *Warnings and errors in the log* card: minutes between two searches while the General tab is open. | 3–120 min | 5 min |
+| `general` → `logViewerDays` | *Errors in the log* card: how many days of log files are searched (today included). | 3–30 days | 7 days |
+| `general` → `logViewerRefreshMinutes` | *Errors in the log* card: minutes between two searches while the General tab is open. | 3–120 min | 5 min |
