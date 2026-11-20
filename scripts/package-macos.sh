@@ -7,16 +7,20 @@
 # Environment:
 #   MACDEPLOYQT        path to macdeployqt (default: from PATH, else Homebrew Qt)
 #   CODESIGN_IDENTITY  signing identity (default "-" = ad-hoc)
+#   DMGBUILD           path to dmgbuild (default: from PATH, else installed
+#                      with pip into a temporary Python environment)
 #
 # The build directory is not modified: the app is copied to a staging folder,
 # Qt is bundled into the copy (macdeployqt), the copy is signed again and put
-# into a compressed, read-only disk image.
+# into a compressed, read-only disk image whose window shows ErgoPro2.app, a
+# link to /Applications and an arrow (drag-and-drop install, 2.0.0).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD="${1:-build-release}"
 OUT="${2:-dist}"
 IDENTITY="${CODESIGN_IDENTITY:--}"
+DMGBUILD_VERSION="1.6.5" # pinned: same layout on every build
 
 fail() { echo "package-macos: $*" >&2; exit 1; }
 
@@ -84,10 +88,28 @@ codesign --force --deep --sign "$IDENTITY" "$STAGE/ErgoPro2.app"
 codesign --verify --deep --strict "$STAGE/ErgoPro2.app"
 echo "Architectures: $(lipo -archs "$STAGE/ErgoPro2.app/Contents/MacOS/ErgoPro2")"
 
-echo "== Creating the disk image"
+echo "== Creating the disk image (drag-and-drop window)"
+# dmgbuild writes the window layout (icons, Applications link, background)
+# without scripting the Finder. It is installed into a temporary Python
+# environment unless DMGBUILD points to an existing dmgbuild.
+DMGBUILD="${DMGBUILD:-$(command -v dmgbuild || true)}"
+if [[ -z "$DMGBUILD" ]]; then
+    command -v python3 >/dev/null || fail "python3 not found (needed for dmgbuild)"
+    python3 -m venv "$STAGE/venv" || fail "cannot create a Python environment for dmgbuild"
+    "$STAGE/venv/bin/python" -m pip install --quiet "dmgbuild==$DMGBUILD_VERSION" \
+        || fail "cannot install dmgbuild $DMGBUILD_VERSION"
+    DMGBUILD="$STAGE/venv/bin/dmgbuild"
+fi
+# One TIFF with the 1x and 2x background, so Retina screens get the sharp one.
+tiffutil -cathidpicheck "$ROOT/packaging/macos/dmg-background.png" "$ROOT/packaging/macos/dmg-background@2x.png" \
+    -out "$STAGE/background.tiff" >/dev/null || fail "cannot create the background TIFF"
+
 mkdir -p "$OUT"
 DMG="$OUT/ErgoPro2-$VERSION-macos.dmg"
 rm -f "$DMG"
-hdiutil create -volname "ErgoPro2 $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null
+"$DMGBUILD" -s "$ROOT/packaging/macos/dmg-settings.py" \
+    -D app="$STAGE/ErgoPro2.app" -D background="$STAGE/background.tiff" \
+    -D volume_icon="$ROOT/resources/icons/app/ErgoPro2.icns" \
+    "ErgoPro2 $VERSION" "$DMG" || fail "dmgbuild failed"
 hdiutil verify "$DMG" >/dev/null
 echo "Created $DMG ($(du -h "$DMG" | cut -f1))"

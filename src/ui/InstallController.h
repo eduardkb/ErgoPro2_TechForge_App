@@ -9,6 +9,7 @@ class QWidget;
 
 namespace ergo {
 
+class SettingsStore;
 struct Platform;
 
 // Install / Uninstall workflow of the General tab (B.1.3): copies the app to
@@ -25,13 +26,18 @@ public:
         LocationCheck location; // of the running copy
     };
 
-    explicit InstallController(Platform &platform, QObject *parent = nullptr);
+    InstallController(Platform &platform, SettingsStore &settings, QObject *parent = nullptr);
 
     Status status() const;
 
     // Both show their own confirmations/errors with 'parent' as dialog parent.
     void install(QWidget *parent);
     void uninstall(QWidget *parent);
+
+    // At every start (2.0.0, macOS drag-and-drop install): when running from
+    // the installed copy, register start at login for it (or move it from an
+    // older copy) and offer once to remove an older copy (~/Applications).
+    void checkAtStartup(QWidget *parent);
 
 signals:
     void changed();
@@ -42,6 +48,7 @@ signals:
 
 private:
     Platform &m_platform;
+    SettingsStore &m_settings;
 };
 
 } // namespace ergo

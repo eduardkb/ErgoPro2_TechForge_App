@@ -4,17 +4,22 @@
 
 namespace ergo {
 
-// macOS: copies the running ErgoPro2.app bundle to ~/Applications/ErgoPro2.app
-// (no admin rights needed). ditto preserves symlinks, permissions and the
-// code signature of the bundle.
+// macOS (2.0.0): ErgoPro2 is installed when ErgoPro2.app is in /Applications
+// (dragged there from the .dmg window, or copied by Install) or in
+// ~/Applications (Install on an account that cannot write /Applications, and
+// all 1.x versions). Install copies the running bundle with ditto, which keeps
+// symlinks, permissions and the code signature. The rules which copy counts
+// are in core/InstallPolicy.
 class MacInstaller final : public IInstaller {
 public:
     InstallState state() const override;
     PlatformResult install() override;
     PlatformResult uninstall(bool *deferred) override;
     PlatformResult launchInstalledCopy() override;
+    PlatformResult removeOlderCopy() override;
 
-    static QString installedBundlePath();
+    static QString systemBundlePath(); // /Applications/ErgoPro2.app
+    static QString userBundlePath();   // ~/Applications/ErgoPro2.app
     static QString runningBundlePath(); // empty if not running from a .app bundle
 };
 

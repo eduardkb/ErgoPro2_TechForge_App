@@ -112,6 +112,7 @@ src/core/                       ---- platform-independent logic (QtCore only) --
   FeatureAvailability.h/.cpp    Feature {AutoClick, KeyControl, BreakTimerActivity, Statistics},
                                 PermissionState, FixKind, FeatureStatus, evaluateFeature()
   StartupMode.h/.cpp            decideStartupWindowMode(): show window / hide in tray (W-02)
+  InstallPolicy.h/.cpp          Which copy is installed, Install target, start-at-login / older-copy decisions at start (2.0.0)
   LocationClassifier.h/.cpp     Detects running from Temp/Downloads/disk image/translocated (install warning)
   WindowLimits.h/.cpp           windowLimitsFor(): min/start/max (80 %) main window size per screen (1.7.8)
   input/InputEvent.h/.cpp       InputEvent (normalized event), InputEventType, MouseButtonId, Modifier, describeEvent()
@@ -152,7 +153,7 @@ src/platform/                   ---- OS abstraction ----
                                 MacPowerEvents (NSWorkspace / distributed notifications)
   mac/MacPermissions.*          Accessibility (AXIsProcessTrusted) + Input Monitoring (IOHIDCheckAccess)
   mac/MacAutostart.*            LaunchAgent ~/Library/LaunchAgents/com.techforge.ergopro2.plist (no SMAppService)
-  mac/MacInstaller.*            Copy to ~/Applications
+  mac/MacInstaller.*            /Applications or ~/Applications (2.0.0: drag-and-drop copy counts)
   mac/MacDesktopIntegration.*   Dock icon policy, activation, break overlay level, full-screen detection
   win/WinInput.*                WinInputHook (WH_KEYBOARD_LL + WH_MOUSE_LL on a message-loop thread),
                                 WinClickInjector (SendInput), WinPowerEvents (hidden window thread)
@@ -733,7 +734,7 @@ Details and per-OS commands are in `documentation/BUILD.md`; this is the overvie
 - **Tests**: `tests/CMakeLists.txt` builds one Qt Test executable per file with
   `ergopro2_add_test()` (links `ergopro2_core`, runs with `QT_QPA_PLATFORM=offscreen`):
   `tst_clock`, `tst_logger`, `tst_settings`, `tst_startupmode`,
-  `tst_locationclassifier`, `tst_featureavailability`, `tst_inputevent`,
+  `tst_locationclassifier`, `tst_installpolicy`, `tst_featureavailability`, `tst_inputevent`,
   `tst_keycombo`, `tst_dispatcher`, `tst_watchdog`, `tst_autoclick`,
   `tst_keycontrol`, `tst_breaktimer`, `tst_draglock`, `tst_statistics`,
   `tst_statisticsstore`, `tst_windowlimits`; on macOS additionally
@@ -741,7 +742,8 @@ Details and per-OS commands are in `documentation/BUILD.md`; this is the overvie
   `ctest --test-dir build --output-on-failure`. Time-dependent tests use `FakeClock`.
 - **Packaging**:
   - macOS: `scripts/package-macos.sh <build> <out>` → `ErgoPro2-<version>-macos.dmg`
-    (copy, `macdeployqt`, re-sign, compressed DMG).
+    (copy, `macdeployqt`, re-sign, compressed DMG made with dmgbuild: drag-and-drop window with an
+    Applications link and background, `packaging/macos/dmg-settings.py`, 2.0.0).
   - Windows: `scripts/package-windows.ps1 -BuildDir <build> -OutDir <out> [-Installer]`
     → `ErgoPro2-<version>-windows-x64.zip` (only the DLLs/plugins actually used + app-local
     MSVC runtime) and, with `-Installer`, `ErgoPro2-<version>-windows-x64-setup.exe`

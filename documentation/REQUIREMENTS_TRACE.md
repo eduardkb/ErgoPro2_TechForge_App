@@ -266,7 +266,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | ID | Rule (short) | Implementation | Unit test(s) | Manual test(s) | Status / notes |
 |----|--------------|----------------|--------------|----------------|----------------|
 | B.1.3-a | Install copies to per-user folder and registers start at login (installed copy) | `InstallController`, `IInstaller` / `IAutostart` implementations | – | S1#22–23 | 🟡 |
-| B.1.3-b | macOS: `~/Applications/ErgoPro2.app`; login item via SMAppService (fallback LaunchAgent) | `MacInstaller.cpp:15`, `MacAutostart` | – | S1#22–24 | ⚠️ Only the LaunchAgent is used, by design (`MacAutostart.h:10-13`: SMAppService cannot register the installed copy with `--autostart`). Spec text aligned in 1.8.0 (G-a4). |
+| B.1.3-b | macOS: `/Applications/ErgoPro2.app` (2.0.0; fallback and 1.x: `~/Applications/ErgoPro2.app`); login item via SMAppService (fallback LaunchAgent) | `MacInstaller.cpp:15`, `MacAutostart` | – | S1#22–24 | ⚠️ Only the LaunchAgent is used, by design (`MacAutostart.h:10-13`: SMAppService cannot register the installed copy with `--autostart`). Spec text aligned in 1.8.0 (G-a4). |
 | B.1.3-c | Windows: `%LOCALAPPDATA%\Programs\ErgoPro2`, HKCU Run, Start Menu shortcut | `WinPlatform.cpp:23,49-58,98-113` | – | S1#31–33 | 🟡 Not run on Windows yet (O-2). |
 | B.1.3-d | Linux: `~/.local/opt/ErgoPro2`, autostart + applications .desktop | `LinuxPlatform.cpp:50-102,129-150` | – | S1#34 | 🟡 Not run on Debian yet (O-2). |
 | B.1.3-e | Offer restart from the installed location | `InstallController.cpp:59-60`, `AppController::relaunch` | – | S1#23, S1#27 | 🟡 |
@@ -282,6 +282,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.1.3-o | Application version (window title, tab, tray tooltip) | `CMakeLists.txt:10`, `src/core/Version.h.in`, `MainWindow.cpp:27`, `GeneralTab.cpp:142`, `TrayController.cpp:29` | – | S0#2, S0#5–6, S0#28 | 🟡 |
 | B.1.3-p | Permissions / diagnostics: OS, session, permissions with buttons, hook status | `DiagnosticsCard.cpp:74-133`, `PermissionActions` | – | S1#9, S2#2 | 🟡 |
 | B.1.3-q | Exit button | `GeneralTab.cpp:116-121` | – | S0#20 | 🟡 |
+| B.1.3-r | macOS drag-and-drop install (2.0.0): .dmg window with Applications link + arrow; copy in /Applications or ~/Applications counts as installed; start at login registered at start; older ~/Applications copy offered for removal once; Install → /Applications (fallback ~/Applications) | `packaging/macos/dmg-settings.py`, `scripts/package-macos.sh`, `core/InstallPolicy`, `MacInstaller::state`, `MacAutostart::registeredExecutable`, `InstallController::checkAtStartup` | `tst_installpolicy` (9 tests), `tst_settings::booleanDefaults` | 2.0.0#2–9 | 🟡 Window layout and the start-at-login move need the manual test on a Mac; CI checks the Applications link and .DS_Store. |
 
 ### B.1.4 OS permissions and feature availability
 

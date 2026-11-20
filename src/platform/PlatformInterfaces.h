@@ -91,6 +91,10 @@ public:
     virtual QString location() const = 0;
     virtual PlatformResult enable(const QString &executablePath, const QStringList &arguments) = 0;
     virtual PlatformResult disable() = 0;
+    // Executable the registration starts; empty when not registered or not
+    // known (only macOS reads it back, 2.0.0: start at login is moved to the
+    // copy dragged into /Applications).
+    virtual QString registeredExecutable() const { return {}; }
 };
 
 struct InstallState {
@@ -104,6 +108,13 @@ struct InstallState {
     // starts uninstallCommand (the setup's own uninstaller).
     bool managedByInstaller = false;
     QString uninstallCommand;
+    // macOS (2.0.0): installing = copying the app into an Applications folder
+    // (drag and drop from the .dmg). The installed copy registers start at
+    // login itself when it starts (InstallController::checkAtStartup).
+    bool registerStartAtLoginOnStart = false;
+    // macOS (2.0.0): an older copy in ~/Applications while the one in
+    // /Applications is used; removed with removeOlderCopy() after asking.
+    QString olderCopy;
 };
 
 // Copies the application to a permanent per-user folder and removes it again,
@@ -125,6 +136,9 @@ public:
 
     // Starts the installed copy as a new process.
     virtual PlatformResult launchInstalledCopy() = 0;
+
+    // Deletes InstallState::olderCopy (macOS only; nothing to do elsewhere).
+    virtual PlatformResult removeOlderCopy() { return PlatformResult::success(); }
 };
 
 // OS permissions / requirements needed by the input features (stage 1).

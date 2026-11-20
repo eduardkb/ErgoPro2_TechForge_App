@@ -1,9 +1,11 @@
 #include "platform/mac/MacAutostart.h"
 
+#include "core/InstallPolicy.h"
 #include "core/LogCategories.h"
 #include "platform/common/FileOperations.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 
 namespace ergo {
@@ -25,6 +27,21 @@ bool MacAutostart::isEnabled() const
 QString MacAutostart::location() const
 {
     return plistPath();
+}
+
+QString MacAutostart::registeredExecutable() const
+{
+    QFile file(plistPath());
+    if (!file.exists())
+        return {};
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCWarning(lcPlatform).noquote() << "Cannot read" << plistPath() << ":" << file.errorString();
+        return {};
+    }
+    const QString executable = launchAgentExecutable(QString::fromUtf8(file.readAll()));
+    if (executable.isEmpty())
+        qCWarning(lcPlatform).noquote() << "No program found in" << plistPath();
+    return executable;
 }
 
 PlatformResult MacAutostart::enable(const QString &executablePath, const QStringList &arguments)

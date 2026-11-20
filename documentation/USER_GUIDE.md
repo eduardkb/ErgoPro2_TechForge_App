@@ -60,20 +60,26 @@ The General tab then shows "Installed at … Installed with the ErgoPro2 setup p
 
 ### 2.3 macOS
 
-1. Double-click `ErgoPro2-<version>-macos.dmg`. A window with **ErgoPro2** opens.
-2. Double-click **ErgoPro2** in that window.
-3. **Gatekeeper:** ErgoPro2 is not notarized by Apple, so macOS may say it cannot verify the app.
+1. Double-click `ErgoPro2-<version>-macos.dmg`. A window opens with **ErgoPro2**, an arrow and the
+   **Applications** folder.
+2. **Drag ErgoPro2 onto Applications.** (If macOS asks for an administrator password, enter it, or see the
+   note below.)
+3. Eject the disk image (in Finder, click the eject symbol next to "ErgoPro2 <version>").
+4. Open **Applications** and double-click **ErgoPro2**.
+5. **Gatekeeper:** ErgoPro2 is not notarized by Apple, so macOS may say it cannot verify the app.
    Click **Done** (not "Move to Trash"), then open **System Settings → Privacy & Security**, scroll down to
    *Security* and click **Open Anyway** next to the message about ErgoPro2. Confirm with **Open Anyway** and
    your password / Touch ID. Start ErgoPro2 again.
-4. ErgoPro2 starts and asks for two permissions (see [3.1](#31-macos)).
-5. Go to the **General** tab → **Installation** card and click **Install**. This copies ErgoPro2 to
-   `~/Applications/ErgoPro2.app` and makes it start when you log in. Answer **Yes** when ErgoPro2 offers to
-   restart from the installed copy.
-6. Eject the disk image (in Finder, click the eject symbol next to "ErgoPro2 <version>").
+6. ErgoPro2 starts, sets itself to **start when you log in** and asks for two permissions (see
+   [3.1](#31-macos)). The General tab shows "Installed at /Applications/ErgoPro2.app, starts at login".
+7. Only when you had a 1.x version: ErgoPro2 asks once whether to remove the older copy in
+   `~/Applications` (the Applications folder in your home folder). **Yes** is recommended. Your settings,
+   statistics and logs are kept.
 
-> As long as ErgoPro2 runs from the disk image, the General tab shows a warning ("running from a disk image
-> or removable drive" or "App Translocation"). Click **Install** to fix this.
+> **Other way:** you can still double-click ErgoPro2 in the disk image window and click **Install** on the
+> General tab. It copies ErgoPro2 to `/Applications` (or to `~/Applications` if your account cannot write
+> `/Applications`). As long as ErgoPro2 runs from the disk image, the General tab shows a warning ("running
+> from a disk image or removable drive" or "App Translocation").
 
 ### 2.4 Debian 13
 
@@ -103,7 +109,7 @@ ErgoPro2 does not update itself. Download the new release and:
 | System | How to update |
 |---|---|
 | Windows | Run the new setup `.exe`. It closes the running ErgoPro2, installs into the same folder without asking, and keeps your settings, logs and statistics. |
-| macOS | **Exit** ErgoPro2 first (tray menu → **Exit**). Open the new `.dmg`, start ErgoPro2 from it, then click **Reinstall** on the General tab and restart from the installed copy. Afterwards check the permissions (see the note below). |
+| macOS | **Exit** ErgoPro2 first (tray menu → **Exit**). Open the new `.dmg`, drag ErgoPro2 onto **Applications** and choose **Replace**, then start ErgoPro2 from Applications. Updating from 1.x: ErgoPro2 moves the start at login to the new copy and offers to remove the old one in `~/Applications`. Afterwards check the permissions (see the note below). |
 | Debian | `sudo apt install ./ergopro2_<new version>_amd64.deb`. If you used **Install** on the General tab, also exit ErgoPro2, start it from the menu and click **Reinstall**, so the copy that starts at login is updated too. |
 
 > **macOS and permissions after an update:** each release is a new app for macOS. If a function is shown
@@ -122,7 +128,7 @@ to delete them by hand).
 | System | How to uninstall |
 |---|---|
 | Windows | General tab → **Uninstall** (runs the setup's uninstaller; ErgoPro2 closes first), or **Settings → Apps → Installed apps → ErgoPro2 → Uninstall**. |
-| macOS | General tab → **Uninstall**. It stops the start at login and deletes `~/Applications/ErgoPro2.app` (when you click it in the installed copy, ErgoPro2 exits and the app is deleted right after). Optionally remove ErgoPro2 from the Accessibility and Input Monitoring lists in System Settings. |
+| macOS | General tab → **Uninstall**. It stops the start at login and deletes ErgoPro2 from `/Applications` (and an older copy in `~/Applications`); when you click it in the installed copy, ErgoPro2 exits and the app is deleted right after. Deleting ErgoPro2 from Applications in the Finder also works, but then delete `~/Library/LaunchAgents/com.techforge.ergopro2.plist` too. Optionally remove ErgoPro2 from the Accessibility and Input Monitoring lists in System Settings. |
 | Debian | If you clicked **Install** before: General tab → **Uninstall** (removes `~/.local/opt/ErgoPro2`, the menu entry and the start at login). Then remove the package: `sudo apt remove ergopro2`. |
 
 ---
@@ -153,7 +159,8 @@ Both re-check automatically every few seconds, so usually no restart is needed.
 1. If a permission is missing, the window **"ErgoPro2 needs your permission"** opens when ErgoPro2 starts.
 2. Click **Open System Settings** next to a permission. The right page opens.
 3. Switch on **ErgoPro2** and confirm with your password / Touch ID. If ErgoPro2 is not in the list, click
-   **+** below the list and choose ErgoPro2 (in your `Applications` folder inside your home folder).
+   **+** below the list and choose ErgoPro2 (in `Applications`; with 1.x or a standard account, the `Applications` folder inside your
+   home folder).
 4. Come back to ErgoPro2. The status changes to **GRANTED** within a few seconds (or click **Check again**).
    When both are granted, the window says "All permissions are granted. Thank you!" and closes by itself.
 5. Still **MISSING** although it is switched on? Click **Restart ErgoPro2** – some macOS versions apply the
@@ -275,7 +282,7 @@ The tabs are, from left to right: **General**, **Break Timer**, **Auto Click**, 
 | System | Installed copy | Start at login |
 |---|---|---|
 | Windows | `%LOCALAPPDATA%\Programs\ErgoPro2\` (or the folder chosen in the setup) | Windows "Run" entry (Task Manager → **Startup apps** shows it) |
-| macOS | `~/Applications/ErgoPro2.app` | Login item (System Settings → General → **Login Items & Extensions** → *Allow in the Background* must be on for ErgoPro2) |
+| macOS | `/Applications/ErgoPro2.app` (or `~/Applications/ErgoPro2.app`) | Login item (System Settings → General → **Login Items & Extensions** → *Allow in the Background* must be on for ErgoPro2) |
 | Linux | `~/.local/opt/ErgoPro2/` | `~/.config/autostart/ergopro2.desktop` |
 
 **Startup card** – what ErgoPro2 does with its window when it starts:

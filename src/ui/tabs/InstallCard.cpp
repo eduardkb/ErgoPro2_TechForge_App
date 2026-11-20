@@ -12,8 +12,9 @@ namespace ergo {
 
 InstallCard::InstallCard(InstallController &controller, QWidget *parent)
     : CardWidget(tr("Installation"),
-                 tr("Install copies ErgoPro2 to a permanent folder in your user account and starts it "
-                    "automatically when you log in. No administrator rights are needed."),
+                 tr("Install copies ErgoPro2 to a permanent folder (on macOS the Applications folder) and starts it "
+                    "automatically when you log in. On macOS, dragging ErgoPro2 into Applications from the disk image "
+                    "window installs it too."),
                  parent)
     , m_controller(controller)
 {

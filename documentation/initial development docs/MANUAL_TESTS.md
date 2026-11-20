@@ -897,3 +897,21 @@ and 9. Use the 1-minute times from Stage 9 for quicker tests.
 | 6 | macOS, Windows, Linux X11: Teams running (visible, then minimized), idle until a cycle. | Teams comes to the front, **exactly its top-left window corner** is clicked once with the left button (the spot where the resize arrows appear), nothing in Teams opens (no search, no menu, no button), the window keeps its size and position, the pointer is put back. |
 | 7 | Same with only Zoom running. | Same as row 6 for Zoom's window. |
 | 8 | Neither Teams nor Zoom running. | Only the 1-pixel pointer movement and back – **no click** anywhere (not on the desktop, not in the middle of the screen). |
+
+## Stage – v2.0.0 (macOS drag-and-drop install)
+
+Goal: the `.dmg` window installs by drag and drop, and the General tab shows such a copy as installed
+(B.1.3, 2.0.0). Use the `.dmg` from the CI run or release (or `scripts/package-macos.sh`). Before rows 2–8
+exit ErgoPro2 (tray → **Exit**).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (21 on macOS, 20 on Windows/Linux). |
+| 2 | Double-click the `.dmg`. | A Finder window ~660 × 400 opens without toolbar/sidebar: ErgoPro2 icon left, arrow, **Applications** folder right, title "Install ErgoPro2", text "Drag ErgoPro2 to the Applications folder" – sharp on a Retina screen, nothing cut off. The mounted volume has the ErgoPro2 icon. |
+| 3 | Without any ErgoPro2 in `/Applications` or `~/Applications` and no `~/Library/LaunchAgents/com.techforge.ergopro2.plist`: drag ErgoPro2 onto Applications, eject, start ErgoPro2 from Applications (Gatekeeper: *Open Anyway*). | General tab › Installation: "✅ Installed at /Applications/ErgoPro2.app, starts at login."; no warning; Install button reads **Reinstall** and is disabled. The LaunchAgent plist exists and points to `/Applications/ErgoPro2.app/Contents/MacOS/ErgoPro2`. Log INFO "Running from the installed copy … registering start at login". |
+| 4 | Log out and in. | ErgoPro2 starts from `/Applications` (hidden in the tray by default). |
+| 5 | Update from 1.x: with a 1.x copy in `~/Applications` (start at login registered for it), drag 2.0.0 into `/Applications` and start it. | Start at login now points to `/Applications` (log shows "(was: …/Applications/ErgoPro2.app/…)"). A question "Older copy of ErgoPro2 … Remove it?" appears once. **Yes**: `~/Applications/ErgoPro2.app` is deleted. |
+| 6 | Repeat row 5 but answer **No**, then restart ErgoPro2. | The old copy stays; the question is not shown again (`general.olderCopyKept` = true). |
+| 7 | Start ErgoPro2 from the mounted `.dmg` (not dragged), click **Install**. | Copies to `/Applications` (admin account) and offers to restart from it. On a standard account: copies to `~/Applications`. |
+| 8 | In the installed copy: General tab › **Uninstall**. | ErgoPro2 exits; `/Applications/ErgoPro2.app`, a kept `~/Applications/ErgoPro2.app` and the LaunchAgent plist are gone. Settings/logs/statistics remain. |
+| 9 | Windows and Debian: General tab › Installation. | Unchanged: same status and buttons as in 1.9.1 (the startup check does nothing there). |

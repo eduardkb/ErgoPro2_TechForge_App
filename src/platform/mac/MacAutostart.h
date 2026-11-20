@@ -9,7 +9,7 @@ namespace ergo {
 //
 // SMAppService (macOS 13+) is not used: it can only register the *running*
 // bundle and cannot pass arguments, while ErgoPro2 must register the installed
-// copy (~/Applications) with --autostart. macOS lists the agent under
+// copy (/Applications or ~/Applications) with --autostart. macOS lists the agent under
 // System Settings > General > Login Items & Extensions > "Allow in the Background".
 class MacAutostart final : public IAutostart {
 public:
@@ -17,6 +17,7 @@ public:
     QString location() const override;
     PlatformResult enable(const QString &executablePath, const QStringList &arguments) override;
     PlatformResult disable() override;
+    QString registeredExecutable() const override;
 
     static QString plistPath();
 };

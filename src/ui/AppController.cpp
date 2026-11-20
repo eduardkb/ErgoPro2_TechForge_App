@@ -87,7 +87,7 @@ void AppController::start(const SettingsLoadResult &loadResult)
     QApplication::setQuitOnLastWindowClosed(false);
 
     m_availability = std::make_unique<FeatureAvailabilityService>(*m_platform.permissions);
-    m_install = std::make_unique<InstallController>(m_platform);
+    m_install = std::make_unique<InstallController>(m_platform, m_settings);
     connect(m_install.get(), &InstallController::relaunchRequested, this, &AppController::relaunch);
     connect(m_install.get(), &InstallController::exitRequested, this, &AppController::exitApplication);
     m_input = std::make_unique<InputService>(m_platform, *m_availability);
@@ -149,6 +149,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     else
         m_platform.desktop->setDockIconVisible(false);
 
+    // macOS (2.0.0): a copy dragged into Applications sets up start at login itself.
+    m_install->checkAtStartup(m_window->isVisible() ? m_window.get() : nullptr);
     showPermissionsWindowIfNeeded();
 
     // Global input layer (stage 2); waits for missing permissions by itself.

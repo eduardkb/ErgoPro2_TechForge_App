@@ -128,6 +128,10 @@ private slots:
         QVERIFY(enabled && fullscreen);
         QCOMPARE(enabled->defaultValue.toBool(), true);
         QCOMPARE(fullscreen->defaultValue.toBool(), false);
+        // 2.0.0: the older ~/Applications copy is offered for removal until kept.
+        const SettingDefinition *olderCopyKept = m_schema.find(GeneralSettings::OlderCopyKept);
+        QVERIFY(olderCopyKept);
+        QCOMPARE(olderCopyKept->defaultValue.toBool(), false);
     }
 
     // 1.8.2 (owner request): the upper-case keys were renamed; an old file is

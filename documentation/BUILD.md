@@ -140,16 +140,28 @@ scripts/package-macos.sh build-release dist
 The script copies the app (the build folder stays unchanged), runs `macdeployqt`, keeps only the Qt
 plugins ErgoPro2 uses (cocoa, SVG icons) and the frameworks/libraries they load, signs the app again
 (ad-hoc by default; `CODESIGN_IDENTITY="ErgoPro2 Local Signing" scripts/package-macos.sh …` for your
-certificate, 1.6.3) and creates a compressed, verified `.dmg`. Options: `MACDEPLOYQT=/path/to/macdeployqt`.
+certificate, 1.6.3) and creates a compressed, verified `.dmg`. Options: `MACDEPLOYQT=/path/to/macdeployqt`,
+`DMGBUILD=/path/to/dmgbuild`.
+
+**Drag-and-drop window (2.0.0).** The `.dmg` is made with [dmgbuild](https://pypi.org/project/dmgbuild/)
+(version pinned in the script; installed with `pip` into a temporary Python environment unless `dmgbuild` is
+on the `PATH` or `DMGBUILD` is set – this needs `python3` and internet access). Its window shows
+`ErgoPro2.app`, a link to `/Applications` and a background with an arrow:
+
+| File | Purpose |
+|---|---|
+| `packaging/macos/dmg-settings.py` | Window layout: icon positions, size, Applications link, volume icon. |
+| `packaging/macos/dmg-background.svg` | Background source (660 × 400). |
+| `packaging/macos/dmg-background.png`, `@2x.png` | Rendered background (committed); regenerate with `swift scripts/generate-dmg-background.swift` (macOS 14+) after changing the SVG. The script joins both into one TIFF with `tiffutil`. |
 A Homebrew Qt prints "ERROR: Cannot resolve rpath … QtPdf / QtVirtualKeyboard" – harmless, those
 plugins are removed.
 
 The CI builds the same `.dmg` as a **universal** app (Apple silicon + Intel) on every push
 (GitHub › Actions › the run › *Artifacts* › `ErgoPro2-<version>-macos.dmg`).
 
-To install from the `.dmg`: double-click it, double-click **ErgoPro2** in the window that opens, then
-click **Install** on the General tab (it copies the app to `~/Applications`, see section 5) and eject the
-disk image. A downloaded `.dmg` is quarantined: see 1.6.5 if macOS refuses to open it.
+To install from the `.dmg`: double-click it, drag **ErgoPro2** onto **Applications** in the window that opens,
+eject the disk image and start ErgoPro2 from Applications (it then registers start at login itself, see
+section 5). Starting it from the disk image and clicking **Install** on the General tab still works too. A downloaded `.dmg` is quarantined: see 1.6.5 if macOS refuses to open it.
 
 ### 1.6 Code signing (important for permissions)
 
@@ -504,10 +516,16 @@ Open the **General** tab → **Installation** card:
 
 | OS | Installed copy | Start-at-login registration | Menu entry / shortcut |
 |----|----------------|-----------------------------|------------------------|
-| macOS | `~/Applications/ErgoPro2.app` | `~/Library/LaunchAgents/com.techforge.ergopro2.plist` | (the app in `~/Applications`) |
+| macOS | `/Applications/ErgoPro2.app` (2.0.0; `~/Applications/ErgoPro2.app` when `/Applications` cannot be written, and in 1.x) | `~/Library/LaunchAgents/com.techforge.ergopro2.plist` | (the app in Applications) |
 | Windows | `%LOCALAPPDATA%\Programs\ErgoPro2\` | Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → value `ErgoPro2` | Start Menu → `ErgoPro2` |
 | Linux | `~/.local/opt/ErgoPro2/ErgoPro2` | `~/.config/autostart/ergopro2.desktop` | `~/.local/share/applications/ergopro2.desktop` |
 
+> **macOS drag-and-drop install (2.0.0):** dragging ErgoPro2 from the `.dmg` window into Applications is an
+> installation too. A copy in `/Applications` or `~/Applications` counts as installed (the running copy first,
+> else `/Applications`). When ErgoPro2 starts from that copy it registers start at login for it (or moves the
+> registration from an older copy), and if an older copy is still in `~/Applications` it asks once whether to
+> remove it (*No* is remembered in `general.olderCopyKept`). Uninstall removes both copies.
+>
 > **macOS:** sign the app **before** clicking Install (section 1.6). The installed copy keeps the
 > signature of the copy you installed from, and macOS ties the permissions to it.
 

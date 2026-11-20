@@ -58,6 +58,10 @@ jobs:
           hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MNT"
           APP="$MNT/ErgoPro2.app"
           test -x "$APP/Contents/MacOS/ErgoPro2"
+          # Drag-and-drop window (2.0.0): Applications link, layout and background.
+          test "$(readlink "$MNT/Applications")" = /Applications
+          test -f "$MNT/.DS_Store"
+          ls -a "$MNT"
           codesign --verify --deep --strict "$APP"
           lipo -archs "$APP/Contents/MacOS/ErgoPro2"
           "$APP/Contents/MacOS/ErgoPro2" --version   # starts the bundled app (Qt + cocoa plugin)
@@ -226,7 +230,7 @@ jobs:
           | System | File | How to install |
           |---|---|---|
           | Windows 11 | \`ErgoPro2-$VERSION-windows-x64-setup.exe\` | Run it (no administrator rights needed). It closes a running ErgoPro2 and updates an existing installation in place. SmartScreen: *More info › Run anyway*. |
-          | macOS (Apple silicon and Intel) | \`ErgoPro2-$VERSION-macos.dmg\` | Open it, start ErgoPro2, click **Install** on the General tab. If macOS says it cannot verify the app: System Settings › Privacy & Security › *Open Anyway*. |
+          | macOS (Apple silicon and Intel) | \`ErgoPro2-$VERSION-macos.dmg\` | Open it and drag **ErgoPro2** onto **Applications** in the window that appears, then start ErgoPro2 from Applications (it sets up start at login itself). If macOS says it cannot verify the app: System Settings › Privacy & Security › *Open Anyway*. |
           | Debian 13 | \`ergopro2_${VERSION}_amd64.deb\` | \`sudo apt install ./ergopro2_${VERSION}_amd64.deb\` |
 
           Settings, logs and statistics are kept when you update.

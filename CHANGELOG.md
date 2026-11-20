@@ -5,6 +5,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.0.0] - 2026-11-20
+
+Major version (owner decision): macOS installs like other Mac apps.
+
+### Added
+- **macOS drag-and-drop install:** opening the `.dmg` shows a window with ErgoPro2, an arrow and the
+  **Applications** folder ("Drag ErgoPro2 to the Applications folder"). Dragging ErgoPro2 there installs it.
+- When ErgoPro2 starts from Applications, the General tab shows it as **installed** and it sets itself to
+  **start at login** (or moves the start at login from an older copy) – no Install click needed.
+- Updating from 1.x: ErgoPro2 asks once whether to remove the older copy in `~/Applications` (your settings,
+  statistics and logs are kept). New system-only setting `general.olderCopyKept`.
+
+### Changed
+- macOS **Install** button copies to `/Applications` (to `~/Applications` only when your account cannot
+  write `/Applications`). A copy in either folder counts as installed; **Uninstall** removes both.
+- The macOS `.dmg` is built with dmgbuild (`packaging/macos/dmg-settings.py`, background
+  `packaging/macos/dmg-background.svg`); CI checks the Applications link and the window layout. The release
+  notes describe the drag-and-drop install.
+- Versioning: MAJOR is 2 from now on (spec A.4).
+- Tests: new `tst_installpolicy` (9 tests: which copy counts as installed, Install target, start at login
+  and older-copy question at start, reading the LaunchAgent); `tst_settings` checks the new setting.
+
 ## [1.9.1] - 2026-11-18
 
 ### Fixed

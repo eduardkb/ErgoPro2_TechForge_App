@@ -26,6 +26,7 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 7 | 1.7.0 | Statistics (Function 4) – daily usage charts, totals, CSV history |
 | 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
 | 9 | 1.9.0 | Keep Screen Active (Function 5) – `documentation/stage9_keep_screen_active.md`, spec B.10 |
+| – | 2.0.0 | macOS drag-and-drop install (owner request; MAJOR bump, A.4) – spec B.1.3 |
 
 > Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, documentation/initial development docs/baseDescription.md), so the final stage reviews and packages every feature.
 
@@ -74,7 +75,7 @@ ergoPro2/
 - Platform implementations that are not done yet must still compile and return a clear "not supported on this OS yet" status (logged and shown in the UI), never crash.
 
 ### A.4 Versioning
-- Format `MAJOR.MINOR.PATCH`. **MAJOR is always 1.**
+- Format `MAJOR.MINOR.PATCH`. **MAJOR is 2 since 2.0.0** (owner decision, 2026-11-20: macOS drag-and-drop install); it changes only when the owner asks. Stages and bug-fix runs keep the rules below (e.g. 2.0.0 → 2.1.0 / 2.0.1).
 - **Each stage bumps MINOR and resets PATCH to 0** (Stage N ⇒ `1.N.0`, e.g. from `1.3.2` a new stage goes to `1.4.0`).
 - **Each bug-fix run bumps PATCH** (`1.3.0` → `1.3.1`).
 - The **single source of truth** is `project(ErgoPro2 VERSION x.y.z ...)` in the root `CMakeLists.txt`. A generated header (`configure_file`) exposes it to the code. The version is shown in the window title, on the General tab and in the tray tooltip, and is set with `QCoreApplication::setApplicationVersion`.
@@ -133,7 +134,8 @@ ergoPro2/
 ### B.1.3 General tab
 - **Install / Uninstall** buttons (W-06, W-07):
   - *Install*: copies the application to a permanent per-user folder and registers it to **start at login**, pointing to the installed copy. No admin rights where possible; if admin rights are ever needed, ask the user first.
-    - macOS: copy `.app` to `~/Applications/ErgoPro2.app`; login item via a LaunchAgent plist in `~/Library/LaunchAgents/com.techforge.ergopro2.plist` (1.8.0 documentation fix: `SMAppService` is not used – see `src/platform/mac/MacAutostart.h` for the reason).
+    - macOS: copy `.app` to `/Applications/ErgoPro2.app`, or to `~/Applications/ErgoPro2.app` when `/Applications` cannot be written (standard account; 1.x always used `~/Applications`); login item via a LaunchAgent plist in `~/Library/LaunchAgents/com.techforge.ergopro2.plist` (1.8.0 documentation fix: `SMAppService` is not used – see `src/platform/mac/MacAutostart.h` for the reason).
+    - **macOS drag-and-drop install (2.0.0, owner request):** the `.dmg` window shows `ErgoPro2.app`, a link to `/Applications` and a background with an arrow ("Drag ErgoPro2 to the Applications folder"; `packaging/macos/dmg-settings.py`, made with dmgbuild). A copy in `/Applications` or `~/Applications` counts as **installed** (`chooseInstalledCopy`: the running copy if it is one of them, else `/Applications`, else `~/Applications`). When ErgoPro2 starts from the installed copy it **registers start at login** for it if it is not registered or points to another copy (`decideInstallStartupActions`, `InstallController::checkAtStartup`). If the installed copy is `/Applications` and an older copy exists in `~/Applications`, it asks once "Remove it?" (*Yes* deletes it; *No* is remembered in `general.olderCopyKept`). Uninstall removes both copies.
     - Windows: copy the whole deployed folder to `%LOCALAPPDATA%\Programs\ErgoPro2\`; `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value; Start Menu shortcut.
     - Linux: copy to `~/.local/opt/ErgoPro2/`; `~/.config/autostart/ergopro2.desktop` and `~/.local/share/applications/ergopro2.desktop`.
     - After install, offer to restart from the installed location.
@@ -187,6 +189,7 @@ ergoPro2/
 | `general.logLevel` | see B.3 | `info_warning_error_critical` | 0 |
 | `general.logRetentionDays` | 1–180 | 30 | 0 |
 | `general.trayHintShown` | bool | false | 0 |
+| `general.olderCopyKept` | bool (system-only; macOS: the user kept an older `~/Applications` copy, 2.0.0) | false | 2.0.0 |
 | `autoclick.enabled` | bool | false | 3 |
 | `autoclick.triggerTimeMs` (ms) | 100–3000 | **200** | 3 |
 | `autoclick.triggerDistancePx` (logical px) | 5–200 | 15 | 3 |

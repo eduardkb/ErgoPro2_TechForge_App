@@ -19,6 +19,7 @@ add_library(ergopro2_core STATIC
     core/input/InputDispatcher.cpp core/input/InputDispatcher.h
     core/input/InputEvent.cpp core/input/InputEvent.h
     core/input/KeyCombo.cpp core/input/KeyCombo.h
+    core/InstallPolicy.cpp core/InstallPolicy.h
     core/LocationClassifier.cpp core/LocationClassifier.h
     core/StartupMode.cpp core/StartupMode.h
     core/WindowLimits.cpp core/WindowLimits.h

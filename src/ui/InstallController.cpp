@@ -1,6 +1,9 @@
 #include "ui/InstallController.h"
 
+#include "core/InstallPolicy.h"
 #include "core/LogCategories.h"
+#include "core/settings/GeneralSettings.h"
+#include "core/settings/SettingsStore.h"
 #include "platform/PlatformFactory.h"
 
 #include <QDir>
@@ -8,9 +11,10 @@
 
 namespace ergo {
 
-InstallController::InstallController(Platform &platform, QObject *parent)
+InstallController::InstallController(Platform &platform, SettingsStore &settings, QObject *parent)
     : QObject(parent)
     , m_platform(platform)
+    , m_settings(settings)
 {
 }
 
@@ -111,6 +115,59 @@ void InstallController::uninstall(QWidget *parent)
     QMessageBox::information(parent, tr("Uninstalled"),
                              tr("ErgoPro2 no longer starts at login and the installed copy was removed. Your "
                                 "settings and log files are kept."));
+}
+
+void InstallController::checkAtStartup(QWidget *parent)
+{
+    const Status s = status();
+    InstallStartupFacts facts;
+    facts.runningFromInstalledCopy = s.install.runningFromInstalledCopy;
+    facts.registerStartAtLoginOnStart = s.install.registerStartAtLoginOnStart;
+    facts.startsAtLogin = s.startsAtLogin;
+    const QString registered = m_platform.autostart->registeredExecutable();
+    facts.startAtLoginPointsToInstalledCopy =
+        !registered.isEmpty() && QDir::cleanPath(registered) == QDir::cleanPath(s.install.installedExecutable);
+    facts.olderCopyExists = !s.install.olderCopy.isEmpty();
+    facts.olderCopyKept = m_settings.boolValue(GeneralSettings::OlderCopyKept);
+    const InstallStartupActions actions = decideInstallStartupActions(facts);
+
+    if (actions.registerStartAtLogin) {
+        qCInfo(lcApp).noquote() << "Running from the installed copy" << s.install.installLocation
+                                << "- registering start at login"
+                                << (registered.isEmpty() ? QString() : QStringLiteral("(was: %1)").arg(registered));
+        const PlatformResult r =
+            m_platform.autostart->enable(s.install.installedExecutable, {QStringLiteral("--autostart")});
+        emit changed();
+        if (!r.ok()) {
+            QMessageBox::warning(parent, tr("Start at login not enabled"),
+                                 tr("ErgoPro2 is installed at %1, but it could not be registered to start at "
+                                    "login:\n%2")
+                                     .arg(QDir::toNativeSeparators(s.install.installLocation), r.message));
+        }
+    }
+
+    if (!actions.askToRemoveOlderCopy)
+        return;
+    qCInfo(lcApp).noquote() << "An older copy exists at" << s.install.olderCopy;
+    const auto answer = QMessageBox::question(
+        parent, tr("Older copy of ErgoPro2"),
+        tr("ErgoPro2 now runs from %1.\n\nAn older copy is still at %2. Remove it?\n\nYour settings, statistics "
+           "and log files are kept.")
+            .arg(QDir::toNativeSeparators(s.install.installLocation), QDir::toNativeSeparators(s.install.olderCopy)),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if (answer != QMessageBox::Yes) {
+        qCInfo(lcApp) << "Older copy kept (the user will not be asked again)";
+        m_settings.setValue(GeneralSettings::OlderCopyKept, true);
+        return;
+    }
+    const PlatformResult removed = m_platform.installer->removeOlderCopy();
+    emit changed();
+    if (!removed.ok()) {
+        QMessageBox::warning(parent, tr("Older copy not removed"),
+                             tr("The older copy at %1 could not be removed:\n%2\n\nYou can delete it in the "
+                                "Finder.")
+                                 .arg(QDir::toNativeSeparators(s.install.olderCopy), removed.message));
+    }
 }
 
 } // namespace ergo

@@ -1,12 +1,9 @@
 # Todo Items
 
 ## Open:
-- when "keep screen active" is deleted from hotkey list. is the feature automatically disabled? make sure it never remains enabled if the feature is not present inside hotkeys table.
-
 
 ## Completed to verify:
-- Right after adding "Keep Screen Active" feature to hotkey list on key control tab, it should get activted.
-- the "keep screen active" feature, in Mac OS is clicking buttons in MS Teams. for Teams and Zoom, make the feature click the top left corner exactly once with the left mouse button (where the icon appears to resize the screen). and if it has to click the desktop, make it click exactly in the middle of the screen also exactly once with the left mose button. But if it does not need to click, maintain only mouse movement as described before.
+- 
 
 ## Improvement and new features suggestions
 
