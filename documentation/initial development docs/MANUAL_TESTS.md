@@ -933,3 +933,23 @@ Use the 2.1.0 `.dmg` from CI / the release, downloaded to **Downloads**. Start w
 | 6 | Repeat rows 3 with the disk image **ejected first** (by hand) before starting ErgoPro2 the first time. | The same dialog lists the `.dmg` found in Downloads; **Yes** moves it to the Trash. |
 | 7 | Repeat row 3 and click **No**. | The disk image stays mounted and the file stays. On the next start the offer appears again only while the disk image is still mounted. |
 | 8 | Update: with 2.1.0 installed, open a newer `.dmg`, drag and **Replace**, start ErgoPro2. | No "installed" text (already installed), but "Installer disk image … Eject it and move it to the Trash?" because the image is mounted. |
+
+## Stage – v2.2.0 (warnings and errors card)
+
+Goal: General tab card "Warnings and errors in the log" (B.3, B.2). To create entries quickly: set
+`general.logViewerRefreshMinutes` to 3 and, with ErgoPro2 closed, put a test line such as
+`2026-11-20 10:00:00.000 [ERROR] [main] [test] test error` at the end of today's log file
+(General tab › Open log folder).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (22 on macOS, 21 on Windows/Linux). |
+| 2 | Log files of the last 7 days contain no WARNING/ERROR/CRITICAL; open the General tab. | Briefly "Refreshing..." in a card below the Logging card, then the card disappears. |
+| 3 | Add an ERROR line (see above), start ErgoPro2, open the General tab. | The card shows "Refreshing...", then "1 entry from the last 7 days." and the line. |
+| 4 | Add more than ~15 entries (several WARNING, ERROR, CRITICAL, also in a file of 3 days ago). | Newest on top; the box keeps its height and gets a vertical scroll bar; text can be selected and copied. |
+| 5 | Switch to another tab for longer than the interval, then back to General. | No search while away (log at Debug level shows no "Log check: searching"); back on General: "Refreshing..." above the previous list, then the updated list. |
+| 6 | Stay on the General tab. | A new search every `logViewerRefreshMinutes` minutes (Debug log "Log check: searching …"). |
+| 7 | Log level *Info only*. | The card disappears and is not searched. Back to *Info + Warning*: it appears again with all three kinds of entries. |
+| 8 | With ErgoPro2 closed set `logViewerDays` to 50 and `logViewerRefreshMinutes` to 1, start it. | WARNING in the log "… using the nearest limit"; settings.json now holds 30 and 3. Entries from 30 days are searched. |
+| 9 | An entry older than `logViewerDays` days only. | Not shown (card disappears if nothing newer). |
+| 10 | More than 500 entries in the searched days. | "Showing the newest 500 of N entries from the last 7 days." |

@@ -89,6 +89,39 @@ private slots:
         QTest::newRow("activity pause") << BT::ActivityPauseS << 5 << 60 << 20;
         QTest::newRow("drag lock timeout") << KeyControlSettings::DragLockTimeoutS << 1 << 60 << 10;
         QTest::newRow("statistics retention") << StatisticsSettings::RetentionDays << 1 << 360 << 90;
+        // 2.2.0: log problems card (system-only values).
+        QTest::newRow("log viewer days") << GeneralSettings::LogViewerDays << 3 << 30 << 7;
+        QTest::newRow("log viewer refresh") << GeneralSettings::LogViewerRefreshMinutes << 3 << 120 << 5;
+    }
+
+    // 2.2.0 (owner decision): out-of-range values of the log viewer settings
+    // become the nearest limit (all other settings fall back to the default).
+    void logViewerValuesAreClampedToTheirLimits()
+    {
+        QTemporaryDir dir;
+        const QString path = QDir(dir.path()).filePath(QStringLiteral("settings.json"));
+        writeRaw(path, R"({"schemaVersion":2,"general":{"logViewerDays":50,"logViewerRefreshMinutes":1,
+                           "logRetentionDays":500}})");
+        SettingsStore store(m_schema, path);
+        const SettingsLoadResult result = store.load();
+        QCOMPARE(store.intValue(GeneralSettings::LogViewerDays), 30);
+        QCOMPARE(store.intValue(GeneralSettings::LogViewerRefreshMinutes), 3);
+        QCOMPARE(store.intValue(GeneralSettings::LogRetentionDays), 30); // others: default as before
+        QCOMPARE(result.invalidValues, 1);
+        // The file now holds the clamped values.
+        const QJsonObject general = readJson(path).value(QStringLiteral("general")).toObject();
+        QCOMPARE(general.value(QStringLiteral("logViewerDays")).toInt(), 30);
+        QCOMPARE(general.value(QStringLiteral("logViewerRefreshMinutes")).toInt(), 3);
+
+        // Not a whole number: default.
+        writeRaw(path, R"({"schemaVersion":2,"general":{"logViewerDays":"many","logViewerRefreshMinutes":7.5}})");
+        SettingsStore again(m_schema, path);
+        again.load();
+        QCOMPARE(again.intValue(GeneralSettings::LogViewerDays), 7);
+        QCOMPARE(again.intValue(GeneralSettings::LogViewerRefreshMinutes), 5);
+        // Runtime values are clamped the same way.
+        QVERIFY(again.setValue(GeneralSettings::LogViewerDays, 99));
+        QCOMPARE(again.intValue(GeneralSettings::LogViewerDays), 30);
     }
 
     void integerRanges()
@@ -102,6 +135,12 @@ private slots:
         QCOMPARE(def->defaultValue.toInt(), defaultValue);
         QVERIFY(SettingsSchema::validate(*def, minimum));
         QVERIFY(SettingsSchema::validate(*def, maximum));
+        if (def->clampToRange) {
+            // 2.2.0: these become the nearest limit (logViewerValuesAreClampedToTheirLimits).
+            QCOMPARE(SettingsSchema::validate(*def, minimum - 1)->toInt(), minimum);
+            QCOMPARE(SettingsSchema::validate(*def, maximum + 1)->toInt(), maximum);
+            return;
+        }
         QVERIFY(!SettingsSchema::validate(*def, minimum - 1));
         QVERIFY(!SettingsSchema::validate(*def, maximum + 1));
 

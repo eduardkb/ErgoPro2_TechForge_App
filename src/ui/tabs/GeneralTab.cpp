@@ -12,6 +12,7 @@
 #include "ui/tabs/DiagnosticsCard.h"
 #include "ui/tabs/InputDiagnosticsCard.h"
 #include "ui/tabs/InstallCard.h"
+#include "ui/tabs/LogProblemsCard.h"
 #include "ui/widgets/CardWidget.h"
 #include "ui/widgets/ParameterRow.h"
 #include "ui/widgets/StatusBadge.h"
@@ -104,6 +105,8 @@ GeneralTab::GeneralTab(AppContext &context, QWidget *parent)
     layout->addWidget(new InstallCard(m_context.install, content));
     layout->addWidget(buildStartupCard(content));
     layout->addWidget(buildLoggingCard(content));
+    m_logProblems = new LogProblemsCard(m_context.settings, m_context.logger, content);
+    layout->addWidget(m_logProblems);
     layout->addWidget(new DiagnosticsCard(m_context, content));
     layout->addWidget(new InputDiagnosticsCard(m_context.input, content));
     layout->addWidget(buildMaintenanceCard(content));
@@ -125,6 +128,18 @@ GeneralTab::GeneralTab(AppContext &context, QWidget *parent)
         if (key.startsWith(QLatin1String("general.")))
             syncFromSettings();
     });
+}
+
+void GeneralTab::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    m_logProblems->setTabShown(true);
+}
+
+void GeneralTab::hideEvent(QHideEvent *event)
+{
+    QWidget::hideEvent(event);
+    m_logProblems->setTabShown(false);
 }
 
 QWidget *GeneralTab::buildApplicationCard(QWidget *parent)

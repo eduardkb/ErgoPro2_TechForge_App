@@ -116,6 +116,11 @@ SettingsLoadResult SettingsStore::load()
         }
         if (const auto v = SettingsSchema::fromJson(d, raw)) {
             m_values.insert(d.key, *v);
+            if (d.clampToRange && raw.toDouble() != v->toDouble()) {
+                qCWarning(lcSettings) << "Value of" << d.key << ":" << raw << "is outside" << d.minimum << "-"
+                                      << d.maximum << "- using the nearest limit" << *v;
+                m_dirty = true; // the file gets the corrected value
+            }
         } else {
             ++result.invalidValues;
             m_dirty = true;

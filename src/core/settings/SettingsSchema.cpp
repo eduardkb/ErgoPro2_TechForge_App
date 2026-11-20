@@ -4,6 +4,7 @@
 
 #include <QJsonArray>
 
+#include <algorithm>
 #include <cmath>
 
 namespace ergo {
@@ -35,6 +36,13 @@ SettingDefinition SettingDefinition::integer(const QString &key, int defaultValu
     d.defaultValue = defaultValue;
     d.minimum = minimum;
     d.maximum = maximum;
+    return d;
+}
+
+SettingDefinition SettingDefinition::clampedInteger(const QString &key, int defaultValue, int minimum, int maximum)
+{
+    SettingDefinition d = integer(key, defaultValue, minimum, maximum);
+    d.clampToRange = true;
     return d;
 }
 
@@ -99,7 +107,9 @@ std::optional<QVariant> SettingsSchema::validate(const SettingDefinition &defini
         const bool wholeDouble = typeId == QMetaType::Double && std::floor(value.toDouble()) == value.toDouble();
         if (!integral && !wholeDouble)
             return std::nullopt;
-        const qlonglong v = wholeDouble ? static_cast<qlonglong>(value.toDouble()) : value.toLongLong();
+        qlonglong v = wholeDouble ? static_cast<qlonglong>(value.toDouble()) : value.toLongLong();
+        if (definition.clampToRange)
+            v = std::clamp<qlonglong>(v, definition.minimum, definition.maximum);
         if (v < definition.minimum || v > definition.maximum)
             return std::nullopt;
         return QVariant(static_cast<int>(v));
@@ -130,9 +140,11 @@ std::optional<QVariant> SettingsSchema::fromJson(const SettingDefinition &defini
     case SettingType::Int: {
         if (!value.isDouble())
             return std::nullopt;
-        const double d = value.toDouble();
+        double d = value.toDouble();
         if (std::floor(d) != d)
             return std::nullopt;
+        if (definition.clampToRange)
+            d = std::clamp<double>(d, definition.minimum, definition.maximum);
         if (d < definition.minimum || d > definition.maximum)
             return std::nullopt;
         return QVariant(static_cast<int>(d));

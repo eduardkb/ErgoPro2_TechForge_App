@@ -24,12 +24,16 @@ struct SettingDefinition {
     int minimum = 0;               // Int only
     int maximum = 0;               // Int only
     QStringList allowedValues;     // Enum only
+    // Int only (2.2.0): a whole number outside the range becomes the nearest
+    // limit instead of the default (owner decision for the log viewer values).
+    bool clampToRange = false;
 
     QString section() const;
     QString name() const;
 
     static SettingDefinition boolean(const QString &key, bool defaultValue);
     static SettingDefinition integer(const QString &key, int defaultValue, int minimum, int maximum);
+    static SettingDefinition clampedInteger(const QString &key, int defaultValue, int minimum, int maximum);
     static SettingDefinition enumeration(const QString &key, const QString &defaultValue, const QStringList &allowed);
     static SettingDefinition list(const QString &key); // default: empty array
 };

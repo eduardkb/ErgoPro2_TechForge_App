@@ -21,6 +21,7 @@ add_library(ergopro2_core STATIC
     core/input/KeyCombo.cpp core/input/KeyCombo.h
     core/InstallPolicy.cpp core/InstallPolicy.h
     core/LocationClassifier.cpp core/LocationClassifier.h
+    core/LogProblems.cpp core/LogProblems.h
     core/StartupMode.cpp core/StartupMode.h
     core/WindowLimits.cpp core/WindowLimits.h
     core/settings/SettingsMigration.cpp core/settings/SettingsMigration.h
@@ -156,6 +157,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h
     ui/tabs/InstallCard.cpp ui/tabs/InstallCard.h
+    ui/tabs/LogProblemsCard.cpp ui/tabs/LogProblemsCard.h
     ui/tabs/KeyControlTab.cpp ui/tabs/KeyControlTab.h
     ui/tabs/StatisticsTab.cpp ui/tabs/StatisticsTab.h
     ui/widgets/CardWidget.cpp ui/widgets/CardWidget.h

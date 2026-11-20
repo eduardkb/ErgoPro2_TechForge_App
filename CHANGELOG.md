@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.2.0] - 2026-11-20
+
+### Added
+- **General tab › "Warnings and errors in the log"** (owner request): a card below the Logging card lists
+  every WARNING, ERROR and CRITICAL entry of the last days' log files, newest first (at most the newest 500),
+  in a fixed-height box with a scroll bar. It searches in the background only while the General tab is
+  shown – at once when the tab is opened and the last search is old enough, then every few minutes – shows
+  "Refreshing..." above the previous result while searching, and disappears when nothing is found. Not shown
+  with the log level *Info only*.
+- **settings.json** (not in the app): `general.logViewerDays` (3–30, default 7) and
+  `general.logViewerRefreshMinutes` (3–120, default 5). Values outside the range become the nearest limit
+  (WARNING in the log) instead of the default.
+- Tests: new `tst_logproblems` (7 tests: which files, entry parsing incl. continuation lines, newest-first
+  limit, when to search, which log levels); `tst_settings` checks the ranges and the nearest-limit rule.
+
 ## [2.1.0] - 2026-11-20
 
 ### Fixed

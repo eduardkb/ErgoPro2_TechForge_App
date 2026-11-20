@@ -305,6 +305,13 @@ The tabs are, from left to right: **General**, **Break Timer**, **Auto Click**, 
 The card also shows the log and statistics folders and has the buttons **Open settings folder**,
 **Open log folder** and **Open statistics folder**.
 
+**Warnings and errors in the log card** (below the Logging card) – appears only when ErgoPro2 wrote warnings
+or errors in the last **7 days**. It lists every WARNING, ERROR and CRITICAL entry, newest first (at most the
+newest 500), in a box with a scroll bar. It is checked when you open the General tab and then every
+**5 minutes** while the tab stays open; while it checks, **Refreshing...** is shown above the last result.
+When no warnings or errors are found the card disappears. With the log level *Info only* there is no card.
+Both numbers can be changed in `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)).
+
 **Permissions & diagnostics card** – operating system, desktop session (e.g. X11 / Wayland), where ErgoPro2
 runs from, each permission (**GRANTED** / **MISSING** with a fix button), the **Input hook** (**RUNNING** /
 **NOT RUNNING** with the reason) and **Start at login** (Registered / Not registered). **Check again**
@@ -689,8 +696,9 @@ The General tab shows the exact folders and opens them with **Open settings fold
 
 ### 6.7 Advanced settings (only in settings.json)
 
-Four values are not on any tab. Change them only if you need to: **exit ErgoPro2 first**, edit
-`settings.json` with a text editor, then start ErgoPro2. A value outside the range is replaced by the default.
+Six values are not on any tab. Change them only if you need to: **exit ErgoPro2 first**, edit
+`settings.json` with a text editor, then start ErgoPro2. A value outside the range is replaced by the default –
+except the two `general` values below, which use the nearest limit (e.g. 50 days becomes 30).
 
 | Key | What it does | Range | Default |
 |---|---|---|---|
@@ -698,3 +706,5 @@ Four values are not on any tab. Change them only if you need to: **exit ErgoPro2
 | `breaktimer` → `activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
 | `keepScreenActive` → `startAfterIdleMinutes` | *Keep screen active*: minutes without input before it starts. | 1–60 min | 3 min |
 | `keepScreenActive` → `intervalMinutes` | *Keep screen active*: minutes between two actions while you stay away. | 1–60 min | 3 min |
+| `general` → `logViewerDays` | *Warnings and errors in the log* card: how many days of log files are searched (today included). | 3–30 days | 7 days |
+| `general` → `logViewerRefreshMinutes` | *Warnings and errors in the log* card: minutes between two searches while the General tab is open. | 3–120 min | 5 min |

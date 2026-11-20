@@ -1,9 +1,16 @@
 # Todo Items
 
 ## Open:
+- both changes below together should be one new bug version increas.
+- .dmg installation. background now correctly appears but it still has no confirmation when the app was correctly moved to the applications folder. also, it is still not offering to delete the .dmg (nor moves it to trash when the .dmg install screen is closed)
+- logs card inside general tab. the card that shows the warning, error and critical logs should have a filter at the top. Default is always show all found logs and ordered by date, newest first. but one filter allows filtering out any log level of the ones existant on the table and the other filter allows selecting the date (inside the range of existing logs)
 
 ## Completed to verify:
-
+- logging show errors on general tab. Full description:
+    1. create new variables (changeable only on the .json file): "loggingShowDays" (Allowed Max: 30, Min: 3, default 7) - will tell the maximum ammount of log days that will be searched and shown. "loggingRecurrentSearchMinutes" (Allowed Max: 120, Min: 3, default 5) - how many minutes between searches. Feel free to rename the variables to the standard and to represent better its function.
+    2. on general screen: if logging is set to log warning, errors or critical errors and any of this three error types is found on a search, a new card appears on general tab below the existing logging card showing all errors found. this new card has a reasonable fixed heigth and if there are more logs that don't fit, insert a vertical scrolling bar.
+    3. the app should only search log files that are maximum "loggingShowDays" days old. and only make a search every "loggingRecurrentSearchMinutes" minutes while the general tab is open. if general tab is not being displayed at the moment, don't refresh the card. If there is previous data, always show it. if not, show only the "refreshing" warning. if the general tab is open and data is being refreshed on top of this card show "Refreshing..." and dipsplay previous data until the new data is available. If any refresh results in no data (no warning, error or critical) remove the entire card.
+    4. Max and Mins.
 
 ## Improvement and new features suggestions
 - when installing the .dmg file double clicking it. There was no clear indication I should drag the app's icon to the application folder and no message on the install screen to do so. also, although the app moved to the application folder when I drag and dropped it there was no indication that it got installed. there must be some sort of confirmation. and, when successfully installed display a message offering to delete the .dmg (it should delete it and un-mount the .dmg if the user confirms deletion.). this is also currently not happneing. make a new minor version

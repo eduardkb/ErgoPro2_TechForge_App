@@ -6,6 +6,7 @@ class QComboBox;
 
 namespace ergo {
 
+class LogProblemsCard;
 class ParameterRow;
 struct AppContext;
 
@@ -19,6 +20,11 @@ public:
 
 signals:
     void exitRequested();
+
+protected:
+    // The log problems card refreshes only while this tab is shown (2.2.0).
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
 
 private:
     QWidget *buildApplicationCard(QWidget *parent);
@@ -34,6 +40,7 @@ private:
     ParameterRow *m_retention = nullptr;
     QComboBox *m_startupAuto = nullptr;
     QComboBox *m_startupManual = nullptr;
+    LogProblemsCard *m_logProblems = nullptr;
 };
 
 } // namespace ergo
