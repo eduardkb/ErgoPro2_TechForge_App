@@ -341,3 +341,10 @@ QSlider::handle:horizontal:disabled {
 QComboBox:disabled, QSpinBox:disabled, QLineEdit:disabled {
     color: @textMuted@;
 }
+
+/* 2.3.0: break reminder window (BreakReminderWindow) */
+QWidget#breakReminder {
+    background: @surface@;
+    border: 1px solid @border@;
+    border-left: 4px solid @accent@;
+}

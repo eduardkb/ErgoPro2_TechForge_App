@@ -361,6 +361,8 @@ time.
 | **Reset after a pause of** | No mouse or keyboard use for this long (also sleep or a locked screen) counts as a break and resets the work time. | 2–15 min | 5 min |
 | **Break length** | How long the break window stays before it closes by itself. | 3–15 min | 4 min |
 | **Postpone by** | After **Postpone**, the break window returns after this time. | 3–20 min | 10 min |
+| **Remind me before a break** | Shows a small window near the tray that counts down to the break ("Break in 0:58"). It never blocks your work; click it to hide it until the next break. A postponed break gets its own reminder. While the work time stands still it shows "paused". | on / off | on |
+| **Remind before the break** | How long before the break the reminder appears. | 15–300 s | 60 s |
 | **No breaks during full-screen apps** | While a full-screen application (video, presentation, game) is in front, the break waits until it is no longer full-screen. Windows and macOS only; on Linux it is disabled ("Not available on this system"). | on / off | off |
 
 **The break window**

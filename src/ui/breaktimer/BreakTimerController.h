@@ -1,16 +1,21 @@
 #pragma once
 
 #include "core/Clock.h"
+#include "core/breaktimer/BreakReminder.h"
 #include "core/breaktimer/BreakTimerEngine.h"
 #include "core/input/InputEvent.h"
 
 #include <QObject>
+#include <QRect>
 #include <QTimer>
+
+#include <functional>
 
 #include <memory>
 
 namespace ergo {
 
+class BreakReminderWindow;
 class BreakWindowManager;
 class FeatureAvailabilityService;
 class InputService;
@@ -48,6 +53,9 @@ public:
     void postpone();
     void startBreakNow();
 
+    // Tray icon geometry for placing the reminder window next to it (2.3.0).
+    void setTrayIconGeometryProvider(std::function<QRect()> provider) { m_trayGeometry = std::move(provider); }
+
 signals:
     void ticked();           // once per second and after every state change
     void enabledChanged(bool enabled);
@@ -69,6 +77,7 @@ private:
     void onInputEvent(const InputEvent &event);
     void onPowerEvent(int event);
     void sync(); // reacts to state changes of the engine
+    void syncReminder();
 
     SettingsStore &m_settings;
     FeatureAvailabilityService &m_availability;
@@ -77,6 +86,9 @@ private:
     SystemClock m_clock;
     BreakTimerEngine m_engine;
     std::unique_ptr<BreakWindowManager> m_windows;
+    BreakReminder m_reminder;                         // 2.3.0
+    std::unique_ptr<BreakReminderWindow> m_reminderWindow;
+    std::function<QRect()> m_trayGeometry;
     QTimer m_tick;
     BreakTimerEngine::State m_lastState = BreakTimerEngine::State::Disabled;
     bool m_started = false;

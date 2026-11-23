@@ -1,10 +1,13 @@
 # Todo Items
 
 ## Open:
-
+- 
 
 ## Completed to verify:
 - from "warnings and errors in the log" card inside "general" tab remove warnings. only errors and critical errors should be shown there.
+- After implementing new functions below, bump minor version up making new version 2.3.0.
+    1. Base description: implement a tray notification about 1 min before a break ("Break in 60 s"). the small reminder window shown should contain a countdown timer until the break window shows.
+    2. create necessary variables in the .json file and allow changing them on the "Break Timer" tab. The show notification x minutes before the break window should be configurable in seconds (from minimum 15 seconds to maximum 5 minutes). default 1 minte. This reminder should always be only a reminder. non-blocking. if clicked it is dismissed and does not show anymore for the same period.
 
 ## Improvement and new features suggestions
 - when installing the .dmg file double clicking it. There was no clear indication I should drag the app's icon to the application folder and no message on the install screen to do so. also, although the app moved to the application folder when I drag and dropped it there was no indication that it got installed. there must be some sort of confirmation. and, when successfully installed display a message offering to delete the .dmg (it should delete it and un-mount the .dmg if the user confirms deletion.). this is also currently not happneing. make a new minor version
@@ -13,7 +16,7 @@
 |---|---|---|---|---|
 | 1 | **Micro-breaks**: a second, smaller timer (e.g. 20–30 s pause every 5–10 min of active use), with a small non-blocking overlay | High | Low–Med | Workrave's main feature. Reuses the engine's active-time logic and the break window. |
 | 2 | **Guided wrist/hand exercises in the break window**: rotating text and illustrations (wrist flexor/extensor stretch, tendon glides, shoulder rolls) | High | Low | Turns idle break time into active recovery. Static content only, no new logic. |
-| 3 | **Advance warning + gentle mode**: a tray notification about 1 min before a break ("Break in 60 s") and an option for a non-blocking reminder instead of a fullscreen one | High | Low | People abandon apps that interrupt mid-sentence. A small timer and settings change. |
+| 3 | **IMPLEMENTED - Advance warning + gentle mode**: a tray notification about 1 min before a break ("Break in 60 s") and an option for a non-blocking reminder instead of a fullscreen one | High | Low | People abandon apps that interrupt mid-sentence. A small timer and settings change. |
 | 4 | **Pause from the tray**: "Pause breaks for 30 min / 1 h / until tomorrow" (today the tray only has Show and Exit) | High | Low | Meetings and presentations are the main reason people quit these apps. |
 | 5 | **Break history in Statistics**: breaks shown, completed, dismissed and postponed per day, plus a "breaks taken" percentage tile | Med | Very low | The events are already in the CSV. This is only new totals and one tile. |
 | 6 | **Daily usage limit**: a warning (and optional long break) after X hours of active mouse/keyboard time per day | Med–High | Low | Statistics already counts active seconds. Workrave has this; most others don't. |

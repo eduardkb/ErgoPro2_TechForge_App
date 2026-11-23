@@ -128,6 +128,7 @@ src/core/                       ---- platform-independent logic (QtCore only) --
   keycontrol/KeyControlEngine.* Bindings, exclusive registration, per-binding status, fires actions (B.5)
   keycontrol/DragLockEngine.*   Drag Lock state machine (B.5.3), IDragLockDevice
   breaktimer/BreakTimerEngine.* Work time, idle reset, break/postpone, half time above 100 % usage (B.7)
+  breaktimer/BreakReminder.*    When the pre-break countdown window shows, dismiss per period, position (2.3.0)
   statistics/StatisticsTypes.*  BreakEvent, MinuteRecord, DayStats, DayTotals, computeTotals()
   statistics/StatisticsCollector.*  Per-second/per-minute recording and usage percent (B.8.1/B.8.2)
   statistics/StatisticsStore.*  Daily CSV files: append, load/repair, day navigation, retention (B.8.4)
@@ -735,7 +736,7 @@ Details and per-OS commands are in `documentation/BUILD.md`; this is the overvie
 - **Tests**: `tests/CMakeLists.txt` builds one Qt Test executable per file with
   `ergopro2_add_test()` (links `ergopro2_core`, runs with `QT_QPA_PLATFORM=offscreen`):
   `tst_clock`, `tst_logger`, `tst_settings`, `tst_startupmode`,
-  `tst_locationclassifier`, `tst_installpolicy`, `tst_logproblems`, `tst_featureavailability`, `tst_inputevent`,
+  `tst_locationclassifier`, `tst_installpolicy`, `tst_logproblems`, `tst_breakreminder`, `tst_featureavailability`, `tst_inputevent`,
   `tst_keycombo`, `tst_dispatcher`, `tst_watchdog`, `tst_autoclick`,
   `tst_keycontrol`, `tst_breaktimer`, `tst_draglock`, `tst_statistics`,
   `tst_statisticsstore`, `tst_windowlimits`; on macOS additionally

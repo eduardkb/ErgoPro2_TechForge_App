@@ -27,6 +27,7 @@ Every stage prompt tells the AI to read this document. **Part A (rules)** and **
 | 8 | 1.8.0 | Hardening, packaging (`.dmg`, Windows zip, `.deb`), final documentation |
 | 9 | 1.9.0 | Keep Screen Active (Function 5) – `documentation/stage9_keep_screen_active.md`, spec B.10 |
 | – | 2.0.0 | macOS drag-and-drop install (owner request; MAJOR bump, A.4) – spec B.1.3 |
+| – | 2.3.0 | Reminder with a countdown before the break (owner request) – spec B.7, B.2 |
 | – | 2.2.0 | General tab card "Errors in the log" (owner request; warnings removed in 2.2.2) – spec B.3, B.2 |
 
 > Order note: the original plan was reordered as requested (P-01). AutoClick and Key Control do not depend on the Break Timer. Drag Lock depends on all three, so it comes after them. Statistics was moved before hardening/packaging at the owner's request (it was planned last, documentation/initial development docs/baseDescription.md), so the final stage reviews and packages every feature.
@@ -209,6 +210,8 @@ ergoPro2/
 | `breaktimer.postponeMinutes` (min) | **3–20** (1–60 until 1.7.6) | 10 | 5 |
 | `breaktimer.suppressWhenFullscreen` | bool | false | 5 |
 | `breaktimer.activityPauseSeconds` (s) | 5–60 | 20 | 1.6.1 (system-only: settings.json, not on the tab) |
+| `breaktimer.reminderEnabled` | bool | true | 2.3.0 |
+| `breaktimer.reminderSeconds` (s) | 15–300 | 60 | 2.3.0 |
 | `statistics.retentionDays` | 1–360 | 90 | 7 |
 | `keepScreenActive.enabled` | bool | false | 9 (changed only by its hotkey; remembered) |
 | `keepScreenActive.startAfterIdleMinutes` (min) | 1–60 | 3 | 9 (system-only: settings.json, never in the UI) |
@@ -330,10 +333,16 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
   - **Postpone** → closes and reopens after `breaktimer.postponeMinutes` minutes. The timer keeps counting; unlimited postpones (B-08). If the user is idle ≥ `breaktimer.idleResetMinutes` during the postpone, the postponed break is cancelled and INTERACTION_TIMER resets (B-09).
   - Activity during the break does nothing (countdown continues) (B-13).
   - AutoClick and hotkeys keep working on the break window (A-06, K-13). An active Drag Lock is released when it appears (D-06).
-  - No pre-warning, no sound (B-11, B-12).
+  - No sound (B-12). ~~No pre-warning (B-11)~~ – replaced in 2.3.0 by the reminder below (owner request).
 - **Suppress when a full-screen app is in the foreground** (B-17): optional setting, off by default. When on and a full-screen app is active, the break is delayed until it is no longer full-screen (best effort per OS; if detection is unsupported on an OS, disable the option with an explanation).
 - Disabling the Break Timer closes any break window and resets the timer.
 - Changing `breaktimer.maxWorkMinutes` takes effect immediately on the current cycle.
+- **Reminder before the break (2.3.0, owner request; `core/breaktimer/BreakReminder`, `ui/breaktimer/BreakReminderWindow`):**
+  - Settings on the Break Timer tab: *Remind me before a break* (`breaktimer.reminderEnabled`, default on) and *Remind before the break* (`breaktimer.reminderSeconds`, 15–300 s, default 60 s).
+  - A small window (not an OS notification, which cannot count down) in the right corner next to the tray – top right when the tray icon is in the upper half of the screen (macOS menu bar, GNOME), else bottom right (Windows) – shows "Break in m:ss" while 0 < time until the break ≤ the reminder time. It stays on top, never takes the keyboard focus and blocks nothing.
+  - While the work time stands still (no input, *Paused*) the countdown freezes: "Break in 0:42 – paused". A reset of the work period closes it.
+  - A click hides it for the rest of the period. A period = one work cycle up to its break, or one postponed break: the postponed break gets its own reminder.
+  - Closed when the break window appears, the cycle resets, the Break Timer is switched off or the time until the break grows above the reminder time (e.g. a longer *Break after working*). Not shown while the break waits for a full-screen app (time until the break = 0).
 
 ## B.9 Releases (1.7.4, owner request)
 - The CI (`.github/workflows/ci.yml`) creates a **GitHub release** named `ErgoPro2_v<version>` (tag `v<version>`) after a push to `main` whose version in `CMakeLists.txt` has no release yet; later pushes with the same version create nothing.

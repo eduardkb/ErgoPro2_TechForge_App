@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.3.0] - 2026-11-23
+
+### Added
+- **Break reminder** (owner request): shortly before the break window, a small window next to the tray
+  counts down: "Break in 0:58". It stays on top but never takes the keyboard focus or blocks anything; a
+  click hides it until the next break. While the work time stands still (no input) it shows "paused". A
+  postponed break gets its own reminder. It closes when the break window appears or the work period resets.
+- **Break Timer tab:** *Remind me before a break* (on by default) and *Remind before the break* (15–300 s,
+  default 60 s); settings.json `breaktimer.reminderEnabled`, `breaktimer.reminderSeconds`.
+- Tests: new `tst_breakreminder` (11 tests: lead time, paused, dismiss per period, postponed break, cycle
+  reset, switched off, position next to the tray, settings).
+
 ## [2.2.2] - 2026-11-20
 
 ### Changed

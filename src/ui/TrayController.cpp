@@ -92,4 +92,9 @@ void TrayController::showMessage(const QString &title, const QString &message, Q
     m_tray->showMessage(title, message, icon, timeoutMs);
 }
 
+QRect TrayController::iconGeometry() const
+{
+    return m_tray ? m_tray->geometry() : QRect();
+}
+
 } // namespace ergo

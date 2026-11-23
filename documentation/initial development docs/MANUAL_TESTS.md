@@ -982,3 +982,21 @@ The General tab log card shows errors only (B.3). Replaces the WARNING parts of 
 | 2 | Log files of the last 7 days with WARNING, ERROR and CRITICAL entries; open the General tab. | Card **"Errors in the log"**: only ERROR and CRITICAL entries, newest first; "Show:" has only ERROR and CRITICAL boxes. No WARNING line anywhere in the list. |
 | 3 | Only WARNING entries in the searched days. | No card (after "Refreshing..." it disappears). |
 | 4 | Log level *Info + Warning*. | No card. *Info + Warning + Error* or higher: the card appears again. |
+
+## Stage – v2.3.0 (reminder before the break)
+
+Goal: countdown window before the break (B.7). For quicker tests set *Break after working* to its minimum
+(20 min) and keep using the mouse or keyboard.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (23 on macOS, 22 on Windows/Linux). |
+| 2 | Break Timer tab. | Below the full-screen option: switch **Remind me before a break** (on) and slider **Remind before the break** 15–300 s (60). Switch off → slider disabled. |
+| 3 | Work until 60 s before the break (Status "Next break in" ≤ 1:00). | Small window: macOS top right below the menu bar; Windows bottom right above the taskbar; Debian next to the tray. "Break in 1:00" counting down every second. The window you are typing in keeps the keyboard focus. Log INFO "Break reminder shown at …". |
+| 4 | Keep working. | At 0:00 the reminder closes and the break window appears. |
+| 5 | Next period: when the reminder appears, click it. | It disappears and does not come back before this break (log "dismissed by the user"). |
+| 6 | When the break window appears, click **Postpone**. | Before the postponed break (60 s before it) the reminder appears again. |
+| 7 | While the reminder shows, stop touching mouse/keyboard for longer than 20 s. | "Break in 0:xx – paused", the countdown stands still; continues with the next input. |
+| 8 | Stay away longer than *Reset after a pause of*. | The reminder closes (work period reset). |
+| 9 | Switch **Remind me before a break** off while it is shown. | It closes; no reminder until switched on again. |
+| 10 | Set *Remind before the break* to 15 s and 300 s. | It appears 15 s / 5 min before the break. |

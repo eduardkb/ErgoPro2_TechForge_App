@@ -114,6 +114,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
         connect(m_tray.get(), &TrayController::showWindowRequested, this, &AppController::showMainWindow);
         connect(m_tray.get(), &TrayController::exitRequested, this, &AppController::exitApplication);
         m_tray->show();
+        // The break reminder (2.3.0) is placed next to the tray icon.
+        m_breaktimer->setTrayIconGeometryProvider([this] { return m_tray ? m_tray->iconGeometry() : QRect(); });
     } else {
         qCWarning(lcUi) << "No system tray available on this desktop; the window will minimize instead of hiding";
         m_window->setHideToTrayEnabled(false);

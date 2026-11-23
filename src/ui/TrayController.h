@@ -33,6 +33,8 @@ public:
     // Extension point for later stages (AutoClick on/off, Break Timer on/off,
     // Start break now). Actions are inserted above the Exit entry.
     void addFeatureAction(QAction *action);
+    // Screen geometry of the tray icon (empty if the system does not tell).
+    QRect iconGeometry() const;
 
     void showMessage(const QString &title, const QString &message,
                      QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information, int timeoutMs = 6000);

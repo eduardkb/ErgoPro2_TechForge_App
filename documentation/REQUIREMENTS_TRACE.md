@@ -442,6 +442,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.7-o | Optional full-screen suppression (best effort; disabled with explanation when unsupported) | `BreakTimerEngine`, `isFullscreenAppActive` (mac, win; Linux unsupported) | `tst_breaktimer::fullscreenDelaysTheBreakWhenEnabled`, `::fullscreenIgnoredWhenTheOptionIsOff` | S5#21, S5#24 | ✅ |
 | B.7-p | Disabling closes the window and resets | `BreakTimerEngine` | `tst_breaktimer::disableEndsTheBreakAndResets` | S5#15, F1.7.5#5 | ✅ |
 | B.7-q | MAX_WORK_TIME change applies to the current cycle | `BreakTimerEngine` | `tst_breaktimer::maxWorkTimeChangeAppliesToTheCurrentCycle` | S5#20, F1.7.6#3 | ✅ |
+| B.7-r | Reminder before the break (2.3.0): countdown window next to the tray, 15–300 s (60), on/off, non-blocking, click = hidden for the period, postponed break = new period, paused shown | `core/breaktimer/BreakReminder`, `ui/breaktimer/BreakReminderWindow`, `BreakTimerController::syncReminder`, `BreakTimerTab` | `tst_breakreminder` (11 tests) | 2.3.0#2–10 | 🟡 Window look and position manual. |
 
 ### B.8.1 Statistics – what is recorded
 

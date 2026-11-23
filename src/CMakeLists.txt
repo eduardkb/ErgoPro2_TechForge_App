@@ -7,6 +7,7 @@ add_library(ergopro2_core STATIC
     core/Clock.h
     core/CrashHandler.cpp core/CrashHandler.h
     core/autoclick/AutoClickEngine.cpp core/autoclick/AutoClickEngine.h
+    core/breaktimer/BreakReminder.cpp core/breaktimer/BreakReminder.h
     core/breaktimer/BreakTimerEngine.cpp core/breaktimer/BreakTimerEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
@@ -136,6 +137,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/autoclick/AutoClickOverlay.cpp ui/autoclick/AutoClickOverlay.h
     ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
     ui/breaktimer/BreakTimerController.cpp ui/breaktimer/BreakTimerController.h
+    ui/breaktimer/BreakReminderWindow.cpp ui/breaktimer/BreakReminderWindow.h
     ui/breaktimer/BreakWindow.cpp ui/breaktimer/BreakWindow.h
     ui/breaktimer/BreakWindowManager.cpp ui/breaktimer/BreakWindowManager.h
     ui/keycontrol/DragLockController.cpp ui/keycontrol/DragLockController.h

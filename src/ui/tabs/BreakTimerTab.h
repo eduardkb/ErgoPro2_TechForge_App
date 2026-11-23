@@ -34,6 +34,8 @@ private:
     ParameterRow *m_postpone = nullptr;
     ToggleSwitch *m_fullscreen = nullptr;
     QLabel *m_fullscreenHint = nullptr;
+    ToggleSwitch *m_reminder = nullptr;        // 2.3.0
+    ParameterRow *m_reminderSeconds = nullptr; // 2.3.0
     QLabel *m_workTime = nullptr;
     QLabel *m_cycleStart = nullptr;
     QLabel *m_untilBreak = nullptr;

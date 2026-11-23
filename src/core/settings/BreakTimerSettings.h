@@ -19,6 +19,10 @@ inline const QString PostponeMin = QStringLiteral("breaktimer.postponeMinutes");
 inline const QString SuppressWhenFullscreen = QStringLiteral("breaktimer.suppressWhenFullscreen");
 // System-only (settings.json, not on the tab; 1.6.1): the work time stops this
 // many seconds after the last mouse/keyboard input and resumes with the next one.
+// 2.3.0 (owner request): reminder window with a countdown before the break.
+inline const QString ReminderEnabled = QStringLiteral("breaktimer.reminderEnabled");
+inline const QString ReminderSeconds = QStringLiteral("breaktimer.reminderSeconds");
+inline constexpr int kReminderMin = 15, kReminderMax = 300, kReminderDefault = 60; // seconds
 inline const QString ActivityPauseS = QStringLiteral("breaktimer.activityPauseSeconds");
 
 inline constexpr int kIdleResetMin = 2, kIdleResetMax = 15, kIdleResetDefault = 5;  // 2-15 since 1.7.7

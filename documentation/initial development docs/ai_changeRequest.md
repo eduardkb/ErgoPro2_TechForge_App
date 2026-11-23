@@ -1,4 +1,4 @@
-You are fixing a bug in the ErgoPro2 desktop application (C++20 / Qt 6 Widgets / CMake; Windows 11, macOS 26 Tahoe, Debian 13).
+You are fixing a bug or improving the ErgoPro2 desktop application (C++20 / Qt 6 Widgets / CMake; Windows 11, macOS 26 Tahoe, Debian 13).
 
 FIRST read:
 - documentation/implementation_stages.md – Part A (mandatory rules: architecture, versioning, coding, testing, workflow) and Part B (consolidated functional specification, which defines the CORRECT behavior).

@@ -106,6 +106,21 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
     m_fullscreenHint->setObjectName(QStringLiteral("hint"));
     m_fullscreenHint->setWordWrap(true);
     params->contentLayout()->addWidget(m_fullscreenHint);
+
+    // 2.3.0 (owner request): reminder with a countdown before the break window.
+    auto *reminderRow = new QHBoxLayout;
+    auto *reminderName = new QLabel(tr("Remind me before a break"), params);
+    reminderName->setObjectName(QStringLiteral("valueLabel"));
+    m_reminder = new ToggleSwitch(params);
+    reminderRow->addWidget(reminderName);
+    reminderRow->addWidget(m_reminder);
+    reminderRow->addStretch(1);
+    params->contentLayout()->addLayout(reminderRow);
+    m_reminderSeconds =
+        new ParameterRow(tr("Remind before the break"), BT::kReminderMin, BT::kReminderMax, tr("s"), params);
+    m_reminderSeconds->setHint(tr("A small window near the tray counts down to the break. It never blocks your "
+                                  "work; click it to hide it until the next break."));
+    params->contentLayout()->addWidget(m_reminderSeconds);
     layout->addWidget(params);
 
     // --- live status ---------------------------------------------------------
@@ -135,6 +150,9 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
     connect(m_idle, &ParameterRow::valueChanged, this, [this](int v) { m_settings.setValue(BT::IdleResetMin, v); });
     connect(m_break, &ParameterRow::valueChanged, this, [this](int v) { m_settings.setValue(BT::BreakMin, v); });
     connect(m_postpone, &ParameterRow::valueChanged, this, [this](int v) { m_settings.setValue(BT::PostponeMin, v); });
+    connect(m_reminder, &ToggleSwitch::toggled, this, [this](bool on) { m_settings.setValue(BT::ReminderEnabled, on); });
+    connect(m_reminderSeconds, &ParameterRow::valueChanged, this,
+            [this](int v) { m_settings.setValue(BT::ReminderSeconds, v); });
     connect(m_fullscreen, &ToggleSwitch::toggled, this,
             [this](bool on) { m_settings.setValue(BT::SuppressWhenFullscreen, on); });
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
@@ -152,18 +170,21 @@ void BreakTimerTab::refresh()
 {
     const bool available = m_controller.isAvailable();
     {
-        const QSignalBlocker b1(m_enabled), b2(m_fullscreen);
+        const QSignalBlocker b1(m_enabled), b2(m_fullscreen), b3(m_reminder);
         m_enabled->setChecked(m_controller.isEnabled());
         m_fullscreen->setChecked(m_settings.boolValue(BT::SuppressWhenFullscreen));
+        m_reminder->setChecked(m_settings.boolValue(BT::ReminderEnabled));
     }
+    m_reminderSeconds->setValue(m_settings.intValue(BT::ReminderSeconds));
     m_work->setValue(m_settings.intValue(BT::MaxWorkMin));
     m_idle->setValue(m_settings.intValue(BT::IdleResetMin));
     m_break->setValue(m_settings.intValue(BT::BreakMin));
     m_postpone->setValue(m_settings.intValue(BT::PostponeMin));
 
     // Controls of an unavailable feature are disabled (B.1.4); the banner says why.
-    for (QWidget *w : std::initializer_list<QWidget *>{m_enabled, m_work, m_idle, m_break, m_postpone})
+    for (QWidget *w : std::initializer_list<QWidget *>{m_enabled, m_work, m_idle, m_break, m_postpone, m_reminder})
         w->setEnabled(available);
+    m_reminderSeconds->setEnabled(available && m_settings.boolValue(BT::ReminderEnabled));
     const bool fsSupported = m_controller.fullscreenDetectionSupported();
     m_fullscreen->setEnabled(available && fsSupported);
     m_fullscreenHint->setText(

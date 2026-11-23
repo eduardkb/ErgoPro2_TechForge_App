@@ -7,6 +7,7 @@
 #include "platform/PlatformFactory.h"
 #include "ui/FeatureAvailabilityService.h"
 #include "ui/InputService.h"
+#include "ui/breaktimer/BreakReminderWindow.h"
 #include "ui/breaktimer/BreakWindowManager.h"
 
 namespace ergo {
@@ -56,6 +57,12 @@ void BreakTimerController::start()
     m_windows = std::make_unique<BreakWindowManager>(*m_platform.desktop);
     connect(m_windows.get(), &BreakWindowManager::dismissClicked, this, &BreakTimerController::dismiss);
     connect(m_windows.get(), &BreakWindowManager::postponeClicked, this, &BreakTimerController::postpone);
+    m_reminderWindow = std::make_unique<BreakReminderWindow>();
+    connect(m_reminderWindow.get(), &BreakReminderWindow::clicked, this, [this] {
+        qCInfo(lcApp) << "Break reminder dismissed by the user (until the next break period)";
+        m_reminder.dismiss();
+        syncReminder();
+    });
 
     connect(&m_input.dispatcher(), &InputDispatcher::inputEvent, this, &BreakTimerController::onInputEvent);
     connect(&m_input, &InputService::powerEventOccurred, this, &BreakTimerController::onPowerEvent);
@@ -83,6 +90,8 @@ void BreakTimerController::shutdown()
     m_tick.stop();
     if (m_windows)
         m_windows->hideAll();
+    if (m_reminderWindow)
+        m_reminderWindow->hide();
     m_started = false;
 }
 
@@ -234,8 +243,10 @@ void BreakTimerController::sync()
             emit breakEvent(int(BreakEvent::Completed));
         if (wasBreak)
             m_closedByUser = false;
-        if (s == BreakTimerEngine::State::WaitingForActivity || s == BreakTimerEngine::State::Disabled)
+        if (s == BreakTimerEngine::State::WaitingForActivity || s == BreakTimerEngine::State::Disabled) {
+            m_reminder.startNewPeriod();
             emit workCycleReset();
+        }
     }
     if (s == BreakTimerEngine::State::BreakShown && m_windows)
         m_windows->setRemaining(m_engine.breakRemainingMs());
@@ -244,7 +255,29 @@ void BreakTimerController::sync()
         qCDebug(lcApp) << "Break Timer: work time" << (paused ? "paused (no input)" : "counting again") << "at"
                        << m_engine.interactionMs() / 1000 << "s";
     }
+    syncReminder();
     emit ticked();
+}
+
+// 2.3.0 (owner request): countdown window shortly before the break.
+void BreakTimerController::syncReminder()
+{
+    if (!m_reminderWindow)
+        return;
+    BreakReminder::Input in;
+    in.state = m_engine.state();
+    in.timeUntilBreakMs = m_engine.timeUntilBreakMs();
+    in.workTimePaused = m_engine.isWorkTimePaused();
+    in.enabled = m_settings.boolValue(BT::ReminderEnabled);
+    in.leadMs = qint64(m_settings.intValue(BT::ReminderSeconds)) * 1000;
+    const BreakReminder::Output out = m_reminder.update(in);
+    if (out.show) {
+        m_reminderWindow->showReminder(out.remainingMs, out.paused, m_trayGeometry ? m_trayGeometry() : QRect());
+    } else if (m_reminderWindow->isVisible()) {
+        m_reminderWindow->hide();
+        qCInfo(lcApp) << "Break reminder hidden (" << (m_reminder.isDismissed() ? "clicked" : stateName(in.state))
+                      << ", until break" << in.timeUntilBreakMs / 1000 << "s )";
+    }
 }
 
 } // namespace ergo
