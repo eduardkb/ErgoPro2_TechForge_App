@@ -175,6 +175,12 @@ void AppController::start(const SettingsLoadResult &loadResult)
     m_statistics->start();
     // Function 5 – Keep Screen Active (stage 9): follows its Key Control hotkey.
     m_keepActive->start();
+    if (m_tray) {
+        // Tray icon badge while Keep screen active is on (2.3.1, owner request).
+        const auto updateBadge = [this] { m_tray->setKeepActiveBadge(m_keepActive->isEnabled()); };
+        connect(m_keepActive.get(), &KeepScreenActiveController::changed, this, updateBadge);
+        updateBadge();
+    }
     reportSettingsLoad(loadResult);
 }
 

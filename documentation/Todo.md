@@ -1,13 +1,17 @@
 # Todo Items
 
 ## Open:
-- 
+-  
 
 ## Completed to verify:
+- in MacOS, if accessibility permission is removed in settings while the app is running, the mouse is blocked from taking any actions (left clicks do not work.). make sure the app does not block this if it looses its permissions.
+- maintain the tray icon colors as they are now (transparent if auto click not active and colored if it is arctive) and add one more status for the "keep screen active" functionality. If it is active, a small related colored symbol should show on the bottom right corner of the icon. if it is unactive, it should disappear. this will probably need to be implemented with several icons because each feature can be enabled/disabled independently.
+
 - from "warnings and errors in the log" card inside "general" tab remove warnings. only errors and critical errors should be shown there.
 - After implementing new functions below, bump minor version up making new version 2.3.0.
     1. Base description: implement a tray notification about 1 min before a break ("Break in 60 s"). the small reminder window shown should contain a countdown timer until the break window shows.
     2. create necessary variables in the .json file and allow changing them on the "Break Timer" tab. The show notification x minutes before the break window should be configurable in seconds (from minimum 15 seconds to maximum 5 minutes). default 1 minte. This reminder should always be only a reminder. non-blocking. if clicked it is dismissed and does not show anymore for the same period.
+
 
 ## Improvement and new features suggestions
 - when installing the .dmg file double clicking it. There was no clear indication I should drag the app's icon to the application folder and no message on the install screen to do so. also, although the app moved to the application folder when I drag and dropped it there was no indication that it got installed. there must be some sort of confirmation. and, when successfully installed display a message offering to delete the .dmg (it should delete it and un-mount the .dmg if the user confirms deletion.). this is also currently not happneing. make a new minor version

@@ -234,6 +234,32 @@ struct MacInputHook::State {
 
 namespace {
 
+CGEventRef probeCallback(CGEventTapProxy, CGEventType, CGEventRef event, void *)
+{
+    return event;
+}
+
+} // namespace
+
+bool macAccessibilityUsable()
+{
+    if (!AXIsProcessTrusted())
+        return false;
+    // Probe: an active (filtering) tap can only be created with Accessibility.
+    // Its mask is a rare event type and it is disabled and removed at once, so
+    // it never holds up any input.
+    CFMachPortRef probe = CGEventTapCreate(kCGSessionEventTap, kCGTailAppendEventTap, kCGEventTapOptionDefault,
+                                           CGEventMaskBit(kCGEventTabletProximity), probeCallback, nullptr);
+    if (!probe)
+        return false;
+    CGEventTapEnable(probe, false);
+    CFMachPortInvalidate(probe);
+    CFRelease(probe);
+    return true;
+}
+
+namespace {
+
 constexpr CFTimeInterval kTrustCheckIntervalS = 1.0;
 
 // Hook thread: stops passing events through the tap immediately and ends the
@@ -253,7 +279,7 @@ void dropTapAfterPermissionLoss(MacInputHook::State *s)
 void trustTimerCallback(CFRunLoopTimerRef, void *info)
 {
     auto *s = static_cast<MacInputHook::State *>(info);
-    if (s->active && !AXIsProcessTrusted())
+    if (s->active && !macAccessibilityUsable())
         dropTapAfterPermissionLoss(s);
 }
 
@@ -268,7 +294,7 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef cgEvent, vo
         // re-enable immediately (B.5.4). The watchdog logs the counter.
         // Never re-enable an active tap without Accessibility (1.7.8): that
         // can freeze all input of the session.
-        if (s->active && !AXIsProcessTrusted()) {
+        if (s->active && !macAccessibilityUsable()) {
             dropTapAfterPermissionLoss(s);
             return cgEvent;
         }
@@ -488,7 +514,7 @@ bool MacInputHook::checkHealth()
         return false;
     if (!CFMachPortIsValid(m_state->tap))
         return false;
-    if (m_active.load() && !AXIsProcessTrusted()) {
+    if (m_active.load() && !macAccessibilityUsable()) {
         // Do not re-enable an active tap without Accessibility (1.7.8); the
         // hook thread removes it within a second.
         qCWarning(lcPlatform) << "Accessibility permission missing: the active event tap must be removed";
@@ -524,7 +550,7 @@ namespace {
 
 PlatformResult postMouse(CGEventType type, CGMouseButton button, int clickState)
 {
-    if (!AXIsProcessTrusted()) {
+    if (!macAccessibilityUsable()) {
         // Without Accessibility macOS silently drops posted events.
         return PlatformResult::permissionDenied(tr("Clicks need the Accessibility permission."));
     }

@@ -2,6 +2,7 @@
 
 #include "core/LogCategories.h"
 #include "ergopro2/Version.h"
+#include "platform/mac/MacInput.h"
 
 #import <AppKit/AppKit.h>
 #include <ApplicationServices/ApplicationServices.h>
@@ -24,7 +25,7 @@ QString tr(const char *text)
 
 bool accessibilityGranted()
 {
-    return AXIsProcessTrusted();
+    return macAccessibilityUsable(); // 2.3.1: also detects a deleted entry (MacInput.h)
 }
 
 // macOS stores permission grants against the app's code signature. If the

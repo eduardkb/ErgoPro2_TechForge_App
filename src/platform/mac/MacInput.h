@@ -14,6 +14,13 @@
 
 namespace ergo {
 
+// 2.3.1: Accessibility really usable by this process. AXIsProcessTrusted()
+// alone is not enough: after the entry is deleted with "-" in System Settings
+// it kept returning true in the running process (log 23 Nov 2026), while macOS
+// already refused the permission. So an active event tap is also tried
+// (created and removed at once); it fails without the permission.
+bool macAccessibilityUsable();
+
 // Session-level event tap (head insert) on a CFRunLoop in its own thread.
 // Uses an active tap (can block keys; needs Accessibility) and falls back to a
 // listen-only tap (Input Monitoring only; keys cannot be blocked).

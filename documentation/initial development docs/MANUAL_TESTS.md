@@ -1000,3 +1000,18 @@ Goal: countdown window before the break (B.7). For quicker tests set *Break afte
 | 8 | Stay away longer than *Reset after a pause of*. | The reminder closes (work period reset). |
 | 9 | Switch **Remind me before a break** off while it is shown. | It closes; no reminder until switched on again. |
 | 10 | Set *Remind before the break* to 15 s and 300 s. | It appears 15 s / 5 min before the break. |
+
+## Bug fix – v2.3.1
+
+macOS Accessibility removal no longer blocks clicks (B.6); tray icon badge for Keep screen active (B.10).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass. |
+| 2 | macOS: ErgoPro2 running with both permissions, Auto Click on. System Settings › Privacy & Security › Accessibility: select ErgoPro2 and click **−**. Then click around (Finder, Settings). | Within about a second all clicks work normally. Log ERROR "Accessibility permission was removed while the event tap was active …", then "Input hook stopped by itself …" and "Permission Accessibility : MISSING"; Auto Click shows unavailable. |
+| 3 | Same as row 2 but switch ErgoPro2 **off** instead of removing it. | Same result. |
+| 4 | Grant Accessibility again (+ / switch on). | Within a few seconds the hook runs again (active), Auto Click works. |
+| 5 | Keep screen active **on** (its hotkey). | Tray / menu bar icon gets a green dot with a white ring in the bottom-right corner. |
+| 6 | Turn Auto Click on and off, hold a Drag lock. | The icon changes as before (colored / transparent / drag lock) and keeps the green dot. |
+| 7 | Keep screen active **off**. | The dot disappears; the icon is exactly as before. |
+| 8 | macOS: switch between light and dark mode while the dot is shown. | The icon is black on a light menu bar and white on a dark one; the dot stays green. |

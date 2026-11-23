@@ -29,6 +29,9 @@ public:
     void show();
     void setIconState(IconState state);
     IconState iconState() const { return m_state; }
+    // Keep screen active is on: green dot in the bottom-right corner of the
+    // icon (2.3.1, owner request), independent of the icon state.
+    void setKeepActiveBadge(bool shown);
 
     // Extension point for later stages (AutoClick on/off, Break Timer on/off,
     // Start break now). Actions are inserted above the Exit entry.
@@ -45,6 +48,8 @@ signals:
 
 private:
     QIcon iconFor(IconState state) const;
+    QIcon withBadge(const QIcon &base, bool tintMask) const;
+    void refreshIcon();
 
     QSystemTrayIcon *m_tray = nullptr;
     QMenu *m_menu = nullptr;
@@ -52,6 +57,7 @@ private:
     QAction *m_exitSeparator = nullptr;
     bool m_monochrome = false;
     IconState m_state = IconState::Normal;
+    bool m_keepActiveBadge = false;
 };
 
 } // namespace ergo

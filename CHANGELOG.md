@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.3.1] - 2026-11-23
+
+### Fixed
+- **macOS: left clicks were blocked after the Accessibility permission was removed** while ErgoPro2 ran
+  (entry deleted with "−" in System Settings). Root cause: after the deletion `AXIsProcessTrusted()` kept
+  answering "granted" inside the running app (log 23 Nov 15:08:45: own clicks no longer reached the hook, but
+  no permission loss was detected), so the protective removal of the active event tap from 1.7.8 never ran.
+  ErgoPro2 now also checks once per second whether macOS still allows an active event tap (a short test tap
+  that is removed at once) and removes its tap immediately when not; the permission status, Auto Click
+  clicks and the hook watchdog use the same check.
+
+### Added
+- **Tray icon: Keep screen active badge** (owner request): while Keep screen active is on, a green dot with a
+  white ring shows in the bottom-right corner of the tray icon, on top of the normal / Auto Click / Drag lock
+  icon; it disappears when the feature is switched off. On macOS the menu bar icon is then drawn in the menu
+  bar color (black / white) so the dot can be green.
+
 ## [2.3.0] - 2026-11-23
 
 ### Added

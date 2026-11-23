@@ -244,7 +244,8 @@ right-click it for the menu. On macOS, click the menu bar icon to open the menu:
 | **Exit** | Exits ErgoPro2. |
 
 The icon changes while **Auto Click is active** and while **Drag lock holds the left button** (Drag lock has
-priority).
+priority). While **Keep screen active** is on, a small **green dot** appears in the bottom-right corner of the
+icon, whatever its state; it disappears when the feature is switched off.
 
 **Exiting.** ErgoPro2 exits only with **Exit ErgoPro2** (bottom of the General tab) or **Exit** in the tray
 menu. There is no confirmation. On exit, a held Drag lock is released and all hotkeys are given back.

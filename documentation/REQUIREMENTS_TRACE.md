@@ -513,6 +513,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.10-e | Injected input never counted (Statistics, Break Timer, Auto Click) | synthetic tagging in each `IAppWindows`; X11 `SyntheticTracker::expectMotion` | – | S9#13 | 🟡 |
 | B.10-f | Auto Click tab card (badge, hotkey, status, Wayland note), only with a hotkey | `AutoClickTab::refreshKeepActive` | – | S9#2–5, S9#14 | 🟡 |
 | B.10-g | Settings: enabled, startAfterIdleMinutes 1–60/3, intervalMinutes 1–60/3, system-only | `KeepScreenActiveSettings` | `tst_keepactive::settings` | S9#15 | ✅ |
+| B.10-h | Tray icon badge (green dot) while Keep screen active is on (2.3.1) | `TrayController::setKeepActiveBadge/withBadge`, `AppController` | – | 2.3.1#5–8 | 🟡 Visual, manual. |
 
 ---
 

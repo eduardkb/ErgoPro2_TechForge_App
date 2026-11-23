@@ -3,8 +3,14 @@
 #include "core/LogCategories.h"
 
 #include <QAction>
+#include <QColor>
 #include <QApplication>
+#include <QGuiApplication>
 #include <QMenu>
+#include <QPainter>
+#include <QStyleHints>
+
+#include <algorithm>
 
 namespace ergo {
 
@@ -28,6 +34,11 @@ TrayController::TrayController(bool monochromeIcons, QObject *parent)
     m_tray->setContextMenu(m_menu);
     m_tray->setToolTip(tr("ErgoPro2 v%1").arg(QApplication::applicationVersion()));
 
+    // A tinted monochrome icon (badge shown) follows the light / dark menu bar.
+    connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, this, [this] {
+        if (m_keepActiveBadge && m_monochrome)
+            refreshIcon();
+    });
     connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick)
             emit showWindowRequested();
@@ -55,7 +66,58 @@ void TrayController::setIconState(IconState state)
     if (state == m_state)
         return;
     m_state = state;
-    m_tray->setIcon(iconFor(state));
+    refreshIcon();
+}
+
+void TrayController::setKeepActiveBadge(bool shown)
+{
+    if (shown == m_keepActiveBadge)
+        return;
+    m_keepActiveBadge = shown;
+    qCInfo(lcUi) << "Tray icon: Keep screen active badge" << (shown ? "shown" : "removed");
+    refreshIcon();
+}
+
+void TrayController::refreshIcon()
+{
+    const QIcon base = iconFor(m_state);
+    m_tray->setIcon(m_keepActiveBadge ? withBadge(base, base.isMask()) : base);
+}
+
+// 2.3.1: the base icon with a green dot and a white ring in the bottom-right
+// corner, rendered for the usual tray sizes (1x and 2x). A macOS template
+// (mask) icon cannot carry color, so it is drawn in the menu bar's text color
+// (black in light mode, white in dark mode) instead (owner decision).
+QIcon TrayController::withBadge(const QIcon &base, bool tintMask) const
+{
+    const bool dark = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    QIcon icon;
+    for (int size : {16, 18, 20, 22, 24, 32, 36, 40, 44, 48, 64}) {
+        // Exactly size x size pixels (device pixel ratio 1), so the badge
+        // coordinates below are pixels.
+        QPixmap pixmap = base.pixmap(QSize(size, size), 1.0);
+        if (pixmap.isNull())
+            continue;
+        QPainter p(&pixmap);
+        p.setRenderHint(QPainter::Antialiasing);
+        if (tintMask) {
+            p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            p.fillRect(pixmap.rect(), dark ? Qt::white : Qt::black);
+            p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        }
+        const qreal d = size * 0.42; // badge diameter
+        const qreal ring = std::max<qreal>(1.0, size * 0.07);
+        const QRectF badge(size - d, size - d, d, d);
+        p.setPen(Qt::NoPen);
+        p.setBrush(Qt::white);
+        p.drawEllipse(badge);
+        p.setBrush(QColor(0x22, 0xa4, 0x47)); // green
+        p.drawEllipse(badge.adjusted(ring, ring, -ring, -ring));
+        p.end();
+        icon.addPixmap(pixmap);
+    }
+    icon.setIsMask(false);
+    return icon;
 }
 
 QIcon TrayController::iconFor(IconState state) const
