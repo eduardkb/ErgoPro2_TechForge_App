@@ -1015,3 +1015,16 @@ macOS Accessibility removal no longer blocks clicks (B.6); tray icon badge for K
 | 6 | Turn Auto Click on and off, hold a Drag lock. | The icon changes as before (colored / transparent / drag lock) and keeps the green dot. |
 | 7 | Keep screen active **off**. | The dot disappears; the icon is exactly as before. |
 | 8 | macOS: switch between light and dark mode while the dot is shown. | The icon is black on a light menu bar and white on a dark one; the dot stays green. |
+
+## Stage – v2.4.0 (Keep screen active time limit)
+
+Keep screen active switches itself off after `keepScreenActive.maxActiveHours` without input (B.10).
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass. |
+| 2 | Quit ErgoPro2, check `settings.json` › `keepScreenActive`, start it. | `maxActiveHours` is present with 4. Log INFO "… switched off after 4 h without input". |
+| 3 | Keep screen active on, leave the computer untouched for 4 hours (Teams open). | Cycles every 3 min until 4 h; then log WARNING "Keep screen active: no input for 240 min (keepScreenActive.maxActiveHours reached); switching it off …", "Keep screen active disabled ( time limit without input reached )", the green tray dot disappears and the screen sleeps per the OS settings. Card status: Disabled. |
+| 4 | Same as row 3, but move the mouse once after 3 hours. | Not switched off at 4 h; the 4 hours start again from the mouse movement. |
+| 5 | Set `maxActiveHours` to 30 (ErgoPro2 closed), start. | Log WARNING that the value was set to 25, file rewritten with 25; INFO "never switched off by time (maxActiveHours 25)"; the feature is never switched off by time. Value 2 → set to 4. |
+| 6 | After row 3, press the Keep screen active hotkey. | Enabled again, green dot back, the 4 hours count from the key press. |

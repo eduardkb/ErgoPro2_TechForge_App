@@ -164,6 +164,66 @@ private slots:
         QVERIFY(!keepActiveHotkeyBecameActive(id, true, {}, false));      // removed
     }
 
+    // 2.4.0 (owner request): after keepScreenActive.maxActiveHours without real
+    // input the feature is switched off so the screen can sleep.
+    void limitReachedAfterTheMaximumTimeWithoutInput()
+    {
+        Fixture f;
+        E::Config c = f.engine.config();
+        c.maxIdleMs = 4 * 60 * kMin;
+        f.engine.setConfig(c);
+        f.advance(4 * 60 * kMin - kSec);
+        QVERIFY(!f.engine.limitReached());
+        const int before = f.cycles;
+        f.advance(kSec);
+        QVERIFY(f.engine.limitReached());
+        QCOMPARE(f.cycles, before); // no cycle once the limit is reached
+        f.advance(10 * kMin);
+        QCOMPARE(f.cycles, before);
+    }
+
+    void realInputRestartsTheLimitButPausesDoNot()
+    {
+        Fixture f;
+        E::Config c = f.engine.config();
+        c.maxIdleMs = 4 * 60 * kMin;
+        f.engine.setConfig(c);
+        f.advance(3 * 60 * kMin);
+        f.engine.onRealInput();
+        f.advance(3 * 60 * kMin);
+        QVERIFY(!f.engine.limitReached());
+        f.engine.setPaused(E::Locked, true); // locked screen: still away
+        f.advance(60 * kMin);
+        QVERIFY(f.engine.limitReached());
+    }
+
+    void noLimitAndDisabled()
+    {
+        Fixture f;
+        E::Config c = f.engine.config();
+        c.maxIdleMs = 0; // 25 h or more: never
+        f.engine.setConfig(c);
+        f.advance(30 * 60 * kMin);
+        QVERIFY(!f.engine.limitReached());
+        QVERIFY(f.cycles > 0);
+        c.maxIdleMs = 4 * 60 * kMin;
+        f.engine.setConfig(c);
+        QVERIFY(f.engine.limitReached());
+        f.engine.setEnabled(false);
+        QVERIFY(!f.engine.limitReached());
+        f.engine.setEnabled(true); // the hotkey press counts from now
+        QVERIFY(!f.engine.limitReached());
+    }
+
+    void maxActiveHoursToMs()
+    {
+        QCOMPARE(keepActiveMaxIdleMs(4), 4 * 60 * kMin);
+        QCOMPARE(keepActiveMaxIdleMs(24), 24 * 60 * kMin);
+        QCOMPARE(keepActiveMaxIdleMs(25), qint64(0));
+        QCOMPARE(keepActiveMaxIdleMs(100), qint64(0));
+        QCOMPARE(keepActiveMaxIdleMs(1), 4 * 60 * kMin); // below the minimum: 4 h
+    }
+
     void settings()
     {
         SettingsSchema schema;
@@ -180,6 +240,12 @@ private slots:
         QVERIFY(!SettingsSchema::validate(*start, 0) && !SettingsSchema::validate(*start, 61));
         QVERIFY(SettingsSchema::validate(*interval, 1) && SettingsSchema::validate(*interval, 60));
         QVERIFY(!SettingsSchema::validate(*interval, 0) && !SettingsSchema::validate(*interval, 61));
+        const SettingDefinition *maxHours = schema.find(KS::MaxActiveHours);
+        QVERIFY(maxHours);
+        QCOMPARE(maxHours->defaultValue.toInt(), 4);
+        QCOMPARE(maxHours->minimum, 4);
+        QCOMPARE(maxHours->maximum, 25);
+        QVERIFY(maxHours->clampToRange); // out of range: nearest limit (30 -> 25 = never)
     }
 };
 

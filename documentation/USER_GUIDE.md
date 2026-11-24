@@ -443,7 +443,9 @@ until you touch the mouse or keyboard again:
 
 Its moves and clicks are not counted anywhere (Statistics, Break Timer, Auto Click). Adding its hotkey in Key Control,
 or switching that hotkey on again there, switches the feature on. Switching the hotkey off in Key Control, or
-deleting it, also switches the feature off. The two times can be changed only in
+deleting it, also switches the feature off. After **4 hours** without any mouse or keyboard input it switches
+itself off so the screen can sleep (the green tray dot disappears); press its hotkey to switch it on again.
+The three times can be changed only in
 `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)). On Linux Wayland only the pointer movement
 is used.
 
@@ -710,5 +712,6 @@ except the two `general` values below, which use the nearest limit (e.g. 50 days
 | `breaktimer` → `activityPauseSeconds` | Seconds without input after which the Break Timer's work time (and the computer usage) stands still (*Paused*). | 5–60 s | 20 s |
 | `keepScreenActive` → `startAfterIdleMinutes` | *Keep screen active*: minutes without input before it starts. | 1–60 min | 3 min |
 | `keepScreenActive` → `intervalMinutes` | *Keep screen active*: minutes between two actions while you stay away. | 1–60 min | 3 min |
+| `keepScreenActive` → `maxActiveHours` | *Keep screen active*: hours without input after which it switches itself off so the screen can sleep. **25 = never.** Values outside the range are set to the nearest limit. | 4–25 h | 4 h |
 | `general` → `logViewerDays` | *Errors in the log* card: how many days of log files are searched (today included). | 3–30 days | 7 days |
 | `general` → `logViewerRefreshMinutes` | *Errors in the log* card: minutes between two searches while the General tab is open. | 3–120 min | 5 min |

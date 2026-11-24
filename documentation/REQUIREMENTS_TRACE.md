@@ -513,6 +513,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.10-e | Injected input never counted (Statistics, Break Timer, Auto Click) | synthetic tagging in each `IAppWindows`; X11 `SyntheticTracker::expectMotion` | – | S9#13 | 🟡 |
 | B.10-f | Auto Click tab card (badge, hotkey, status, Wayland note), only with a hotkey | `AutoClickTab::refreshKeepActive` | – | S9#2–5, S9#14 | 🟡 |
 | B.10-g | Settings: enabled, startAfterIdleMinutes 1–60/3, intervalMinutes 1–60/3, system-only | `KeepScreenActiveSettings` | `tst_keepactive::settings` | S9#15 | ✅ |
+| B.10-i | Switched off after `maxActiveHours` (4–25, default 4, 25 = never) without real input (2.4.0) | `KeepScreenActiveEngine::limitReached`, `keepActiveMaxIdleMs`, `KeepScreenActiveController::onTick` | `tst_keepactive::limitReached…`, `realInputRestartsTheLimitButPausesDoNot`, `noLimitAndDisabled`, `maxActiveHoursToMs`, `settings` | 2.4.0#2–5 | ✅ |
 | B.10-h | Tray icon badge (green dot) while Keep screen active is on (2.3.1) | `TrayController::setKeepActiveBadge/withBadge`, `AppController` | – | 2.3.1#5–8 | 🟡 Visual, manual. |
 
 ---
@@ -525,7 +526,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 > `ARCHITECTURE.md` now exist. O-1 and O-2 remain open for the owner, together with the review items listed
 > in the 1.8.0 final report (CHANGELOG 1.8.0).
 
-Row counts: Table A 39 rows, Table B 101 rows, Table C 171 rows.
+Row counts: Table A 39 rows, Table B 102 rows, Table C 171 rows.
 
 ### (a) Small fixes within the existing scope
 

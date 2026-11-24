@@ -9,6 +9,8 @@ void registerSettings(SettingsSchema &schema)
     schema.add(SettingDefinition::boolean(Enabled, false));
     schema.add(SettingDefinition::integer(StartAfterIdleMinutes, kStartAfterDefault, kStartAfterMin, kStartAfterMax));
     schema.add(SettingDefinition::integer(IntervalMinutes, kIntervalDefault, kIntervalMin, kIntervalMax));
+    schema.add(SettingDefinition::clampedInteger(MaxActiveHours, kMaxActiveHoursDefault, kMaxActiveHoursMin,
+                                                 kMaxActiveHoursMax));
 }
 
 } // namespace ergo::KeepScreenActiveSettings

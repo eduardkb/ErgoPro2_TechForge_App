@@ -79,7 +79,7 @@ void KeepScreenActiveController::start()
             [this] { setEnabled(!m_engine.isEnabled(), "hotkey pressed"); });
     connect(&m_keycontrol, &KeyControlController::changed, this, &KeepScreenActiveController::syncHotkey);
     connect(&m_settings, &SettingsStore::valueChanged, this, [this](const QString &key) {
-        if (key == KS::StartAfterIdleMinutes || key == KS::IntervalMinutes)
+        if (key == KS::StartAfterIdleMinutes || key == KS::IntervalMinutes || key == KS::MaxActiveHours)
             applyConfig();
         else if (key == KS::Enabled && m_settings.boolValue(key) != m_engine.isEnabled())
             setEnabled(m_settings.boolValue(key), "settings changed");
@@ -115,9 +115,12 @@ void KeepScreenActiveController::applyConfig()
     Engine::Config c;
     c.startAfterMs = qint64(m_settings.intValue(KS::StartAfterIdleMinutes)) * 60000;
     c.intervalMs = qint64(m_settings.intValue(KS::IntervalMinutes)) * 60000;
+    c.maxIdleMs = keepActiveMaxIdleMs(m_settings.intValue(KS::MaxActiveHours));
     m_engine.setConfig(c);
     qCInfo(lcApp) << "Keep screen active: first action after" << c.startAfterMs / 60000 << "min without input, then every"
-                  << c.intervalMs / 60000 << "min";
+                  << c.intervalMs / 60000 << "min;"
+                  << (c.maxIdleMs > 0 ? QStringLiteral("switched off after %1 h without input").arg(c.maxIdleMs / 3600000)
+                                      : QStringLiteral("never switched off by time (maxActiveHours 25)"));
 }
 
 void KeepScreenActiveController::setEnabled(bool enabled, const char *reason)
@@ -195,6 +198,15 @@ void KeepScreenActiveController::onPowerEvent(int event)
 
 void KeepScreenActiveController::onTick()
 {
+    if (m_engine.limitReached()) {
+        // 2.4.0 (owner request): stop keeping the screen awake so it can sleep.
+        qCWarning(lcApp) << "Keep screen active: no input for" << m_engine.idleMs() / 60000
+                         << "min (keepScreenActive.maxActiveHours reached); switching it off so the screen can sleep";
+        ++m_cycleSerial; // a pending step does nothing
+        m_cycleRunning = false;
+        setEnabled(false, "time limit without input reached");
+        return;
+    }
     if (m_engine.update() && !m_cycleRunning)
         runCycle();
     notifyIfChanged();

@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.4.0] - 2026-11-24
+
+### Added
+- **Keep screen active switches itself off after a long time away** (owner request): after
+  `keepScreenActive.maxActiveHours` (default **4**) hours without real mouse or keyboard input it is switched
+  off, like pressing its hotkey, so the screen can go to sleep; the green tray dot disappears and the log shows
+  a WARNING. Any real input restarts the time; a locked screen, the break window or Drag lock do not. The value
+  exists only in `settings.json`: 4–25 hours, values outside are set to the nearest limit, **25 = never**.
+  Switch the feature on again with its hotkey.
+
 ## [2.3.1] - 2026-11-23
 
 ### Fixed

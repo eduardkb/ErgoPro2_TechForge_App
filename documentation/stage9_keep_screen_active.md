@@ -39,6 +39,7 @@ Key names follow the 1.8.2 style (camelCase + unit). Validation, defaults and fa
 | `keepScreenActive.enabled` | bool | `false` | indirectly (card status) | On/off; changed only by the hotkey and the hotkey table (section 6). Remembered across restarts. |
 | `keepScreenActive.startAfterIdleMinutes` | 1–60 | 3 | **no** | Idle time before the first cycle. |
 | `keepScreenActive.intervalMinutes` | 1–60 | 3 | **no** | Time between two cycles while the user stays idle. |
+| `keepScreenActive.maxActiveHours` (2.4.0) | 4–25, out of range → nearest limit | 4 | **no** | Hours without real input after which the feature switches itself off so the screen can sleep; **25 = never**. |
 
 The two minute values can only be changed by editing `settings.json` (with ErgoPro2 closed, or picked up at
 the next start like other system-only values). The interface never mentions them. Changing them in the file
@@ -92,6 +93,11 @@ Process / window identification (to be verified during implementation and listed
 - the screen is **locked** or the computer **sleeps** (clicks cannot reach apps behind the lock screen);
 - the **break window** is shown (a click would hit the break overlay);
 - **Drag Lock** holds the left button (a click would disturb it).
+
+### 4.4a Time limit (2.4.0, owner request)
+
+After `maxActiveHours` hours without real input (pauses do not reset the time) the feature is switched off,
+exactly as with the hotkey, and a WARNING is logged. 25 hours or more: never.
 
 ### 4.5 Title-bar click position
 

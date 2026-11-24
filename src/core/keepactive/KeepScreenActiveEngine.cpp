@@ -15,6 +15,7 @@ void KeepScreenActiveEngine::setConfig(const Config &config)
     m_config = config;
     m_config.startAfterMs = std::max<qint64>(m_config.startAfterMs, 1000);
     m_config.intervalMs = std::max<qint64>(m_config.intervalMs, 1000);
+    m_config.maxIdleMs = std::max<qint64>(m_config.maxIdleMs, 0);
 }
 
 void KeepScreenActiveEngine::setEnabled(bool enabled)
@@ -48,6 +49,10 @@ bool KeepScreenActiveEngine::update()
 {
     if (!m_enabled || m_pause != None)
         return false;
+    if (limitReached()) {
+        m_working = false;
+        return false;
+    }
     const qint64 t = now();
     if (t - m_lastInputMs < m_config.startAfterMs) {
         m_working = false;
@@ -72,6 +77,18 @@ KeepScreenActiveEngine::State KeepScreenActiveEngine::state() const
 qint64 KeepScreenActiveEngine::idleMs() const
 {
     return std::max<qint64>(0, now() - m_lastInputMs);
+}
+
+bool KeepScreenActiveEngine::limitReached() const
+{
+    return m_enabled && m_config.maxIdleMs > 0 && idleMs() >= m_config.maxIdleMs;
+}
+
+qint64 keepActiveMaxIdleMs(int hours)
+{
+    if (hours >= 25)
+        return 0;
+    return qint64(std::max(hours, 4)) * 60 * 60000;
 }
 
 bool keepActiveClickPoint(const QRectF &frame, QPointF *point)

@@ -24,11 +24,15 @@ namespace ergo {
 //  - A pause condition (screen locked / sleep, break window, drag lock) makes
 //    the state Idle; when it ends and the user is still idle, Working starts
 //    again with an immediate cycle.
+//  - 2.4.0 (owner request): after maxIdleMs without real input (pauses do not
+//    reset it) limitReached() is true and no further cycle runs; the controller
+//    then switches the feature off so the screen can sleep. 0 = no limit.
 class KeepScreenActiveEngine {
 public:
     struct Config {
         qint64 startAfterMs = 3 * 60000;
         qint64 intervalMs = 3 * 60000;
+        qint64 maxIdleMs = 0; // 0 = never switched off by the limit
     };
 
     enum class State { Disabled, Idle, Working };
@@ -52,6 +56,9 @@ public:
     // Evaluates the rules; returns true when a cycle must run now.
     bool update();
 
+    // Enabled and no real input for maxIdleMs (when a limit is set).
+    bool limitReached() const;
+
     State state() const;
     qint64 idleMs() const;
     int cycleCount() const { return m_cycles; } // cycles since the last real input
@@ -68,6 +75,10 @@ private:
     qint64 m_nextCycleMs = 0;
     int m_cycles = 0;
 };
+
+// keepScreenActive.maxActiveHours -> Config::maxIdleMs (2.4.0): 4..24 hours,
+// 25 or more = no limit (0); less than 4 counts as 4.
+qint64 keepActiveMaxIdleMs(int hours);
 
 // Which application window a cycle targets.
 enum class KeepActiveApp { Teams, Zoom };
