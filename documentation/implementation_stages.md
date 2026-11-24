@@ -116,7 +116,7 @@ ergoPro2/
 ## B.1 General application
 
 ### B.1.1 Window and look & feel
-- Main window with top tabs, in this order: **General**, **Break Timer**, **Auto Click**, **Key Control**, **Statistics**.
+- Main window with top tabs, in this order: **General**, **Break Timer**, **Micro-breaks** (2.5.0), **Auto Click**, **Key Control**, **Statistics**. Tabs keep their full names; when the window is narrower than the tab bar, scroll arrows appear on it, and each tab's content scrolls horizontally when it does not fit (2.5.0, owner request).
 - Modern look: Qt Fusion style + application stylesheet (`resources/style.qss`), card-like grouped sections with rounded corners, consistent spacing, one accent color, modern toggle-switch style for on/off states, clear "Active / Inactive" status badges. Must look good in **both light and dark OS mode** (follow the OS color scheme).
 - Every tab shows a small icon next to its name (accent color; black on the selected tab, in both themes – 1.4.1).
 - App and tray icons: create simple, clean SVG icons (a stylized hand/wrist or mouse). Tray icon variants: normal, **AutoClick active**, **Drag Lock active** (if easy to implement on the OS; not mandatory for AutoClick per A-09). **2.3.1 (owner request):** while Keep screen active is enabled, a green dot with a white ring (≈ 42 % of the icon) is drawn in the bottom-right corner of whichever variant is shown (`TrayController::setKeepActiveBadge`, rendered in code for every size, so all combinations exist). The macOS template icon cannot carry color: while the badge is shown it is drawn in the menu bar's text color (black light mode / white dark mode, redrawn on a theme change).
@@ -348,6 +348,14 @@ Group the keys in the JSON by section (`general`, `autoclick`, `keycontrol`, `dr
 - The CI (`.github/workflows/ci.yml`) creates a **GitHub release** named `ErgoPro2_v<version>` (tag `v<version>`) after a push to `main` whose version in `CMakeLists.txt` has no release yet; later pushes with the same version create nothing.
 - Release text: the version's section of `CHANGELOG.md` plus a download/install table.
 - Files: macOS `.dmg` (same as the CI artifact), Windows setup `.exe` (B.1.3), Debian `.deb` (same as the CI artifact). The portable Windows `.zip` stays a CI artifact only.
+
+## B.7a Micro-breaks (2.5.0, owner request)
+- A second, smaller timer next to the Break Timer, with its own on/off switch (`microBreaks.enabled`, default **off**). Needs the same activity monitoring as the Break Timer (`Feature::BreakTimerActivity`, same availability banner).
+- **Active use** counts like the Break Timer work time (B.7): from the first real input, while input continues; a pause counts only up to `breaktimer.activityPauseSeconds`. A pause **at least as long as the micro-break** (`showSeconds`) counts as a micro-break taken: the count restarts with the next input. Screen lock / sleep restart the count and close a shown micro-break; input is ignored until unlock/resume.
+- After `microBreaks.intervalMinutes` (1–60, default **10**) of active use: a **small window** in the screen corner next to the tray (same position rule as the 2.3.0 reminder, `breakReminderPosition`): title "Time for a micro-break", a short suggestion, "Click to hide." and the **countdown in its bottom-right corner**. Non-blocking (never takes the focus), **always on top** (also while ErgoPro2 is not the active app on macOS) until it closes by itself after `microBreaks.showSeconds` (10–120, default **20**) or is clicked. Input while it is shown changes nothing; afterwards the count starts again with the next input.
+- **Gives way to the Break Timer:** no micro-break while the break window or the pre-break reminder is shown (a due one waits; a shown one closes when they appear); every Break Timer cycle reset (break over, Dismiss, idle reset, switched off) restarts the count.
+- **Micro-breaks tab** (after Break Timer): on/off switch with an Active / Inactive / Unavailable badge; Status (Active use, Next micro-break in – "waiting (Break Timer)" when due but blocked, State *Disabled / Idle / Counting / Paused / Micro-break*); Settings: *Micro-break every* (min) and *Show it for* (s). The values can also be edited in `settings.json`; out-of-range numbers are set to the nearest limit (WARNING, file rewritten).
+- Code: `core/breaktimer/MicroBreakEngine` (`tests/tst_microbreak.cpp`), `core/settings/MicroBreakSettings`, `ui/breaktimer/MicroBreakController`, `MicroBreakWindow`, `ui/tabs/MicroBreaksTab`.
 
 ## B.8 Function 4 – Statistics (Stage 7)
 Owner description (stage 7 request) with the owner's answers to the clarification questions (all suggested defaults accepted).

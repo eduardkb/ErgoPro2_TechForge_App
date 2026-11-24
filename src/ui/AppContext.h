@@ -12,6 +12,7 @@ class InputService;
 class InstallController;
 class KeepScreenActiveController;
 class Logger;
+class MicroBreakController;
 class SettingsStore;
 class StatisticsController;
 struct Platform;
@@ -29,6 +30,7 @@ struct AppContext {
     BreakTimerController &breaktimer;
     StatisticsController &statistics;
     KeepScreenActiveController &keepActive; // stage 9
+    MicroBreakController &microBreaks;      // 2.5.0
 };
 
 } // namespace ergo

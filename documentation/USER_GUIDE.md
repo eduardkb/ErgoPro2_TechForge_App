@@ -10,7 +10,7 @@ and Debian 13. (Building ErgoPro2 from source is described in [BUILD.md](BUILD.m
 3. [Permissions](#3-permissions)
 4. [Window, tray and exit](#4-window-tray-and-exit)
 5. [The tabs](#5-the-tabs) – [General](#51-general) · [Break Timer](#52-break-timer) ·
-   [Auto Click](#53-auto-click) · [Key Control](#54-key-control) · [Statistics](#55-statistics)
+   [Micro-breaks](#53-micro-breaks) · [Auto Click](#54-auto-click) · [Key Control](#55-key-control) · [Statistics](#56-statistics)
 6. [Limitations and troubleshooting](#6-limitations-and-troubleshooting)
 
 ---
@@ -18,7 +18,7 @@ and Debian 13. (Building ErgoPro2 from source is described in [BUILD.md](BUILD.m
 ## 1. What ErgoPro2 does
 
 ErgoPro2 helps reduce strain on your wrists and hands from mouse and keyboard work. It runs quietly in the
-background (system tray / menu bar) and offers five functions:
+background (system tray / menu bar) and offers six functions:
 
 | Function | What it does for you |
 |---|---|
@@ -26,6 +26,7 @@ background (system tray / menu bar) and offers five functions:
 | **Auto Click** | Clicks the left mouse button for you when you stop moving the pointer – no finger press needed. |
 | **Key Control** | Lets keyboard keys do mouse clicks (left, right, double click), hold the left button for dragging (**Drag lock**) or switch Auto Click on/off. |
 | **Statistics** | Shows how much you used the mouse and keyboard per day, with charts. Only counts and times are stored – never what you type. |
+| **Micro-breaks** | Suggests a 20-second pause every 10 minutes of active use in a small window that never blocks your work. |
 | **Keep screen active** | While you are away, keeps the screen awake and Teams / Zoom showing you as active (switched with a Key Control hotkey). |
 
 ErgoPro2 never plays sounds.
@@ -267,8 +268,10 @@ you log in. What the window does at start is set on the General tab → **Startu
 
 ## 5. The tabs
 
-The tabs are, from left to right: **General**, **Break Timer**, **Auto Click**, **Key Control**,
-**Statistics**. Every change applies immediately and is saved automatically.
+The tabs are, from left to right: **General**, **Break Timer**, **Micro-breaks**, **Auto Click**,
+**Key Control**, **Statistics**. Every change applies immediately and is saved automatically. When the window
+is too narrow for all tab names, arrows at the end of the tab bar scroll it; a tab whose content does not fit
+can be scrolled sideways.
 
 ### 5.1 General
 
@@ -388,9 +391,34 @@ time.
 tab grows above 100 %. While it is above 100 %, the next break comes after **half** of *Break after working*
 (e.g. 25 instead of 50 min). If the usage goes above 100 % while you are already past half the time, the
 break starts at once. The full time applies again once the usage is back at 0 % (after a completed break or
-a pause as long as *Break length*). See [5.5](#55-statistics).
+a pause as long as *Break length*). See [5.6](#56-statistics).
 
-### 5.3 Auto Click
+### 5.3 Micro-breaks
+
+A second, smaller timer for very short pauses between the real breaks. **Off** until you switch it on.
+
+After **10 minutes** of active use, a small window appears in the corner next to the tray icon:
+**Time for a micro-break** – look away from the screen and relax your hands and shoulders. Its countdown is
+in its bottom-right corner. It never blocks your work, stays on top of all windows and closes by itself after
+**20 seconds**; click it to hide it earlier.
+
+| Item | Meaning | Range | Default |
+|---|---|---|---|
+| Switch | Micro-breaks on / off. | on / off | off |
+| **Micro-break every** | Minutes of active use until the next micro-break. | 1–60 min | 10 min |
+| **Show it for** | How long the window stays. | 10–120 s | 20 s |
+
+**Status:** *Active use* since the last micro-break, *Next micro-break in*, and *State* (**Idle** – waiting for
+your first input, **Counting**, **Paused** – no input for 20 s (only when *Show it for* is longer than that), **Micro-break**, **Disabled**).
+
+- Active use is counted like the Break Timer's work time; a pause at least as long as a micro-break (20 s)
+  counts as one and the count starts again. Locking the screen or sleep also restarts it.
+- No micro-break appears while the Break Timer's reminder or break window is shown; after a break the count
+  starts again.
+- The values can also be changed in `settings.json` (section `microBreaks`: `enabled`, `intervalMinutes`,
+  `showSeconds`; exit ErgoPro2 first). Values outside the range are set to the nearest limit.
+
+### 5.4 Auto Click
 
 Auto Click clicks the **left mouse button** for you when the pointer stops moving.
 
@@ -449,7 +477,7 @@ The three times can be changed only in
 `settings.json` ([6.7](#67-advanced-settings-only-in-settingsjson)). On Linux Wayland only the pointer movement
 is used.
 
-### 5.4 Key Control
+### 5.5 Key Control
 
 Key Control lets keyboard keys do mouse actions. While a hotkey is **enabled**, other applications do
 **not** receive that key – it belongs to ErgoPro2. All clicks happen at the current pointer position and
@@ -537,7 +565,7 @@ The button is let go (at the current pointer position) when:
 While Drag lock holds the button, Auto Click does not click. After the release, the pointer must move
 *Minimum movement* before the next auto-click.
 
-### 5.5 Statistics
+### 5.6 Statistics
 
 The Statistics tab shows how you used the mouse and keyboard, per day. Statistics are **always recorded**
 while ErgoPro2 runs; there is no on/off switch. (On macOS this needs Input Monitoring; otherwise the tab shows

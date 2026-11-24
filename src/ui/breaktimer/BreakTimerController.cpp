@@ -105,6 +105,11 @@ bool BreakTimerController::isAvailable() const
     return m_availability.status(Feature::BreakTimerActivity).available && m_input.stats().running;
 }
 
+bool BreakTimerController::isReminderShown() const
+{
+    return m_reminderWindow && m_reminderWindow->isVisible();
+}
+
 bool BreakTimerController::fullscreenDetectionSupported() const
 {
     return m_platform.desktop->isFullscreenAppActive().has_value();

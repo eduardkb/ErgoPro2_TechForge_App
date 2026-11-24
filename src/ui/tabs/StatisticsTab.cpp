@@ -92,7 +92,7 @@ StatisticsTab::StatisticsTab(StatisticsController &controller, SettingsStore &se
     auto *scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); // narrow screens (2.5.0)
     pageLayout->addWidget(scroll, 1);
     auto *content = new QWidget(scroll);
     content->setObjectName(QStringLiteral("scrollContent"));

@@ -10,6 +10,7 @@
 #include "ui/InputService.h"
 #include "ui/autoclick/AutoClickController.h"
 #include "ui/breaktimer/BreakTimerController.h"
+#include "ui/breaktimer/MicroBreakController.h"
 #include "ui/keycontrol/DragLockController.h"
 #include "ui/keycontrol/KeyControlController.h"
 #include "ui/keepactive/KeepScreenActiveController.h"
@@ -57,6 +58,8 @@ void AppController::shutdownAll(const char *reason)
         m_keepActive->shutdown(); // no further keep-active clicks
     if (m_statistics)
         m_statistics->shutdown(); // writes the current minute
+    if (m_microBreaks)
+        m_microBreaks->shutdown();
     if (m_breaktimer)
         m_breaktimer->shutdown();
     if (m_keycontrol)
@@ -99,9 +102,10 @@ void AppController::start(const SettingsLoadResult &loadResult)
                                                           *m_keycontrol, *m_breaktimer);
     m_keepActive = std::make_unique<KeepScreenActiveController>(m_settings, *m_input, *m_keycontrol, *m_breaktimer,
                                                                 m_platform);
+    m_microBreaks = std::make_unique<MicroBreakController>(m_settings, *m_input, *m_breaktimer);
     m_context = std::make_unique<AppContext>(AppContext{m_settings, m_logger, m_platform, *m_availability, *m_install,
                                                         *m_input, *m_autoclick, *m_keycontrol, *m_breaktimer,
-                                                        *m_statistics, *m_keepActive});
+                                                        *m_statistics, *m_keepActive, *m_microBreaks});
 
     m_window = std::make_unique<MainWindow>(*m_context);
     connect(m_window.get(), &MainWindow::hideToTrayRequested, this, &AppController::hideMainWindowToTray);
@@ -116,6 +120,7 @@ void AppController::start(const SettingsLoadResult &loadResult)
         m_tray->show();
         // The break reminder (2.3.0) is placed next to the tray icon.
         m_breaktimer->setTrayIconGeometryProvider([this] { return m_tray ? m_tray->iconGeometry() : QRect(); });
+        m_microBreaks->setTrayIconGeometryProvider([this] { return m_tray ? m_tray->iconGeometry() : QRect(); });
     } else {
         qCWarning(lcUi) << "No system tray available on this desktop; the window will minimize instead of hiding";
         m_window->setHideToTrayEnabled(false);
@@ -165,6 +170,8 @@ void AppController::start(const SettingsLoadResult &loadResult)
     // Function 3 – Break Timer (stage 5).
     m_breaktimer->start();
     setupBreakTimerTrayEntries();
+    // Micro-breaks (2.5.0): give way to the Break Timer.
+    m_microBreaks->start();
     // Drag Lock (stage 6): an active drag lock is released when the break window appears (D-06).
     connect(m_breaktimer.get(), &BreakTimerController::breakWindowShown, this,
             [this] { m_keycontrol->dragLock().release(DragLockController::Reason::BreakWindow); });

@@ -53,6 +53,9 @@ public:
     void postpone();
     void startBreakNow();
 
+    // The pre-break reminder window is visible (2.5.0: micro-breaks give way to it).
+    bool isReminderShown() const;
+
     // Tray icon geometry for placing the reminder window next to it (2.3.0).
     void setTrayIconGeometryProvider(std::function<QRect()> provider) { m_trayGeometry = std::move(provider); }
 

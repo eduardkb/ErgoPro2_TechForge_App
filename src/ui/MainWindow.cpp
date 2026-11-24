@@ -9,6 +9,7 @@
 #include "ui/tabs/BreakTimerTab.h"
 #include "ui/tabs/GeneralTab.h"
 #include "ui/tabs/KeyControlTab.h"
+#include "ui/tabs/MicroBreaksTab.h"
 #include "ui/tabs/StatisticsTab.h"
 #include "ui/widgets/FeaturePage.h"
 
@@ -38,7 +39,11 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
 
     m_tabs = new QTabWidget(this);
     m_tabs->setDocumentMode(true);
-    m_tabs->setUsesScrollButtons(false);
+    // 2.5.0 (owner request, six tabs): the tabs keep their full names; when the
+    // window is too narrow for all of them, arrows scroll the tab bar instead
+    // of making the window wider.
+    m_tabs->setUsesScrollButtons(true);
+    m_tabs->setElideMode(Qt::ElideNone);
 
     m_general = new GeneralTab(context, m_tabs);
 
@@ -48,6 +53,9 @@ MainWindow::MainWindow(AppContext &context, QWidget *parent)
     m_tabs->addTab(new FeaturePage(Feature::BreakTimerActivity, context.availability,
                                    new BreakTimerTab(context.breaktimer, context.settings)),
                    tr("Break Timer"));
+    m_tabs->addTab(new FeaturePage(Feature::BreakTimerActivity, context.availability,
+                                   new MicroBreaksTab(context.microBreaks, context.settings)),
+                   tr("Micro-breaks"));
     m_tabs->addTab(new FeaturePage(Feature::AutoClick, context.availability,
                                    new AutoClickTab(context.autoclick, context.settings, context.availability,
                                                                     context.keepActive)),
@@ -110,7 +118,8 @@ void MainWindow::showEvent(QShowEvent *event)
 void MainWindow::updateTabIcons()
 {
     // Same order as the tabs (B.1.1).
-    static const char *const kIcons[] = {":/icons/ui/general.svg", ":/icons/ui/break.svg", ":/icons/ui/autoclick.svg",
+    static const char *const kIcons[] = {":/icons/ui/general.svg",  ":/icons/ui/break.svg",
+                                         ":/icons/ui/microbreak.svg", ":/icons/ui/autoclick.svg",
                                          ":/icons/ui/keyboard.svg", ":/icons/ui/statistics.svg"};
     const QColor normal = Theme::instance().colors().accent;
     for (int i = 0; i < m_tabs->count() && i < int(std::size(kIcons)); ++i)

@@ -442,6 +442,11 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 | B.7-o | Optional full-screen suppression (best effort; disabled with explanation when unsupported) | `BreakTimerEngine`, `isFullscreenAppActive` (mac, win; Linux unsupported) | `tst_breaktimer::fullscreenDelaysTheBreakWhenEnabled`, `::fullscreenIgnoredWhenTheOptionIsOff` | S5#21, S5#24 | ✅ |
 | B.7-p | Disabling closes the window and resets | `BreakTimerEngine` | `tst_breaktimer::disableEndsTheBreakAndResets` | S5#15, F1.7.5#5 | ✅ |
 | B.7-q | MAX_WORK_TIME change applies to the current cycle | `BreakTimerEngine` | `tst_breaktimer::maxWorkTimeChangeAppliesToTheCurrentCycle` | S5#20, F1.7.6#3 | ✅ |
+| B.7a-a | Micro-breaks: active use like the work time, pause ≥ show time restarts, shown after the interval, closes after the show time / click, lock restarts | `core/breaktimer/MicroBreakEngine`, `ui/breaktimer/MicroBreakController` | `tst_microbreak` (10 tests) | 2.5.0#3–7 | ✅ |
+| B.7a-b | Gives way to the Break Timer (reminder / break window; cycle reset restarts) | `MicroBreakEngine::setBlocked/restart`, `BreakTimerController::isReminderShown` | `tst_microbreak::givesWayToTheBreakTimer`, `::breakTimerResetRestartsTheCount` | 2.5.0#8–9 | ✅ |
+| B.7a-c | Window next to the tray, on top, non-blocking, countdown bottom right | `MicroBreakWindow` | – | 2.5.0#4 | 🟡 Visual, manual. |
+| B.7a-d | Micro-breaks tab (switch on top, values), settings 1–60 min / 10–120 s clamped, off by default | `MicroBreaksTab`, `MicroBreakSettings` | `tst_microbreak::settings` | 2.5.0#2, #10 | ✅ |
+| B.7a-e | Six tabs fit the default width; tab bar arrows / horizontal scroll when narrower | `MainWindow`, tab `QScrollArea`s, `style.qss` | – | 2.5.0#11 | 🟡 Visual, manual. |
 | B.7-r | Reminder before the break (2.3.0): countdown window next to the tray, 15–300 s (60), on/off, non-blocking, click = hidden for the period, postponed break = new period, paused shown | `core/breaktimer/BreakReminder`, `ui/breaktimer/BreakReminderWindow`, `BreakTimerController::syncReminder`, `BreakTimerTab` | `tst_breakreminder` (11 tests) | 2.3.0#2–10 | 🟡 Window look and position manual. |
 
 ### B.8.1 Statistics – what is recorded
@@ -526,7 +531,7 @@ Precedence (A.1): Part B > answers in `ai_questions.md` > `baseDescription.md`. 
 > `ARCHITECTURE.md` now exist. O-1 and O-2 remain open for the owner, together with the review items listed
 > in the 1.8.0 final report (CHANGELOG 1.8.0).
 
-Row counts: Table A 39 rows, Table B 102 rows, Table C 171 rows.
+Row counts: Table A 39 rows, Table B 107 rows, Table C 171 rows.
 
 ### (a) Small fixes within the existing scope
 

@@ -701,6 +701,19 @@ and on the first tick of a new day ("new day") – never when the setting change
 
 ---
 
+## 7a. Micro-breaks (2.5.0)
+
+| Layer | Piece | Role |
+|---|---|---|
+| core | `src/core/breaktimer/MicroBreakEngine` | Pure state machine (FakeClock-tested in `tests/tst_microbreak.cpp`): Disabled / Waiting / Working / Shown; active use like `BreakTimerEngine::workedAt` (pauses count up to `pauseAfterMs`); a pause of `showMs` restarts; `setBlocked` (Break Timer window or reminder), `restart` (Break Timer cycle reset), `setLocked`, `dismiss`. |
+| core | `src/core/settings/MicroBreakSettings` | `microBreaks.enabled` (false), `intervalMinutes` (clamped 1–60, 10), `showSeconds` (clamped 10–120, 20). |
+| ui | `src/ui/breaktimer/MicroBreakController` | GUI thread, 1 s tick: real input (synthetic and key-up ignored), power events, `BreakTimerController::state()/isReminderShown()` → `setBlocked`, `workCycleReset` → `restart`; availability = `BreakTimerController::isAvailable()`. Shows / hides the window. |
+| ui | `src/ui/breaktimer/MicroBreakWindow` | Frameless tool window, on top, no focus, `WA_MacAlwaysShowToolWindow`; placed with `breakReminderPosition`; countdown bottom right; click → `clicked()`. |
+| ui | `src/ui/tabs/MicroBreaksTab` | Switch + badge, status, the two `ParameterRow`s. In `MainWindow` after Break Timer, wrapped in `FeaturePage(Feature::BreakTimerActivity)`. |
+
+`MainWindow` uses tab-bar scroll buttons (no eliding) and every tab's `QScrollArea` shows a horizontal scroll
+bar when needed (2.5.0), so six tabs never force a wider window.
+
 ## 8a. Keep Screen Active (stage 9, 1.9.0)
 
 | Layer | Piece | Role |

@@ -27,6 +27,9 @@ BreakReminderWindow::BreakReminderWindow(QWidget *parent)
     setObjectName(QStringLiteral("breakReminder"));
     setAttribute(Qt::WA_StyledBackground, true);
     setAttribute(Qt::WA_ShowWithoutActivating, true); // never steals the keyboard focus
+    // 2.5.0: macOS hides a tool window while its application is not active,
+    // and ErgoPro2 almost never is; keep it visible.
+    setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
     setFocusPolicy(Qt::NoFocus);
     setCursor(Qt::PointingHandCursor);
     setWindowTitle(tr("Break reminder"));

@@ -14,6 +14,7 @@ namespace ergo {
 
 class AutoClickController;
 class BreakTimerController;
+class MicroBreakController;
 class StatisticsController;
 class KeyControlController;
 class FeatureAvailabilityService;
@@ -75,6 +76,7 @@ private:
     std::unique_ptr<BreakTimerController> m_breaktimer;
     std::unique_ptr<StatisticsController> m_statistics;
     std::unique_ptr<KeepScreenActiveController> m_keepActive;
+    std::unique_ptr<MicroBreakController> m_microBreaks; // 2.5.0
     QDate m_lastLogCleanup; // log files are deleted at most once per day (and at startup)
     std::unique_ptr<AppContext> m_context;
     std::unique_ptr<MainWindow> m_window;

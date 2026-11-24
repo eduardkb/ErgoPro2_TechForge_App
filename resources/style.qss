@@ -39,7 +39,7 @@ QTabBar {
 QTabBar::tab {
     background: transparent;
     color: @textMuted@;
-    padding: 8px 16px;
+    padding: 8px 12px; /* 12 px since 2.5.0: six tabs fit the default window width */
     margin: 8px 4px 6px 0px;
     border-radius: 8px;
     font-weight: 600;
@@ -344,6 +344,13 @@ QComboBox:disabled, QSpinBox:disabled, QLineEdit:disabled {
 
 /* 2.3.0: break reminder window (BreakReminderWindow) */
 QWidget#breakReminder {
+    background: @surface@;
+    border: 1px solid @border@;
+    border-left: 4px solid @accent@;
+}
+
+/* 2.5.0: micro-break window (MicroBreakWindow) */
+QWidget#microBreak {
     background: @surface@;
     border: 1px solid @border@;
     border-left: 4px solid @accent@;

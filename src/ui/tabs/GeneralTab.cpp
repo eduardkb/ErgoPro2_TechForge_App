@@ -90,7 +90,7 @@ GeneralTab::GeneralTab(AppContext &context, QWidget *parent)
     auto *scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); // content wraps to the window width
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); // narrow screens (2.5.0)
     outer->addWidget(scroll);
 
     auto *content = new QWidget(scroll);

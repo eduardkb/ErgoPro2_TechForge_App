@@ -5,6 +5,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ver
 each implementation stage bumps MINOR, each bug-fix run bumps PATCH, MAJOR stays 1
 (see `documentation/implementation_stages.md`, A.4).
 
+## [2.5.0] - 2026-11-24
+
+### Added
+- **Micro-breaks** (owner request): a second, smaller timer. After **10 minutes** of active use (mouse or
+  keyboard, counted like the Break Timer's work time) a small window in the corner next to the tray suggests a
+  **20-second** micro-break. It never blocks your work, stays on top until it closes by itself, shows its
+  countdown in the bottom-right corner and is hidden by a click. A pause at least as long as a micro-break
+  counts as one; locking the screen or sleep also restarts the count. No micro-break appears while the Break
+  Timer's reminder or break window is shown, and the count starts again after a break.
+- New **Micro-breaks** tab (after Break Timer): on/off switch, status, *Micro-break every* (1–60 min) and
+  *Show it for* (10–120 s). Off by default. The same values are in `settings.json` under `microBreaks`
+  (`enabled`, `intervalMinutes`, `showSeconds`); values outside the range are set to the nearest limit.
+
+### Changed
+- Six tabs: the tab names are a little narrower so all fit the default window width; when the window is too
+  narrow, arrows scroll the tab bar, and every tab scrolls sideways if its content does not fit.
+
+### Fixed
+- macOS: the 2.3.0 reminder before a break could disappear while ErgoPro2 was not the active app, because macOS
+  hides tool windows of inactive apps by default; it now stays visible (same for the micro-break window).
+
 ## [2.4.0] - 2026-11-24
 
 ### Added

@@ -51,7 +51,7 @@ BreakTimerTab::BreakTimerTab(BreakTimerController &controller, SettingsStore &se
     auto *scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded); // narrow screens (2.5.0)
     outer->addWidget(scroll);
     auto *content = new QWidget(scroll);
     content->setObjectName(QStringLiteral("scrollContent"));

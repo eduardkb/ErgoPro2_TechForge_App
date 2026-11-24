@@ -1028,3 +1028,22 @@ Keep screen active switches itself off after `keepScreenActive.maxActiveHours` w
 | 4 | Same as row 3, but move the mouse once after 3 hours. | Not switched off at 4 h; the 4 hours start again from the mouse movement. |
 | 5 | Set `maxActiveHours` to 30 (ErgoPro2 closed), start. | Log WARNING that the value was set to 25, file rewritten with 25; INFO "never switched off by time (maxActiveHours 25)"; the feature is never switched off by time. Value 2 → set to 4. |
 | 6 | After row 3, press the Keep screen active hotkey. | Enabled again, green dot back, the 4 hours count from the key press. |
+
+## Stage – v2.5.0 (micro-breaks)
+
+Micro-breaks (B.7a), six tabs (B.1.1), reminder window on macOS.
+
+| # | Steps | Expected result |
+|---|-------|-----------------|
+| 1 | `ctest --test-dir build --output-on-failure` | All test programs pass (incl. `tst_microbreak`). |
+| 2 | Start 2.5.0, open the **Micro-breaks** tab (third). | Switch off, badge INACTIVE, *Micro-break every* 10 min, *Show it for* 20 s. `settings.json` has `microBreaks` with `enabled` false, 10, 20. |
+| 3 | Switch on, set *Micro-break every* to 1 min, keep using the mouse/keyboard. | State *Counting*, *Next micro-break in* counts down while you work. |
+| 4 | Keep working until it reaches 0. | Small window in the corner next to the tray / menu bar icon: "Time for a micro-break", "Click to hide." and a countdown bottom right; the focus stays in your app; it stays on top when you click other apps (macOS: also while ErgoPro2 is not active). Closes after 20 s; log "Micro-breaks: Counting -> Micro-break shown", "Micro-break window hidden ( time elapsed … )". |
+| 5 | Next one: click the window. | It closes at once; log "Micro-break dismissed by the user". |
+| 6 | Work 30 s, stop for 15 s, then stop for 20 s. | After 15 s still *Counting* and *Active use* grew by 15 s; after 20 s without input the state is *Idle* and the count restarts. With *Show it for* 60 s a pause of 30 s shows *Paused* (active use stands still after 20 s). |
+| 7 | While counting, lock the screen and unlock. | Count restarted (*Idle* until the next input). |
+| 8 | Break Timer on with *Remind me before a break*; let the reminder appear while a micro-break is due. | No micro-break while the reminder / break window is shown (*Next micro-break in*: "waiting (Break Timer)"); a shown micro-break closes when the reminder appears. |
+| 9 | After the break window closes (or Dismiss). | Micro-break count starts again from 0. |
+| 10 | Quit, set `intervalMinutes` 90 and `showSeconds` 5 in `settings.json`, start. | WARNINGs, values set to 60 and 10, file rewritten. |
+| 11 | Main window at its default size, then resized to the minimum width. | Default: all six tab names visible. Minimum: arrows at the end of the tab bar scroll it; tab contents that do not fit show a horizontal scroll bar. |
+| 12 | macOS: Break Timer reminder (2.3.0) while another app is active. | The reminder stays visible (it was hidden by macOS before). |

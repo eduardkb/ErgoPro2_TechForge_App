@@ -8,6 +8,7 @@ add_library(ergopro2_core STATIC
     core/CrashHandler.cpp core/CrashHandler.h
     core/autoclick/AutoClickEngine.cpp core/autoclick/AutoClickEngine.h
     core/breaktimer/BreakReminder.cpp core/breaktimer/BreakReminder.h
+    core/breaktimer/MicroBreakEngine.cpp core/breaktimer/MicroBreakEngine.h
     core/breaktimer/BreakTimerEngine.cpp core/breaktimer/BreakTimerEngine.h
     core/FeatureAvailability.cpp core/FeatureAvailability.h
     core/input/HookWatchdog.cpp core/input/HookWatchdog.h
@@ -44,6 +45,7 @@ add_library(ergopro2_core STATIC
     core/settings/SettingsStore.cpp core/settings/SettingsStore.h
     core/settings/StatisticsSettings.cpp core/settings/StatisticsSettings.h
     core/settings/KeepScreenActiveSettings.cpp core/settings/KeepScreenActiveSettings.h
+    core/settings/MicroBreakSettings.cpp core/settings/MicroBreakSettings.h
 )
 target_include_directories(ergopro2_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -138,6 +140,8 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/autoclick/AutoClickWorker.cpp ui/autoclick/AutoClickWorker.h
     ui/breaktimer/BreakTimerController.cpp ui/breaktimer/BreakTimerController.h
     ui/breaktimer/BreakReminderWindow.cpp ui/breaktimer/BreakReminderWindow.h
+    ui/breaktimer/MicroBreakController.cpp ui/breaktimer/MicroBreakController.h
+    ui/breaktimer/MicroBreakWindow.cpp ui/breaktimer/MicroBreakWindow.h
     ui/breaktimer/BreakWindow.cpp ui/breaktimer/BreakWindow.h
     ui/breaktimer/BreakWindowManager.cpp ui/breaktimer/BreakWindowManager.h
     ui/keycontrol/DragLockController.cpp ui/keycontrol/DragLockController.h
@@ -155,6 +159,7 @@ qt_add_executable(ErgoPro2 WIN32 MACOSX_BUNDLE
     ui/TrayController.cpp ui/TrayController.h
     ui/tabs/AutoClickTab.cpp ui/tabs/AutoClickTab.h
     ui/tabs/BreakTimerTab.cpp ui/tabs/BreakTimerTab.h
+    ui/tabs/MicroBreaksTab.cpp ui/tabs/MicroBreaksTab.h
     ui/tabs/DiagnosticsCard.cpp ui/tabs/DiagnosticsCard.h
     ui/tabs/GeneralTab.cpp ui/tabs/GeneralTab.h
     ui/tabs/InputDiagnosticsCard.cpp ui/tabs/InputDiagnosticsCard.h
